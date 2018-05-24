@@ -1,0 +1,58 @@
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: "kotlin"
+apply plugin: 'application'
+apply plugin: 'antlr'
+
+buildscript {
+    ext.kotlin_version = "1.2.41"
+
+    repositories {
+        jcenter()
+    }
+
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+repositories {
+    mavenCentral()
+    maven { url 'https://repo.gradle.org/gradle/libs-releases' }
+}
+
+dependencies {
+    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
+    compile 'ch.qos.logback:logback-classic:1.2.3'
+    compile 'io.github.microutils:kotlin-logging:1.4.6'
+    compile 'com.xenomachina:kotlin-argparser:2.0.3'
+    testCompile 'junit:junit:4.12'
+}
+
+idea {
+    module {
+        downloadJavadoc = true
+        downloadSources = true
+    }
+}
+
+test {
+    testLogging {
+        events "started", "skipped", "failed"
+        exceptionFormat "full"
+    }
+}
+
+compileJava {
+    sourceCompatibility = '1.8'
+}
+
+generateGrammarSource {
+    maxHeapSize = "64m"
+    arguments += ["-visitor", "-long-messages"]
+}
+
+mainClassName = "ru.spbstu.kspt.librarymigration.MainKt"
+
+//test.maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
