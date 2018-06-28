@@ -4,6 +4,8 @@ import logging
 import requests
 import sys
 
+import json
+
 class RequestsReceiver():
     def __init__(self):
         if not os.path.exists("/tmp/wrapperfifo_input"):
@@ -14,31 +16,43 @@ class RequestsReceiver():
         sys.stdout.write("Done\n")
         sys.stdout.flush()
 
-        # self.input = open("/tmp/wrapperfifo_input", "r")
-        # self.output = open("/tmp/wrapperfifo_output", "w")
+        self.input = open("/tmp/wrapperfifo_input", "r")
+        self.output = open("/tmp/wrapperfifo_output", "w")
+
+        self.persistence = {}
 
         logging.info("Opened!")
 
     def receive(self):
-        self.input = open("/tmp/wrapperfifo_input", "r")
-        self.output = open("/tmp/wrapperfifo_output", "w")
-
         while True:
-            message = self.input.read(1024)
-            logging.info("Received: {}".format(message))
-            if len(message) == 0:
+            length_text = self.input.read(4)
+            if len(length_text) == 0:
                 logging.info("Empty")
                 break
-            if message == "exit":
+            logging.info("Received length: {}".format(length_text))
+            length = int(length_text)
+            message_text = self.input.read(length)
+            logging.info("Received message: {}".format(message_text))
+            if message_text == "exit":
                 logging.info("Exit")
                 break
-            exec_part, eval_part = message.split(";;")
-            exec(exec_part)
-            res = eval(eval_part, globals(), locals())
-            logging.info("Result is {}".format(res))
-            self.output.write(str(res))
+            message = json.loads(message_text)
+            local = self.persistence.copy()
+            exec(message['exec'], globals(), local)
+            response = {}
+            if 'eval' in message:
+                res = eval(message['eval'], globals(), local)
+                logging.info("Result is {}".format(res))
+                response["return_value"] = str(res)
+            if 'store' in message:
+                var_name = message['store']
+                self.persistence[var_name] = local[var_name]
+            logging.info("Persistence is {}".format(self.persistence))
+            response_text = json.dumps(response)
+            self.output.write("{0:04d}".format(len(response_text)))
+            self.output.write(response_text)
             self.output.flush()
-            logging.info("Wrote")
+            logging.info("Wrote " + response_text)
 
         logging.info("Exit")
         self.input.close()

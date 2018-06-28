@@ -1,10 +1,13 @@
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.KotlinModule
 import java.io.File
 import java.io.Reader
 import java.io.Writer
 
 fun main(args: Array<String>) {
     val requests = Requests()
-    requests.get("https://api.github.com/user")
+    val resp = requests.get("https://api.github.com/user")
+    println(resp.statusCode())
     requests.stopPython()
 }
 
@@ -12,6 +15,8 @@ class Requests {
     val output: Writer
     val input: Reader
     private val pythonProcess: Process
+
+    val mapper = ObjectMapper().registerModule(KotlinModule())
 
     init {
         pythonProcess = ProcessBuilder("python3", "/home/artyom/Projects/HTTPClientKotlin/src/main/python/main.py")
@@ -45,18 +50,39 @@ class Requests {
         pythonProcess.destroy()
     }
 
-    fun printResponse() {
-        val buffer = CharArray(1024)
-        val size = input.read(buffer)
-        val actualData = buffer.copyOfRange(0, size)
-        println(actualData)
+    fun printResponse(): Map<String, String> {
+        val lengthBuffer = CharArray(4)
+        var size = input.read(lengthBuffer)
+        val length = String(lengthBuffer).toInt()
+
+        val actualData = CharArray(length)
+        size = input.read(actualData)
+        val response = mapper.readValue(String(actualData), Map::class.java)
+        return response as Map<String, String>
     }
 
-    fun get(url: String) {
-        output.write("import requests; r = requests.get('https://api.github.com/user');; r.status_code\n")
+    private fun makeRequest(requestMessage: Map<String, Any>) {
+        val message = mapper.writeValueAsString(requestMessage)
+        output.write("%04d".format(message.length))
+        output.write(message)
         output.flush()
-        output.close()
+    }
+
+    fun get(url: String): Response {
+        makeRequest(mapOf("exec" to "import requests; r = requests.get('https://api.github.com/user')",
+                "store" to "r"))
         println("Wrote request")
         printResponse()
+        return Response("r")
+    }
+
+    inner class Response(private val storedName: String) {
+        fun statusCode(): Int {
+            makeRequest(mapOf("exec" to "",
+                    "eval" to "r.status_code"))
+            println("Wrote request")
+            val responseText = printResponse()
+            return responseText["return_value"]!!.toInt()
+        }
     }
 }

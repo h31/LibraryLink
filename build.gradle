@@ -5,7 +5,7 @@ apply plugin: 'application'
 apply plugin: 'antlr'
 
 buildscript {
-    ext.kotlin_version = "1.2.41"
+    ext.kotlin_version = "1.2.50"
 
     repositories {
         jcenter()
@@ -27,6 +27,8 @@ dependencies {
     compile 'ch.qos.logback:logback-classic:1.2.3'
     compile 'io.github.microutils:kotlin-logging:1.4.6'
     compile 'com.xenomachina:kotlin-argparser:2.0.3'
+    compile 'com.fasterxml.jackson.core:jackson-databind:2.9.5'
+    compile 'com.fasterxml.jackson.module:jackson-module-kotlin:2.9.5'
     testCompile 'junit:junit:4.12'
 }
 
