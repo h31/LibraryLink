@@ -55,6 +55,7 @@ class Requests {
     fun get(url: String) {
         output.write("import requests; r = requests.get('https://api.github.com/user');; r.status_code\n")
         output.flush()
+        output.close()
         println("Wrote request")
         printResponse()
     }
