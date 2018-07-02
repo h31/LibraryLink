@@ -12,6 +12,7 @@ fun main(args: Array<String>) {
     val resp = requests.get("https://api.github.com/user")
     println(resp.statusCode())
     println(String(resp.content()))
+    println(resp.headers())
     requests.stopPython()
 }
 
@@ -30,7 +31,7 @@ class Requests {
     val mapper = ObjectMapper().registerModule(KotlinModule())
 
     init {
-        pythonProcess = ProcessBuilder("python3", "/home/artyom/Projects/HTTPClientKotlin/src/main/python/main.py")
+        pythonProcess = ProcessBuilder("python3", "src/main/python/main.py")
                 .redirectError(ProcessBuilder.Redirect.INHERIT)
                 .start()
         val outputFile = File("/tmp/wrapperfifo_input")
@@ -61,7 +62,7 @@ class Requests {
         pythonProcess.destroy()
     }
 
-    fun printResponse(): Map<String, Any> {
+    fun receiveResponse(): Map<String, Any> {
         val lengthBuffer = CharArray(4)
         var size = input.read(lengthBuffer)
         check(size == 4)
@@ -81,27 +82,27 @@ class Requests {
         output.flush()
     }
 
-    private fun makeRequest(exec: String? = null, eval: String? = null, store: String? = null) {
+    private fun makeRequest(exec: String? = null, eval: String? = null, store: String? = null, description: String) {
         val request = mutableMapOf<String, String>()
         if (exec != null) request += "exec" to exec
         if (store != null) request += "store" to store
         if (eval != null) request += "eval" to eval
         makeRequest(request)
+        logger.info("Wrote $description")
     }
 
     fun get(url: String): Response {
         makeRequest(exec = "import requests; r = requests.get('$url')",
-                store = "r")
+                store = "r", description = "get")
         logger.info("Wrote get")
-        printResponse()
+        receiveResponse()
         return Response("r")
     }
 
     inner class Response(private val storedName: String) {
         fun statusCode(): Int {
-            makeRequest(eval = "$storedName.status_code")
-            logger.info("Wrote statusCode")
-            val responseText = printResponse()
+            makeRequest(eval = "$storedName.status_code", description = "statusCode")
+            val responseText = receiveResponse()
             val returnValue = responseText["return_value"]
             if (returnValue != null && returnValue is Int) {
                 return returnValue
@@ -111,12 +112,22 @@ class Requests {
         }
 
         fun content(): ByteArray {
-            makeRequest(eval = "$storedName.content")
-            logger.info("Wrote content")
-            val responseText = printResponse()
+            makeRequest(eval = "$storedName.content", description = "content")
+            val responseText = receiveResponse()
             val returnValue = responseText["return_value"]
             if (returnValue != null && returnValue is String) {
                 return Base64.getDecoder().decode(returnValue)
+            } else {
+                throw IllegalArgumentException()
+            }
+        }
+
+        fun headers(): Map<String, String> {
+            makeRequest(eval = "$storedName.headers", description = "headers")
+            val responseText = receiveResponse()
+            val returnValue = responseText["return_value"]
+            if (returnValue != null && returnValue is Map<*, *>) {
+                return returnValue as Map<String, String>
             } else {
                 throw IllegalArgumentException()
             }

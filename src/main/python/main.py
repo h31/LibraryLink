@@ -28,7 +28,7 @@ class RequestsReceiver():
         while True:
             length_text = self.input.read(4)
             if len(length_text) == 0:
-                logging.info("Empty")
+                logging.info("Empty request, exiting")
                 break
             logging.info("Received length: {}".format(length_text))
             length = int(length_text)
@@ -45,8 +45,11 @@ class RequestsReceiver():
             if 'eval' in message:
                 return_value = eval(message['eval'], globals(), local)
                 logging.info("Result is {}".format(return_value))
+                logging.info("Result type is {}".format(type(return_value)))
                 if isinstance(return_value, bytes):
                     response["return_value"] = base64.b64encode(return_value).decode()
+                elif isinstance(return_value, requests.structures.CaseInsensitiveDict):
+                    response["return_value"] = dict(return_value)
                 else:
                     response["return_value"] = return_value
             if 'store' in message:
