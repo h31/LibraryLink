@@ -1,3 +1,4 @@
+import base64
 import os
 import logging
 
@@ -38,12 +39,16 @@ class RequestsReceiver():
                 break
             message = json.loads(message_text)
             local = self.persistence.copy()
-            exec(message['exec'], globals(), local)
+            if 'exec' in message:
+                exec(message['exec'], globals(), local)
             response = {}
             if 'eval' in message:
-                res = eval(message['eval'], globals(), local)
-                logging.info("Result is {}".format(res))
-                response["return_value"] = str(res)
+                return_value = eval(message['eval'], globals(), local)
+                logging.info("Result is {}".format(return_value))
+                if isinstance(return_value, bytes):
+                    response["return_value"] = base64.b64encode(return_value).decode()
+                else:
+                    response["return_value"] = return_value
             if 'store' in message:
                 var_name = message['store']
                 self.persistence[var_name] = local[var_name]
