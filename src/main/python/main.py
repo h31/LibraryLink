@@ -1,11 +1,11 @@
 import base64
-import os
+import json
 import logging
+import os
+from collections import MutableMapping
 
-import requests
 import sys
 
-import json
 
 class RequestsReceiver():
     def __init__(self):
@@ -48,7 +48,7 @@ class RequestsReceiver():
                 logging.info("Result type is {}".format(type(return_value)))
                 if isinstance(return_value, bytes):
                     response["return_value"] = base64.b64encode(return_value).decode()
-                elif isinstance(return_value, requests.structures.CaseInsensitiveDict):
+                elif isinstance(return_value, MutableMapping):
                     response["return_value"] = dict(return_value)
                 else:
                     response["return_value"] = return_value
