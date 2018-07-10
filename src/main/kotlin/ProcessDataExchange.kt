@@ -64,6 +64,10 @@ open class ProcessDataExchange {
         return response as Map<String, Any>
     }
 
+    fun receiveReturnValue() {
+
+    }
+
     private fun makeRequest(requestMessage: Map<String, String>) {
         val message = mapper.writeValueAsString(requestMessage)
         output.write("%04d".format(message.length))

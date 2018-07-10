@@ -27,8 +27,11 @@ dependencies {
     compile 'ch.qos.logback:logback-classic:1.2.3'
     compile 'io.github.microutils:kotlin-logging:1.4.6'
     compile 'com.xenomachina:kotlin-argparser:2.0.3'
+    compile "org.antlr:antlr4:4.7"
     compile 'com.fasterxml.jackson.core:jackson-databind:2.9.5'
     compile 'com.fasterxml.jackson.module:jackson-module-kotlin:2.9.5'
+    compile 'com.github.javaparser:javaparser-core:3.6.9'
+    compile files('../ModelParser/build/libs/modelparser-0.2.jar')
     testCompile 'junit:junit:4.12'
 }
 
