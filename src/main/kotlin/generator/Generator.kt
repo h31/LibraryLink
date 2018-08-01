@@ -3,11 +3,10 @@ package generator
 import com.github.javaparser.JavaParser
 import com.github.javaparser.ast.CompilationUnit
 import com.github.javaparser.ast.Modifier
+import com.github.javaparser.ast.NodeList
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration
-import com.github.javaparser.ast.type.ClassOrInterfaceType
-import com.github.javaparser.ast.type.ReferenceType
+import com.github.javaparser.ast.expr.Expression
 import ru.spbstu.kspt.librarymigration.CallEdge
-import ru.spbstu.kspt.librarymigration.ExpressionEdge
 import ru.spbstu.kspt.librarymigration.TemplateEdge
 import ru.spbstu.kspt.librarymigration.parser.ModelParser
 import java.util.*
@@ -47,20 +46,25 @@ fun generate() {
 //    originalCall.isStatic = true
 
     val compilationUnit = CompilationUnit()
-    val myClass = compilationUnit
+    val wrapperClass = compilationUnit
             .addClass(library.name + "Wrapper")
             .setPublic(true)
+    wrapperClass.extendedTypes = NodeList(JavaParser.parseClassOrInterfaceType("ProcessDataExchange"))
     for (type in library.machineTypes.values.filter { it.contains('.') }) {
         val actualName = type.split('.').last().replace("$", "")
         val clazz = ClassOrInterfaceDeclaration(EnumSet.noneOf(Modifier::class.java), false, actualName)
         clazz.isStatic = true
-        myClass.addMember(clazz)
+        wrapperClass.addMember(clazz)
         val edges = library.edges.filter { library.machineTypes[it.src.machine] == type }
         for (edge in edges.filterIsInstance<CallEdge>()) {
             val method = clazz.addMethod(edge.methodName)
+            val methodBody = method.createBody()
+            methodBody.addStatement(JavaParser.parseStatement("makeRequest(exec = \"import requests; r = requests.get(\'\$url')\",\n" +
+                    "store = \"r\", description = \"get\");"))
             if (edge.hasReturnValue) {
                 val linkedEdge = edge.linkedEdge!!
                 method.type = JavaParser.parseType(linkedEdge.dst.machine.name)
+                methodBody.addStatement(JavaParser.parseStatement("receiveResponse();"))
             }
         }
         for (edge in edges.filterIsInstance<TemplateEdge>()) {
@@ -70,6 +74,6 @@ fun generate() {
     }
 //    myClass.addField(Int::class.javaPrimitiveType, "A_CONSTANT", Modifier.PUBLIC, Modifier.STATIC)
 //    myClass.addField(String::class.java, "name", Modifier.PRIVATE)
-    val code = myClass.toString()
+    val code = wrapperClass.toString()
     println(code)
 }
