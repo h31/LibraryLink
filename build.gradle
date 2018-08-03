@@ -5,7 +5,7 @@ apply plugin: 'application'
 apply plugin: 'antlr'
 
 buildscript {
-    ext.kotlin_version = "1.2.50"
+    ext.kotlin_version = "1.2.60"
 
     repositories {
         jcenter()
@@ -17,8 +17,13 @@ buildscript {
 }
 
 repositories {
-    mavenCentral()
-    maven { url 'https://repo.gradle.org/gradle/libs-releases' }
+    jcenter()
+    maven {
+        url 'https://repo.gradle.org/gradle/libs-releases'
+    }
+    maven {
+        url  "https://dl.bintray.com/artyom-h31/LibraryMigration"
+    }
 }
 
 dependencies {
@@ -31,7 +36,7 @@ dependencies {
     compile 'com.fasterxml.jackson.core:jackson-databind:2.9.5'
     compile 'com.fasterxml.jackson.module:jackson-module-kotlin:2.9.5'
     compile 'com.github.javaparser:javaparser-core:3.6.9'
-    compile files('../ModelParser/build/libs/modelparser-0.2.jar')
+    compile 'ru.spbstu.kspt.librarymigration:modelparser:0.3'
     testCompile 'junit:junit:4.12'
 }
 
