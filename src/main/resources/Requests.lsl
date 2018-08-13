@@ -8,17 +8,21 @@ library Requests {
    Headers (Map);
  }
  converters {
-   StatusCode <- <Response>.status_code();
    Content <- <Response>.content();
    Headers <- <Response>.headers();
  }
 
-   automaton Requests {
-     state Created;
-     shift Created -> self (get);
-   }
+ automaton Requests {
+   state Created;
+   shift Created -> self (get);
+ }
+
+ automaton Response {
+ }
 
  fun Requests.get(url: URL): Response {
    static;
- };
+ }
+
+ fun Response.status_code(): StatusCode;
 }

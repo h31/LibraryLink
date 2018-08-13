@@ -50,6 +50,7 @@ fun generate() {
             .addClass(library.name + "Wrapper")
             .setPublic(true)
     wrapperClass.extendedTypes = NodeList(JavaParser.parseClassOrInterfaceType("ProcessDataExchange"))
+    wrapperClass.addField("int", "idCounter")
     for (type in library.machineTypes.values.filter { it.contains('.') }) {
         val actualName = type.split('.').last().replace("$", "")
         val clazz = ClassOrInterfaceDeclaration(EnumSet.noneOf(Modifier::class.java), false, actualName)

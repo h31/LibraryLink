@@ -1,5 +1,6 @@
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.Reader
@@ -10,14 +11,18 @@ fun mkfifo(path: String) {
     check(exitCode == 0)
 }
 
-open class ProcessDataExchange {
-    val logger = LoggerFactory.getLogger(ProcessDataExchange::class.java)
-
+interface ForeignChannelRunner {
     val output: Writer
     val input: Reader
+}
+
+open class PythonChannelRunner : ForeignChannelRunner {
+    final override val output: Writer
+    final override val input: Reader
+
     private val pythonProcess: Process
 
-    val mapper = ObjectMapper().registerModule(KotlinModule())
+    val logger = LoggerFactory.getLogger(PythonChannelRunner::class.java)
 
     init {
         pythonProcess = ProcessBuilder("python3", "src/main/python/main.py")
@@ -50,6 +55,10 @@ open class ProcessDataExchange {
         input.close()
         pythonProcess.destroy()
     }
+}
+
+open class ProcessDataExchange : PythonChannelRunner() {
+    val mapper = ObjectMapper().registerModule(KotlinModule())
 
     fun receiveResponse(): Map<String, Any> {
         val lengthBuffer = CharArray(4)
@@ -64,15 +73,17 @@ open class ProcessDataExchange {
         return response as Map<String, Any>
     }
 
-    fun receiveReturnValue() {
-
-    }
-
-    private fun makeRequest(requestMessage: Map<String, String>) {
+    private fun makeRequest(requestMessage: Map<String, Any>) {
         val message = mapper.writeValueAsString(requestMessage)
         output.write("%04d".format(message.length))
         output.write(message)
         output.flush()
+    }
+
+    fun makeRequestSeparated(methodName: String, objectID: String, args: List<String>, description: String) {
+        val request = mutableMapOf("methodName" to methodName, "objectID" to objectID, "args" to args)
+        makeRequest(request)
+        logger.info("Wrote $description")
     }
 
     fun makeRequest(exec: String? = null, eval: String? = null, store: String? = null, description: String) {
