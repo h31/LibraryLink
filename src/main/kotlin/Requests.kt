@@ -2,11 +2,13 @@ import java.util.*
 
 class Requests : ProcessDataExchange() {
     fun get(url: String): Response {
-        makeRequest(exec = "import requests; r = requests.get('$url')",
-                store = "r", description = "get")
+        makeRequestSeparated(Request(import = "requests", objectID = "requests",
+                args = listOf(url), methodName = "get", doGetReturnValue = false))
+//        makeRequest(exec = "import requests; r = requests.get('$url')",
+//                store = "r", description = "get")
         logger.info("Wrote get")
         receiveResponse()
-        return Response("r")
+        return Response("var0")
     }
 
     inner class Response(private val storedName: String) {

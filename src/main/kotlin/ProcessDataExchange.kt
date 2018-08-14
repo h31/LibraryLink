@@ -1,10 +1,10 @@
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.Reader
 import java.io.Writer
+import java.util.concurrent.atomic.AtomicInteger
 
 fun mkfifo(path: String) {
     val exitCode = Runtime.getRuntime().exec(arrayOf("mkfifo", path)).waitFor()
@@ -14,6 +14,8 @@ fun mkfifo(path: String) {
 interface ForeignChannelRunner {
     val output: Writer
     val input: Reader
+
+    fun stopChannelInteration()
 }
 
 open class PythonChannelRunner : ForeignChannelRunner {
@@ -49,6 +51,8 @@ open class PythonChannelRunner : ForeignChannelRunner {
         logger.info("Greeting received")
     }
 
+    override fun stopChannelInteration() = stopPython()
+
     fun stopPython() {
         logger.info("Stop Python")
         output.close()
@@ -60,9 +64,24 @@ open class PythonChannelRunner : ForeignChannelRunner {
 open class ProcessDataExchange : PythonChannelRunner() {
     val mapper = ObjectMapper().registerModule(KotlinModule())
 
+    object AssignedIDCounter {
+        val counter = AtomicInteger()
+    }
+
+    data class Request(val import: String,
+                       val objectID: String,
+                       val methodName: String, // TODO: Static
+                       val args: List<String>,
+                       val isStatic: Boolean = false,
+                       val doGetReturnValue: Boolean = false,
+                       val assignedID: String = "var" + AssignedIDCounter.counter.getAndIncrement().toString())
+
+    data class Response(val returnValue: String)
+
     fun receiveResponse(): Map<String, Any> {
         val lengthBuffer = CharArray(4)
         var size = input.read(lengthBuffer)
+        println(size)
         check(size == 4)
         val length = String(lengthBuffer).toInt()
 
@@ -73,17 +92,16 @@ open class ProcessDataExchange : PythonChannelRunner() {
         return response as Map<String, Any>
     }
 
-    private fun makeRequest(requestMessage: Map<String, Any>) {
-        val message = mapper.writeValueAsString(requestMessage)
-        output.write("%04d".format(message.length))
-        output.write(message)
+    private fun makeRequest(requestMessage: String) {
+        output.write("%04d".format(requestMessage.length))
+        output.write(requestMessage)
         output.flush()
     }
 
-    fun makeRequestSeparated(methodName: String, objectID: String, args: List<String>, description: String) {
-        val request = mutableMapOf("methodName" to methodName, "objectID" to objectID, "args" to args)
-        makeRequest(request)
-        logger.info("Wrote $description")
+    fun makeRequestSeparated(request: Request) {
+        val message = mapper.writeValueAsString(request)
+        makeRequest(message)
+        logger.info("Wrote $request")
     }
 
     fun makeRequest(exec: String? = null, eval: String? = null, store: String? = null, description: String) {
@@ -91,7 +109,8 @@ open class ProcessDataExchange : PythonChannelRunner() {
         if (exec != null) request += "exec" to exec
         if (store != null) request += "store" to store
         if (eval != null) request += "eval" to eval
-        makeRequest(request)
+        val message = mapper.writeValueAsString(request)
+        makeRequest(message)
         logger.info("Wrote $description")
     }
 }
