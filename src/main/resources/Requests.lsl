@@ -18,6 +18,8 @@ library Requests {
  }
 
  automaton Response {
+   state Created;
+   shift Created -> self (status_code);
  }
 
  fun Requests.get(url: URL): Response {
