@@ -1,21 +1,25 @@
+import org.slf4j.LoggerFactory
 import java.util.*
 
-class Requests : ProcessDataExchange() {
+class Requests(private val localChannel: ThreadLocal<PythonChannelRunner> = ThreadLocal.withInitial { PythonChannelRunner() },
+               private val exchange: ProcessDataExchange = SimpleTextProcessDataExchange(localChannel.get())) : ProcessDataExchange by exchange {
+    val logger = LoggerFactory.getLogger(ProcessDataExchange::class.java)
+
     fun get(url: String): Response {
-        makeRequestSeparated(Request(import = "requests", objectID = "requests",
+        val assignedID = makeRequestSeparated(Request(import = "requests", objectID = "requests",
                 args = listOf(url), methodName = "get", doGetReturnValue = false))
-//        makeRequest(exec = "import requests; r = requests.get('$url')",
-//                store = "r", description = "get")
         logger.info("Wrote get")
         receiveResponse()
-        return Response("var0")
+        val response = Response(assignedID!!)
+        return response
     }
 
-    inner class Response(private val storedName: String) {
+    inner class Response(private val storedName: String): Handle(storedName) {
         fun statusCode(): Int {
-            makeRequest(eval = "$storedName.status_code", description = "statusCode")
+            makeRequestSeparated(Request(objectID = storedName, methodName = "status_code",
+                    doGetReturnValue = true, import = "", args = listOf(), isProperty = true))
             val responseText = receiveResponse()
-            val returnValue = responseText["return_value"]
+            val returnValue = responseText.returnValue
             if (returnValue != null && returnValue is Int) {
                 return returnValue
             } else {
@@ -24,9 +28,10 @@ class Requests : ProcessDataExchange() {
         }
 
         fun content(): ByteArray {
-            makeRequest(eval = "$storedName.content", description = "content")
+            makeRequestSeparated(Request(objectID = storedName, methodName = "content",
+                    doGetReturnValue = true, import = "", args = listOf(), isProperty = true))
             val responseText = receiveResponse()
-            val returnValue = responseText["return_value"]
+            val returnValue = responseText.returnValue
             if (returnValue != null && returnValue is String) {
                 return Base64.getDecoder().decode(returnValue)
             } else {
@@ -37,7 +42,7 @@ class Requests : ProcessDataExchange() {
         fun headers(): Map<String, String> {
             makeRequest(eval = "$storedName.headers", description = "headers")
             val responseText = receiveResponse()
-            val returnValue = responseText["return_value"]
+            val returnValue = responseText.returnValue
             if (returnValue != null && returnValue is Map<*, *>) {
                 return returnValue as Map<String, String>
             } else {
