@@ -98,8 +98,10 @@ object AssignedIDCounter {
     val counter = AtomicInteger()
 }
 
-data class ProcessExchangeResponse(@JsonProperty("return_value") val returnValue: Any? = null,
-                                   val assignedID: String? = null)
+class ChannelResponse(@JsonProperty("return_value") val returnValue: Any? = null)
+
+data class ProcessExchangeResponse(val returnValue: Any?,
+                                   val assignedID: String) // TODO
 
 open class Handle(assignedID: String) {
     init {
@@ -116,9 +118,7 @@ object HandleReferenceQueue {
 class HandlePhantomReference<T>(referent: T, q: ReferenceQueue<T>, val assignedID: String) : PhantomReference<T>(referent, q)
 
 interface ProcessDataExchange {
-    fun makeRequestSeparated(request: Request): ProcessExchangeResponse
-    fun makeRequest(exec: String? = null, eval: String? = null, store: String? = null, description: String)
-    fun registerHandle(handle: Any, assignedID: String)
+    fun makeRequest(request: Request): ProcessExchangeResponse
 }
 
 open class SimpleTextProcessDataExchange(channel: ForeignChannelRunner) : ProcessDataExchange, BlockingRequestGenerator(channel) {
@@ -152,23 +152,23 @@ open class SimpleTextProcessDataExchange(channel: ForeignChannelRunner) : Proces
         return response
     }
 
-    private fun makeRequest(requestMessage: String): ProcessExchangeResponse {
+    private fun makeRequest(requestMessage: String): ChannelResponse {
         val responseText = sendRequest(requestMessage)
-        val response = mapper.readValue(responseText, ProcessExchangeResponse::class.java)
+        val response = mapper.readValue(responseText, ChannelResponse::class.java)
         return response
     }
 
-    override fun makeRequestSeparated(request: Request): ProcessExchangeResponse {
+    override fun makeRequest(request: Request): ProcessExchangeResponse {
         val message = mapper.writeValueAsString(request)
+        val channelResponse = makeRequest(message)
         logger.info("Wrote $request")
-        val response = makeRequest(message)
-        val filledResponse = response.copy(assignedID = request.assignedID)
-        logger.info("Received $filledResponse")
-        return filledResponse
+        val response = ProcessExchangeResponse(returnValue = channelResponse.returnValue, assignedID = request.assignedID)
+        logger.info("Received $response")
+        return response
     }
 
     @Deprecated("Old protocol")
-    override fun makeRequest(exec: String?, eval: String?, store: String?, description: String) {
+    fun makeRequest(exec: String?, eval: String?, store: String?, description: String) {
         val request = mutableMapOf<String, String>()
         if (exec != null) request += "exec" to exec
         if (store != null) request += "store" to store
@@ -176,10 +176,5 @@ open class SimpleTextProcessDataExchange(channel: ForeignChannelRunner) : Proces
         val message = mapper.writeValueAsString(request)
         makeRequest(message)
         logger.info("Wrote $description")
-    }
-
-    override fun registerHandle(handle: Any, assignedID: String) {
-        val ref = HandlePhantomReference(handle, HandleReferenceQueue.refqueue, assignedID)
-        HandleReferenceQueue.references += ref
     }
 }
