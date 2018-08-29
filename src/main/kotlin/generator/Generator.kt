@@ -36,6 +36,14 @@ fun prettyPrinter(string: String): String {
 
 class Test
 
+fun generateStatement(import: String?, methodName: String, args: String?, isProperty: Boolean = false): String {
+//    val import = "requests"
+//    val args = "url"
+    val statement = "Object assignedID = makeRequestSeparated(new Request(\"$import\", \"$import\", " +
+            "\"$methodName\", Collections.singletonList($args), false));"
+    return statement
+}
+
 fun generate() {
     val modelStream = Test().javaClass.classLoader.getResourceAsStream("Requests.lsl")
     val ast = ModelParser().parse(modelStream)
@@ -55,13 +63,16 @@ fun generate() {
         val actualName = type.split('.').last().replace("$", "")
         val clazz = ClassOrInterfaceDeclaration(EnumSet.noneOf(Modifier::class.java), false, actualName)
         clazz.isStatic = true
+        clazz.addExtendedType("Handle")
         wrapperClass.addMember(clazz)
         val edges = library.edges.filter { library.machineTypes[it.src.machine] == type }
         for (edge in edges.filterIsInstance<CallEdge>()) {
             val method = clazz.addMethod(edge.methodName)
             val methodBody = method.createBody()
-            methodBody.addStatement(JavaParser.parseStatement("makeRequest(exec = \"import requests; r = requests.get(\'\$url')\",\n" +
-                    "store = \"r\", description = \"get\");"))
+            val statementText = generateStatement(import = if (edge.isStatic) edge.machine.name.toLowerCase() else "",
+                    methodName = edge.methodName, args = edge.param.joinToString())
+            println(statementText)
+            methodBody.addStatement(JavaParser.parseStatement(statementText))
             if (edge.hasReturnValue) {
                 val linkedEdge = edge.linkedEdge!!
                 method.type = JavaParser.parseType(linkedEdge.dst.machine.name)
