@@ -54,6 +54,10 @@ class RequestsReceiver():
             if 'exec' in message:
                 exec(message['exec'], globals(), local)
             response = {}
+            if 'delete' in message and message['delete']:
+                var_name = message['delete']
+                logging.info("Delete {} from persistence".format(var_name))
+                del self.persistence[var_name]
             if 'eval' in message:
                 return_value = eval(message['eval'], globals(), local)
                 logging.info("Result is {}".format(return_value))
@@ -63,15 +67,21 @@ class RequestsReceiver():
                 var_name = message['store']
                 self.persistence[var_name] = local[var_name]
             if 'methodName' in message:
-                if 'import' in message:
+                if 'import' in message and message['import']:
                     prefix = "import {}; ".format(message['import'])
                 else:
                     prefix = ""
-                command = prefix + "{} = {}.{}({})".format(message['assignedID'],
+                if 'property' in message and message['property'] == True:
+                    command = prefix + "{} = {}.{}".format(message['assignedID'],
                                                            message['objectID'],
-                                                           message['methodName'],
-                                                           self.decode_args(message['args']))
-                logging.debug(command)
+                                                           message['methodName'])
+                else:
+                    command = prefix + "{} = {}.{}({})".format(message['assignedID'],
+                                                               message['objectID'],
+                                                               message['methodName'],
+                                                               self.decode_args(message['args']))
+                logging.debug("Exec: " + command)
+                logging.debug("Persistence before exec is {}".format(local))
                 exec(command, globals(), local)
                 var_name = message['assignedID']
                 self.persistence[var_name] = local[var_name]
