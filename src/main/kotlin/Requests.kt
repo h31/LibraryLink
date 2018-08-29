@@ -6,20 +6,18 @@ class Requests(private val localChannel: ThreadLocal<PythonChannelRunner> = Thre
     val logger = LoggerFactory.getLogger(ProcessDataExchange::class.java)
 
     fun get(url: String): Response {
-        val assignedID = makeRequestSeparated(Request(import = "requests", objectID = "requests",
+        val peResponse = makeRequestSeparated(Request(import = "requests", objectID = "requests",
                 args = listOf(url), methodName = "get", doGetReturnValue = false))
         logger.info("Wrote get")
-        receiveResponse()
-        val response = Response(assignedID!!)
+        val response = Response(peResponse.assignedID!!)
         return response
     }
 
     inner class Response(private val storedName: String): Handle(storedName) {
         fun statusCode(): Int {
-            makeRequestSeparated(Request(objectID = storedName, methodName = "status_code",
+            val response = makeRequestSeparated(Request(objectID = storedName, methodName = "status_code",
                     doGetReturnValue = true, import = "", args = listOf(), isProperty = true))
-            val responseText = receiveResponse()
-            val returnValue = responseText.returnValue
+            val returnValue = response.returnValue
             if (returnValue != null && returnValue is Int) {
                 return returnValue
             } else {
@@ -28,10 +26,9 @@ class Requests(private val localChannel: ThreadLocal<PythonChannelRunner> = Thre
         }
 
         fun content(): ByteArray {
-            makeRequestSeparated(Request(objectID = storedName, methodName = "content",
+            val response = makeRequestSeparated(Request(objectID = storedName, methodName = "content",
                     doGetReturnValue = true, import = "", args = listOf(), isProperty = true))
-            val responseText = receiveResponse()
-            val returnValue = responseText.returnValue
+            val returnValue = response.returnValue
             if (returnValue != null && returnValue is String) {
                 return Base64.getDecoder().decode(returnValue)
             } else {
@@ -40,9 +37,9 @@ class Requests(private val localChannel: ThreadLocal<PythonChannelRunner> = Thre
         }
 
         fun headers(): Map<String, String> {
-            makeRequest(eval = "$storedName.headers", description = "headers")
-            val responseText = receiveResponse()
-            val returnValue = responseText.returnValue
+            val response = makeRequestSeparated(Request(objectID = storedName, methodName = "headers",
+                    doGetReturnValue = true, import = "", args = listOf(), isProperty = true))
+            val returnValue = response.returnValue
             if (returnValue != null && returnValue is Map<*, *>) {
                 return returnValue as Map<String, String>
             } else {

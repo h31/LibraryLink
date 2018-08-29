@@ -65,6 +65,26 @@ open class PythonChannelRunner : ForeignChannelRunner {
     }
 }
 
+open class BlockingRequestGenerator(private val channel: ForeignChannelRunner): ForeignChannelRunner by channel {
+    protected fun sendRequest(requestMessage: String): String {
+        synchronized(channel) {
+            output.write("%04d".format(requestMessage.length))
+            output.write(requestMessage)
+            output.flush()
+
+            val lengthBuffer = CharArray(4)
+            var receivedDataSize = input.read(lengthBuffer)
+            check(receivedDataSize == 4)
+            val length = String(lengthBuffer).toInt()
+
+            val actualData = CharArray(length)
+            receivedDataSize = input.read(actualData)
+            check(receivedDataSize == length)
+            return String(actualData)
+        }
+    }
+}
+
 data class Request(val import: String,
                    val objectID: String,
                    val methodName: String, // TODO: Static
@@ -78,7 +98,8 @@ object AssignedIDCounter {
     val counter = AtomicInteger()
 }
 
-data class Response(@JsonProperty("return_value") val returnValue: Any?)
+data class ProcessExchangeResponse(@JsonProperty("return_value") val returnValue: Any? = null,
+                                   val assignedID: String? = null)
 
 open class Handle(assignedID: String) {
     init {
@@ -95,13 +116,12 @@ object HandleReferenceQueue {
 class HandlePhantomReference<T>(referent: T, q: ReferenceQueue<T>, val assignedID: String) : PhantomReference<T>(referent, q)
 
 interface ProcessDataExchange {
-    fun receiveResponse(): Response
-    fun makeRequestSeparated(request: Request): String?
+    fun makeRequestSeparated(request: Request): ProcessExchangeResponse
     fun makeRequest(exec: String? = null, eval: String? = null, store: String? = null, description: String)
     fun registerHandle(handle: Any, assignedID: String)
 }
 
-open class SimpleTextProcessDataExchange(val channel: ForeignChannelRunner) : ProcessDataExchange, ForeignChannelRunner by channel {
+open class SimpleTextProcessDataExchange(channel: ForeignChannelRunner) : ProcessDataExchange, BlockingRequestGenerator(channel) {
     val mapper = ObjectMapper().registerModule(KotlinModule())
 
     val logger = LoggerFactory.getLogger(ProcessDataExchange::class.java)
@@ -118,7 +138,7 @@ open class SimpleTextProcessDataExchange(val channel: ForeignChannelRunner) : Pr
         }
     }
 
-    override fun receiveResponse(): Response {
+    fun receiveResponse(): ProcessExchangeResponse {
         val lengthBuffer = CharArray(4)
         var size = input.read(lengthBuffer)
         println(size)
@@ -128,23 +148,26 @@ open class SimpleTextProcessDataExchange(val channel: ForeignChannelRunner) : Pr
         val actualData = CharArray(length)
         size = input.read(actualData)
         check(size == length)
-        val response = mapper.readValue(String(actualData), Response::class.java)
+        val response = mapper.readValue(String(actualData), ProcessExchangeResponse::class.java)
         return response
     }
 
-    private fun makeRequest(requestMessage: String) {
-        output.write("%04d".format(requestMessage.length))
-        output.write(requestMessage)
-        output.flush()
+    private fun makeRequest(requestMessage: String): ProcessExchangeResponse {
+        val responseText = sendRequest(requestMessage)
+        val response = mapper.readValue(responseText, ProcessExchangeResponse::class.java)
+        return response
     }
 
-    override fun makeRequestSeparated(request: Request): String? {
+    override fun makeRequestSeparated(request: Request): ProcessExchangeResponse {
         val message = mapper.writeValueAsString(request)
-        makeRequest(message)
         logger.info("Wrote $request")
-        return request.assignedID
+        val response = makeRequest(message)
+        val filledResponse = response.copy(assignedID = request.assignedID)
+        logger.info("Received $filledResponse")
+        return filledResponse
     }
 
+    @Deprecated("Old protocol")
     override fun makeRequest(exec: String?, eval: String?, store: String?, description: String) {
         val request = mutableMapOf<String, String>()
         if (exec != null) request += "exec" to exec
