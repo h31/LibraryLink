@@ -16,15 +16,34 @@ fun mkfifo(path: String) {
 }
 
 interface ForeignChannelRunner {
-    val output: Writer
-    val input: Reader
+    data class BidirectionalChannel(val output: Writer,
+                                    val input: Reader)
 
+    fun getBidirectionalChannel(): BidirectionalChannel
+    fun getBidirectionalChannel(subchannel: String): BidirectionalChannel
     fun stopChannelInteraction()
 }
 
 open class PythonChannelRunner : ForeignChannelRunner {
-    final override val output: Writer
-    final override val input: Reader
+    override fun getBidirectionalChannel() = ForeignChannelRunner.BidirectionalChannel(output, input)
+    override fun getBidirectionalChannel(subchannel: String): ForeignChannelRunner.BidirectionalChannel {
+        val outputFile = File("/tmp/wrapperfifo_input_$subchannel")
+        val inputFile = File("/tmp/wrapperfifo_output_$subchannel")
+        if (!outputFile.exists()) {
+            mkfifo(outputFile.path)
+        }
+        if (!inputFile.exists()) {
+            mkfifo(inputFile.path)
+        }
+        val subchannelOutput = inputFile.writer()
+        logger.info("Output $subchannel opened!")
+        val subchannelInput = outputFile.reader()
+        logger.info("Input $subchannel opened!")
+        return ForeignChannelRunner.BidirectionalChannel(subchannelOutput, subchannelInput)
+    }
+
+    val output: Writer
+    val input: Reader
 
     private val pythonProcess: Process
 
@@ -65,8 +84,10 @@ open class PythonChannelRunner : ForeignChannelRunner {
     }
 }
 
-open class BlockingRequestGenerator(private val channel: ForeignChannelRunner): ForeignChannelRunner by channel {
+open class BlockingRequestGenerator(private val channel: ForeignChannelRunner) : ForeignChannelRunner by channel {
     protected fun sendRequest(requestMessage: String): String {
+        val (output, input) = getBidirectionalChannel()
+
         synchronized(channel) {
             output.write("%04d".format(requestMessage.length))
             output.write(requestMessage)
@@ -82,6 +103,40 @@ open class BlockingRequestGenerator(private val channel: ForeignChannelRunner): 
             check(receivedDataSize == length)
             return String(actualData)
         }
+    }
+}
+
+open class ThreadLocalRequestGenerator(private val channel: ForeignChannelRunner) : ForeignChannelRunner by channel {
+    private val channelCache: MutableMap<Long, ForeignChannelRunner.BidirectionalChannel> = mutableMapOf()
+
+    private fun getChannel(): ForeignChannelRunner.BidirectionalChannel {
+        synchronized(this) {
+            val threadID = Thread.currentThread().id
+            if (threadID in channelCache) {
+                return channelCache[threadID]!!
+            }
+            val subchannel = getBidirectionalChannel(threadID.toString())
+            channelCache += threadID to subchannel
+            return subchannel
+        }
+    }
+
+    protected fun sendRequest(requestMessage: String): String {
+        val (output, input) = getChannel()
+
+        output.write("%04d".format(requestMessage.length))
+        output.write(requestMessage)
+        output.flush()
+
+        val lengthBuffer = CharArray(4)
+        var receivedDataSize = input.read(lengthBuffer)
+        check(receivedDataSize == 4)
+        val length = String(lengthBuffer).toInt()
+
+        val actualData = CharArray(length)
+        receivedDataSize = input.read(actualData)
+        check(receivedDataSize == length)
+        return String(actualData)
     }
 }
 
@@ -136,20 +191,6 @@ open class SimpleTextProcessDataExchange(channel: ForeignChannelRunner) : Proces
                 makeRequest(message)
             }
         }
-    }
-
-    fun receiveResponse(): ProcessExchangeResponse {
-        val lengthBuffer = CharArray(4)
-        var size = input.read(lengthBuffer)
-        println(size)
-        check(size == 4)
-        val length = String(lengthBuffer).toInt()
-
-        val actualData = CharArray(length)
-        size = input.read(actualData)
-        check(size == length)
-        val response = mapper.readValue(String(actualData), ProcessExchangeResponse::class.java)
-        return response
     }
 
     private fun makeRequest(requestMessage: String): ChannelResponse {
