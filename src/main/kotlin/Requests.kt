@@ -5,13 +5,21 @@ class Requests(private val localChannel: ThreadLocal<PythonChannelRunner> = Thre
                private val exchange: ProcessDataExchange = SimpleTextProcessDataExchange(localChannel.get())) : ProcessDataExchange by exchange {
     val logger = LoggerFactory.getLogger(ProcessDataExchange::class.java)
 
-    fun get(url: String): Response {
+    fun get(url: String, headers: Headers? = null): Response {
+        val args: List<String>
+        if (headers == null) {
+            args = listOf(url)
+        } else {
+            args = listOf(url, "__headers = " + headers.storedName)
+        }
         val peResponse = makeRequest(Request(import = "requests", objectID = "requests",
-                args = listOf(url), methodName = "get", doGetReturnValue = false))
+                args = args, methodName = "get", doGetReturnValue = false))
         logger.info("Wrote get")
         val response = Response(peResponse.assignedID)
         return response
     }
+
+    fun getHeaders(): Headers = Headers()
 
     inner class Response(private val storedName: String): Handle(storedName) {
         fun statusCode(): Int {
@@ -31,6 +39,20 @@ class Requests(private val localChannel: ThreadLocal<PythonChannelRunner> = Thre
             val response = makeRequest(Request(objectID = storedName, methodName = "headers",
                     doGetReturnValue = true, import = "", args = listOf(), isProperty = true))
             return response.returnValue as? Map<String, String> ?: throw IllegalArgumentException()
+        }
+    }
+
+    inner class Headers() {
+        private val handle: Handle
+        val storedName: String
+        init {
+            val response = makeRequest(Request(import = "", objectID = "", methodName = "dict", args = listOf()))
+            storedName = response.assignedID
+            handle = Handle(storedName)
+        }
+
+        fun update(key: String, value: String) {
+            makeRequest(Request(import = "", objectID = storedName, methodName = "update", args = listOf("__{\"$key\": \"$value\"}")))
         }
     }
 }

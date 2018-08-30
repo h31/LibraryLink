@@ -8,7 +8,9 @@ fun main(args: Array<String>) {
 
 fun doRequest() {
     val requests = Requests()
-    val resp = requests.get("https://api.github.com/user")
+    val headers = requests.getHeaders()
+    headers.update("X-Test", "Value")
+    val resp = requests.get("https://api.github.com/user", headers = headers)
     println(resp.statusCode())
     println(String(resp.content()))
     println(resp.headers())

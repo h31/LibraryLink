@@ -33,7 +33,7 @@ class RequestsReceiver():
             return return_value
 
     def decode_args(self, args):
-        decoded_args = map(lambda x: '"' + x + '"' if isinstance(x, str) else "ERROR", args)
+        decoded_args = map(lambda x: '"' + x + '"' if isinstance(x, str) and not x.startswith("__") else x[2:], args)
         return ", ".join(decoded_args)
 
     def receive(self):
@@ -75,9 +75,13 @@ class RequestsReceiver():
                     command = prefix + "{} = {}.{}".format(message['assignedID'],
                                                            message['objectID'],
                                                            message['methodName'])
-                else:
+                elif message['objectID']:
                     command = prefix + "{} = {}.{}({})".format(message['assignedID'],
                                                                message['objectID'],
+                                                               message['methodName'],
+                                                               self.decode_args(message['args']))
+                else:
+                    command = prefix + "{} = {}({})".format(message['assignedID'],
                                                                message['methodName'],
                                                                self.decode_args(message['args']))
                 logging.debug("Exec: " + command)
