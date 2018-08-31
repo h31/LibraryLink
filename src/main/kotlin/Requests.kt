@@ -1,16 +1,14 @@
 import org.slf4j.LoggerFactory
 import java.util.*
 
-class Requests(private val localChannel: ThreadLocal<PythonChannelRunner> = ThreadLocal.withInitial { PythonChannelRunner() },
-               private val exchange: ProcessDataExchange = SimpleTextProcessDataExchange(localChannel.get())) : ProcessDataExchange by exchange {
+class Requests(runner: ReceiverRunner = LibraryLink.runner,
+               private val exchange: ProcessDataExchange = SimpleTextProcessDataExchange(runner)) : ProcessDataExchange by exchange {
     val logger = LoggerFactory.getLogger(ProcessDataExchange::class.java)
 
     fun get(url: String, headers: Headers? = null): Response {
-        val args: List<String>
-        if (headers == null) {
-            args = listOf(url)
-        } else {
-            args = listOf(url, "__headers = " + headers.storedName)
+        val args = mutableListOf<Argument>(StringArgument(url))
+        if (headers != null) {
+            args += ReferenceArgument(headers.storedName, key = "headers")
         }
         val peResponse = makeRequest(Request(import = "requests", objectID = "requests",
                 args = args, methodName = "get", doGetReturnValue = false))
@@ -37,22 +35,21 @@ class Requests(private val localChannel: ThreadLocal<PythonChannelRunner> = Thre
 
         fun headers(): Map<String, String> {
             val response = makeRequest(Request(objectID = storedName, methodName = "headers",
-                    doGetReturnValue = true, import = "", args = listOf(), isProperty = true))
+                    doGetReturnValue = true, args = listOf(), isProperty = true))
             return response.returnValue as? Map<String, String> ?: throw IllegalArgumentException()
         }
     }
 
-    inner class Headers() {
-        private val handle: Handle
+    inner class Headers: Handle() {
         val storedName: String
         init {
-            val response = makeRequest(Request(import = "", objectID = "", methodName = "dict", args = listOf()))
+            val response = makeRequest(Request(methodName = "dict", args = listOf()))
             storedName = response.assignedID
-            handle = Handle(storedName)
+            registerReference(storedName)
         }
 
         fun update(key: String, value: String) {
-            makeRequest(Request(import = "", objectID = storedName, methodName = "update", args = listOf("__{\"$key\": \"$value\"}")))
+            makeRequest(Request(objectID = storedName, methodName = "update", args = listOf(RawArgument("{\"$key\": \"$value\"}"))))
         }
     }
 }

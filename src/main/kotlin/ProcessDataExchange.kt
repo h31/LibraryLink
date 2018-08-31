@@ -15,142 +15,179 @@ fun mkfifo(path: String) {
     check(exitCode == 0)
 }
 
-interface ForeignChannelRunner {
-    data class BidirectionalChannel(val output: Writer,
-                                    val input: Reader)
+object LibraryLink {
+    lateinit var runner: ReceiverRunner
+}
+
+interface ForeignChannelManager {
+    data class BidirectionalChannel(val reader: Reader,
+                                    val writer: Writer)
 
     fun getBidirectionalChannel(): BidirectionalChannel
     fun getBidirectionalChannel(subchannel: String): BidirectionalChannel
     fun stopChannelInteraction()
 }
 
-open class PythonChannelRunner : ForeignChannelRunner {
-    override fun getBidirectionalChannel() = ForeignChannelRunner.BidirectionalChannel(output, input)
-    override fun getBidirectionalChannel(subchannel: String): ForeignChannelRunner.BidirectionalChannel {
-        val outputFile = File("/tmp/wrapperfifo_input_$subchannel")
-        val inputFile = File("/tmp/wrapperfifo_output_$subchannel")
-        if (!outputFile.exists()) {
-            mkfifo(outputFile.path)
-        }
-        if (!inputFile.exists()) {
-            mkfifo(inputFile.path)
-        }
-        val subchannelOutput = inputFile.writer()
-        logger.info("Output $subchannel opened!")
-        val subchannelInput = outputFile.reader()
-        logger.info("Input $subchannel opened!")
-        return ForeignChannelRunner.BidirectionalChannel(subchannelOutput, subchannelInput)
-    }
+interface ReceiverRunner {
+    val isMultiThreaded: Boolean
+    val foreignChannelManager: ForeignChannelManager
+    val requestGenerator: RequestGenerator
 
-    val output: Writer
-    val input: Reader
+    fun stop()
+}
 
-    private val pythonProcess: Process
+open class Python3Runner(pathToScript: String, channelPrefix: String) : ReceiverRunner {
+    private val pythonProcess: Process = ProcessBuilder("python3", pathToScript, channelPrefix)
+            .redirectError(ProcessBuilder.Redirect.INHERIT)
+            .start()
 
-    val logger = LoggerFactory.getLogger(PythonChannelRunner::class.java)
+    final override val isMultiThreaded = false
+    final override val foreignChannelManager = FIFOChannelManager(this, channelPrefix)
+    override val requestGenerator: RequestGenerator =
+            if (isMultiThreaded) ThreadLocalRequestGenerator(foreignChannelManager) else BlockingRequestGenerator(foreignChannelManager)
 
-    init {
-        pythonProcess = ProcessBuilder("python3", "src/main/python/main.py")
-                .redirectError(ProcessBuilder.Redirect.INHERIT)
-                .start()
-        val outputFile = File("/tmp/wrapperfifo_input")
-        val inputFile = File("/tmp/wrapperfifo_output")
-        if (!outputFile.exists()) {
-            mkfifo(outputFile.path)
-        }
-        if (!inputFile.exists()) {
-            mkfifo(inputFile.path)
-        }
-        output = File("/tmp/wrapperfifo_input").writer()
-        logger.info("Output opened!")
-        input = File("/tmp/wrapperfifo_output").reader()
-        logger.info("Input opened!")
-    }
+    val logger = LoggerFactory.getLogger(Python3Runner::class.java)
 
-    @Deprecated("")
-    fun waitForGreeting() {
-        val greeting = pythonProcess.inputStream.bufferedReader().readLine()
-        check(greeting == "Done")
-        logger.info("Greeting received")
-    }
-
-    override fun stopChannelInteraction() = stopPython()
-
-    fun stopPython() {
+    override fun stop() {
         logger.info("Stop Python")
-        output.close()
-        input.close()
         pythonProcess.destroy()
     }
 }
 
-open class BlockingRequestGenerator(private val channel: ForeignChannelRunner) : ForeignChannelRunner by channel {
-    protected fun sendRequest(requestMessage: String): String {
-        val (output, input) = getBidirectionalChannel()
+class DummyRunner(override val isMultiThreaded: Boolean,
+                  override val foreignChannelManager: ForeignChannelManager,
+                  override val requestGenerator: RequestGenerator) : ReceiverRunner {
+    override fun stop() = Unit // TODO: Use a callback
+}
 
-        synchronized(channel) {
-            output.write("%04d".format(requestMessage.length))
-            output.write(requestMessage)
-            output.flush()
+open class FIFOChannelManager(val runner: ReceiverRunner, val channelPrefix: String) : ForeignChannelManager {
+    val logger = LoggerFactory.getLogger(FIFOChannelManager::class.java)
 
-            val lengthBuffer = CharArray(4)
-            var receivedDataSize = input.read(lengthBuffer)
-            check(receivedDataSize == 4)
-            val length = String(lengthBuffer).toInt()
+    override fun getBidirectionalChannel() = ForeignChannelManager.BidirectionalChannel(reader, writer)
+    override fun getBidirectionalChannel(subchannel: String) = createChannel(subchannel)
 
-            val actualData = CharArray(length)
-            receivedDataSize = input.read(actualData)
-            check(receivedDataSize == length)
-            return String(actualData)
+    val writer: Writer
+    val reader: Reader
+
+    private fun createChannel(subchannel: String): ForeignChannelManager.BidirectionalChannel {
+        val outputFile = File("${channelPrefix}_to_receiver_${subchannel}")
+        val inputFile = File("${channelPrefix}_from_receiver_${subchannel}")
+        if (!outputFile.exists()) {
+            mkfifo(outputFile.path)
         }
+        if (!inputFile.exists()) {
+            mkfifo(inputFile.path)
+        }
+        val channelWriter = outputFile.writer()
+        logger.info("Output opened!")
+        val channelReader = inputFile.reader()
+        logger.info("Input opened!")
+        return ForeignChannelManager.BidirectionalChannel(channelReader, channelWriter)
+    }
+
+    init {
+        val channel = createChannel("main")
+        writer = channel.writer
+        reader = channel.reader
+    }
+
+    override fun stopChannelInteraction() {
+        reader.close()
+        writer.close()
+        logger.info("Main channel stopped")
+        runner.stop()
     }
 }
 
-open class ThreadLocalRequestGenerator(private val channel: ForeignChannelRunner) : ForeignChannelRunner by channel {
-    private val channelCache: MutableMap<Long, ForeignChannelRunner.BidirectionalChannel> = mutableMapOf()
+interface Framing {
+    fun write(writer: Writer, message: String)
+    fun read(reader: Reader): String
+}
 
-    private fun getChannel(): ForeignChannelRunner.BidirectionalChannel {
-        synchronized(this) {
-            val threadID = Thread.currentThread().id
-            if (threadID in channelCache) {
-                return channelCache[threadID]!!
-            }
-            val subchannel = getBidirectionalChannel(threadID.toString())
-            channelCache += threadID to subchannel
-            return subchannel
-        }
+open class SimpleTextFraming : Framing {
+    override fun write(writer: Writer, message: String) {
+        writer.write("%04d".format(message.length))
+        writer.write(message)
+        writer.flush()
     }
 
-    protected fun sendRequest(requestMessage: String): String {
-        val (output, input) = getChannel()
-
-        output.write("%04d".format(requestMessage.length))
-        output.write(requestMessage)
-        output.flush()
-
+    override fun read(reader: Reader): String {
         val lengthBuffer = CharArray(4)
-        var receivedDataSize = input.read(lengthBuffer)
+        var receivedDataSize = reader.read(lengthBuffer)
         check(receivedDataSize == 4)
         val length = String(lengthBuffer).toInt()
 
         val actualData = CharArray(length)
-        receivedDataSize = input.read(actualData)
+        receivedDataSize = reader.read(actualData)
         check(receivedDataSize == length)
         return String(actualData)
     }
 }
 
-data class Request(val import: String,
-                   val objectID: String,
+interface RequestGenerator {
+    fun sendRequest(requestMessage: String): String
+}
+
+open class BlockingRequestGenerator(private val channel: ForeignChannelManager) : RequestGenerator, ForeignChannelManager by channel, SimpleTextFraming() {
+    override fun sendRequest(requestMessage: String): String {
+        val (reader, writer) = getBidirectionalChannel()
+
+        synchronized(channel) {
+            write(writer, requestMessage)
+            val response = read(reader)
+            return response
+        }
+    }
+}
+
+open class ThreadLocalRequestGenerator(private val channelManager: ForeignChannelManager) : RequestGenerator, ForeignChannelManager by channelManager, SimpleTextFraming() {
+    private val localChannel: ThreadLocal<ForeignChannelManager.BidirectionalChannel> = ThreadLocal.withInitial {
+        channelManager.getBidirectionalChannel(Thread.currentThread().id.toString())
+    }
+
+    override fun sendRequest(requestMessage: String): String {
+        val (reader, writer) = localChannel.get()
+
+        write(writer, requestMessage)
+        val response = read(reader)
+        return response
+    }
+}
+
+data class Request(val import: String = "",
+                   val objectID: String = "",
                    val methodName: String, // TODO: Static
-                   val args: List<String>,
+                   val args: List<Argument> = listOf(),
                    val isStatic: Boolean = false,
                    val doGetReturnValue: Boolean = false,
                    val isProperty: Boolean = false,
-                   val assignedID: String = "var" + AssignedIDCounter.counter.getAndIncrement().toString())
+                   val assignedID: String = AssignedIDCounter.getNextID())
+
+interface Argument {
+    val type: String
+    val value: Any?
+    val key: String?
+}
+
+data class StringArgument(override val value: String,
+                          override val key: String? = null) : Argument {
+    override val type = "string"
+}
+
+data class RawArgument(override val value: String,
+                       override val key: String? = null) : Argument {
+    override val type = "raw"
+}
+
+data class ReferenceArgument(override val value: String,
+                             override val key: String? = null) : Argument {
+    override val type = "raw"
+}
 
 object AssignedIDCounter {
     val counter = AtomicInteger()
+
+    fun getNextID() = "var" + AssignedIDCounter.counter.getAndIncrement().toString()
 }
 
 class ChannelResponse(@JsonProperty("return_value") val returnValue: Any? = null)
@@ -158,8 +195,12 @@ class ChannelResponse(@JsonProperty("return_value") val returnValue: Any? = null
 data class ProcessExchangeResponse(val returnValue: Any?,
                                    val assignedID: String) // TODO
 
-open class Handle(assignedID: String) {
-    init {
+open class Handle() {
+    constructor(assignedID: String) : this() {
+        registerReference(assignedID)
+    }
+
+    fun registerReference(assignedID: String) {
         val ref = HandlePhantomReference(this, HandleReferenceQueue.refqueue, assignedID)
         HandleReferenceQueue.references += ref
     }
@@ -176,7 +217,8 @@ interface ProcessDataExchange {
     fun makeRequest(request: Request): ProcessExchangeResponse
 }
 
-open class SimpleTextProcessDataExchange(channel: ForeignChannelRunner) : ProcessDataExchange, BlockingRequestGenerator(channel) {
+open class SimpleTextProcessDataExchange(runner: ReceiverRunner,
+                                         val requestGenerator: RequestGenerator = runner.requestGenerator) : ProcessDataExchange, RequestGenerator by requestGenerator {
     val mapper = ObjectMapper().registerModule(KotlinModule())
 
     val logger = LoggerFactory.getLogger(ProcessDataExchange::class.java)

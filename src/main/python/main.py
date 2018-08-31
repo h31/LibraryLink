@@ -8,17 +8,16 @@ import sys
 
 
 class RequestsReceiver():
-    def __init__(self):
-        if not os.path.exists("/tmp/wrapperfifo_input"):
-            os.mkfifo("/tmp/wrapperfifo_input")
-        if not os.path.exists("/tmp/wrapperfifo_output"):
-            os.mkfifo("/tmp/wrapperfifo_output")
+    def __init__(self, base_path):
+        input = "{}_to_receiver_{}".format(base_path, "main")
+        output = "{}_from_receiver_{}".format(base_path, "main")
+        if not os.path.exists(input):
+            os.mkfifo(input)
+        if not os.path.exists(output):
+            os.mkfifo(output)
 
-        sys.stdout.write("Done\n")
-        sys.stdout.flush()
-
-        self.input = open("/tmp/wrapperfifo_input", "r")
-        self.output = open("/tmp/wrapperfifo_output", "w")
+        self.input = open(input, "r")
+        self.output = open(output, "w")
 
         self.persistence = {}
 
@@ -33,7 +32,12 @@ class RequestsReceiver():
             return return_value
 
     def decode_args(self, args):
-        decoded_args = map(lambda x: '"' + x + '"' if isinstance(x, str) and not x.startswith("__") else x[2:], args)
+        decoded_args = []
+        for arg in args:
+            if arg['type'] == "string":
+                decoded_args.append('"' + arg['value'] + '"')
+            else:
+                decoded_args.append(arg['value'])
         return ", ".join(decoded_args)
 
     def receive(self):
@@ -106,5 +110,9 @@ class RequestsReceiver():
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
-    receiver = RequestsReceiver()
+    if len(sys.argv) < 2:
+        logging.critical("FIFO base path required, cannot proceed")
+        exit(1)
+    base_path = sys.argv[1]
+    receiver = RequestsReceiver(base_path)
     receiver.receive()
