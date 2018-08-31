@@ -54,9 +54,11 @@ open class Python3Runner(pathToScript: String, channelPrefix: String) : Receiver
     }
 }
 
-class DummyRunner(override val isMultiThreaded: Boolean,
-                  override val foreignChannelManager: ForeignChannelManager,
-                  override val requestGenerator: RequestGenerator) : ReceiverRunner {
+class DummyRunner(override val isMultiThreaded: Boolean = false,
+                  channelPrefix: String) : ReceiverRunner {
+    override val foreignChannelManager: ForeignChannelManager = FIFOChannelManager(this, channelPrefix)
+    override val requestGenerator: RequestGenerator =
+            if (isMultiThreaded) ThreadLocalRequestGenerator(foreignChannelManager) else BlockingRequestGenerator(foreignChannelManager)
     override fun stop() = Unit // TODO: Use a callback
 }
 
@@ -172,6 +174,11 @@ interface Argument {
 data class StringArgument(override val value: String,
                           override val key: String? = null) : Argument {
     override val type = "string"
+}
+
+data class NumArgument(override val value: String,
+                       override val key: String? = null) : Argument {
+    override val type = "num"
 }
 
 data class RawArgument(override val value: String,

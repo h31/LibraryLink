@@ -7,7 +7,7 @@ fun main(args: Array<String>) {
 }
 
 fun doRequest() {
-    LibraryLink.runner = Python3Runner("src/main/python/main.py", "/tmp/wrapperfifo_input")
+    LibraryLink.runner = Python3Runner("src/main/python/main.py", "/tmp/wrapperfifo")
     val requests = Requests()
     val headers = requests.getHeaders()
     headers.update("X-Test", "Value")
@@ -16,4 +16,11 @@ fun doRequest() {
     println(String(resp.content()))
     println(resp.headers())
 //    requests.stopPython()
+}
+
+fun doCurl() {
+    LibraryLink.runner = DummyRunner(isMultiThreaded = false, channelPrefix = "/tmp/curl")
+    val curlWrapper = CurlWrapper()
+    val curl = curlWrapper.curl_easy_init()
+    curlWrapper.curl_easy_setopt(curl, "CURLOPT_URL", "http://example.com")
 }
