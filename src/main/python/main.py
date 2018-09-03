@@ -34,10 +34,14 @@ class RequestsReceiver():
     def decode_args(self, args):
         decoded_args = []
         for arg in args:
+            decoded_arg = ""
+            if arg['key']:
+                decoded_arg = "{} = ".format(arg['key'])
             if arg['type'] == "string":
-                decoded_args.append('"' + arg['value'] + '"')
+                decoded_arg += '"' + arg['value'] + '"'
             else:
-                decoded_args.append(arg['value'])
+                decoded_arg += arg['value']
+            decoded_args.append(decoded_arg)
         return ", ".join(decoded_args)
 
     def receive(self):

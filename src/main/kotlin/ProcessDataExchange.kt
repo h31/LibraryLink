@@ -59,6 +59,7 @@ class DummyRunner(override val isMultiThreaded: Boolean = false,
     override val foreignChannelManager: ForeignChannelManager = FIFOChannelManager(this, channelPrefix)
     override val requestGenerator: RequestGenerator =
             if (isMultiThreaded) ThreadLocalRequestGenerator(foreignChannelManager) else BlockingRequestGenerator(foreignChannelManager)
+
     override fun stop() = Unit // TODO: Use a callback
 }
 
@@ -156,14 +157,15 @@ open class ThreadLocalRequestGenerator(private val channelManager: ForeignChanne
     }
 }
 
-data class Request(val import: String = "",
-                   val objectID: String = "",
-                   val methodName: String, // TODO: Static
-                   val args: List<Argument> = listOf(),
-                   val isStatic: Boolean = false,
-                   val doGetReturnValue: Boolean = false,
-                   val isProperty: Boolean = false,
-                   val assignedID: String = AssignedIDCounter.getNextID())
+data class Request @JvmOverloads constructor(
+        val methodName: String,
+        val objectID: String = "",
+        var args: List<Argument> = listOf(),
+        val import: String = "",
+        val isStatic: Boolean = false,
+        val doGetReturnValue: Boolean = false,
+        val isProperty: Boolean = false,
+        val assignedID: String = AssignedIDCounter.getNextID())
 
 interface Argument {
     val type: String
@@ -203,11 +205,14 @@ data class ProcessExchangeResponse(val returnValue: Any?,
                                    val assignedID: String) // TODO
 
 open class Handle() {
+    lateinit var assignedID: String
+
     constructor(assignedID: String) : this() {
         registerReference(assignedID)
     }
 
     fun registerReference(assignedID: String) {
+        this.assignedID = assignedID
         val ref = HandlePhantomReference(this, HandleReferenceQueue.refqueue, assignedID)
         HandleReferenceQueue.references += ref
     }

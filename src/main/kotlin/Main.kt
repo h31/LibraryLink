@@ -11,10 +11,10 @@ fun doRequest() {
     val requests = Requests()
     val headers = requests.getHeaders()
     headers.update("X-Test", "Value")
-    val resp = requests.get("https://api.github.com/user", headers = headers)
-    println(resp.statusCode())
-    println(String(resp.content()))
-    println(resp.headers())
+    val resp = requests.get("https://api.github.com/user", headers)
+    println("Status code is ${resp.statusCode()}")
+    println("Content is ${String(resp.content())}")
+    println("Headers are ${resp.headers()}")
 //    requests.stopPython()
 }
 

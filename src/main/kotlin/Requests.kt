@@ -3,7 +3,7 @@ import java.util.*
 
 class Requests(runner: ReceiverRunner = LibraryLink.runner,
                private val exchange: ProcessDataExchange = SimpleTextProcessDataExchange(runner)) : ProcessDataExchange by exchange {
-    val logger = LoggerFactory.getLogger(ProcessDataExchange::class.java)
+    val logger = LoggerFactory.getLogger(Requests::class.java)
 
     fun get(url: String, headers: Headers? = null): Response {
         val args = mutableListOf<Argument>(StringArgument(url))
