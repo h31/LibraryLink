@@ -30,7 +30,7 @@ public class RequestsJava {
     Response get(String url, Headers headers) {
         List<Argument> args = Arrays.asList(
                 new StringArgument(url, null),
-                new ReferenceArgument(headers.storedName, "headers"));
+                new ReferenceArgument(headers.getAssignedID(), "headers"));
         Request request = new Request("get", "requests", args, "requests",
                 false, false);
         ProcessExchangeResponse peResponse = exchange.makeRequest(request);
@@ -69,15 +69,14 @@ public class RequestsJava {
     }
 
     class Headers extends Handle {
-        String storedName;
         public Headers() {
             ProcessExchangeResponse response = exchange.makeRequest(new Request("dict"));
-            storedName = response.getAssignedID();
+            String storedName = response.getAssignedID();
             registerReference(storedName);
         }
 
         void update(String key, String value) {
-            exchange.makeRequest(new Request("update", storedName,
+            exchange.makeRequest(new Request("update", getAssignedID(),
                     Collections.singletonList(new RawArgument(String.format("{\"%s\": \"%s\"}", key, value), null))));
         }
     }
