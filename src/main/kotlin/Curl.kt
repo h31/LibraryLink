@@ -8,11 +8,14 @@ class CurlWrapper(runner: ReceiverRunner = LibraryLink.runner,
 
     inner class WriteDataHandler : CallbackReceiver {
         override fun invoke(request: Request): Any? {
-            val arg_name = request.args[0].value as String
-            val content = makeRequest(Request("__read_data", args = listOf(ReferenceArgument(arg_name))))
-            println("Content is ${content.returnValue}")
-            val size = (request.args[1].value as String).toInt()
-            val nmemb = (request.args[2].value as String).toInt()
+            val contents = CharStar(request.args[0].value as String, exchange)
+            val size = (request.args[1].value as String).toLong()
+            val nmemb = (request.args[2].value as String).toLong()
+            return writeData(contents, size, nmemb)
+        }
+
+        fun writeData(contents: CharStar, size: Long, nmemb: Long): Long {
+            println("Content is ${contents.asString()}")
             return size * nmemb
         }
     }
@@ -37,4 +40,6 @@ class CurlWrapper(runner: ReceiverRunner = LibraryLink.runner,
                 args = listOf(ReferenceArgument(handle.storedName))))
         return response.returnValue as Int
     }
+
+    inner class CharStar(storedName: String, dataExchange: ProcessDataExchange) : DataHandle(storedName, dataExchange)
 }

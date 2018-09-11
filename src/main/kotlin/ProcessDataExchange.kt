@@ -278,6 +278,13 @@ open class Handle() {
     }
 }
 
+open class DataHandle(assignedID: String, val dataExchange: ProcessDataExchange) : Handle(assignedID) {
+    fun asString(): String {
+        val content = dataExchange.makeRequest(Request("__read_data", args = listOf(ReferenceArgument(assignedID))))
+        return content.returnValue as String
+    }
+}
+
 object HandleReferenceQueue {
     val refqueue = ReferenceQueue<Any>()
     val references: MutableSet<HandlePhantomReference<Any>> = mutableSetOf()
