@@ -298,19 +298,17 @@ open class CallbackDataExchange(val channelManager: ForeignChannelManager,
                                 val framing: Framing) : Framing by framing {
     private val logger = LoggerFactory.getLogger(CallbackDataExchange::class.java)
 
-    private val channel = channelManager.getBidirectionalCallbackChannel("") // TODO: subchannel name?
-
     private val mapper = ObjectMapper().registerModule(KotlinModule())
 
     private val callbackReceiversMap: MutableMap<String, CallbackReceiver> = mutableMapOf()
-
-    fun myFunc(): Unit = "123".toInt() as Unit
 
     fun registerCallback(funcName: String, receiver: CallbackReceiver) {
         callbackReceiversMap += funcName to receiver
     }
 
     fun run() = thread {
+        val channel = channelManager.getBidirectionalCallbackChannel("") // TODO: subchannel name?
+
         val callbackRequest = read(channel.reader)
         val request = mapper.readValue(callbackRequest, Request::class.java)
         logger.info("Received callback request $request")
@@ -341,7 +339,9 @@ open class SimpleTextProcessDataExchange(runner: ReceiverRunner,
                 makeRequest(message)
             }
         }
-        callbackDataExchange.run()
+        if (runner.isMultiThreaded) {
+            callbackDataExchange.run()
+        }
     }
 
     private fun makeRequest(requestMessage: String): ChannelResponse {
