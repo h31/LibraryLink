@@ -1,4 +1,5 @@
 #include <iostream>
+#include <thread>
 #include <stdio.h>
 #include <curl/curl.h>
 
@@ -9,12 +10,6 @@
 using json = nlohmann::json;
 
 std::string write_buffer;
-
-static size_t write_callback(void *contents, size_t size, size_t nmemb, void *userp) {
-    write_buffer.append((char *) contents, size * nmemb);
-//    ((std::string *) userp)->append((char *) contents, size * nmemb);
-    return size * nmemb;
-}
 
 bool do_get() {
     CURL *curl;
@@ -47,6 +42,7 @@ void log(const char *message) {
 
 void check(bool condition) {
     if (!condition) {
+        log("Check failed");
         throw std::exception();
     }
 }
@@ -71,6 +67,45 @@ std::unique_ptr<char[]> read_frame(FILE* input) {
     return data;
 }
 
+volatile int write_callback_counter = 0;
+
+FILE* callback_from_receiver_channel;
+FILE* callback_to_receiver_channel;
+
+static size_t write_callback(char *contents, size_t size, size_t nmemb, void *userdata) {
+    const int counter = ++write_callback_counter; // TODO: Sync
+    const std::string persistance_key = "write_callback_contents_" + std::to_string(counter);
+    persistence[persistance_key] = contents;
+    json request = {
+            {"methodName", "write_callback"},
+            {"objectID", ""},
+            {"args", {{{"value", persistance_key},
+                              {"key", "contents"},
+                              {"type", "ref"}},
+                                   {{"value", size},
+                                           {"key", "size"},
+                                           {"type", "raw"}},
+                                   {{"value", nmemb},
+                                           {"key", "nmemb"},
+                                           {"type", "raw"}}}},
+            {"import", ""},
+            {"doGetReturnValue", false},
+            {"assignedID", "var0"},
+            {"isProperty", false},
+            {"isStatic", false}
+    };
+    std::string request_text = request.dump();
+    fmt::printf("Callback request is %s \n", request_text);
+    fmt::fprintf(callback_from_receiver_channel, "%04d%s", request_text.length(), request_text);
+    fflush(callback_from_receiver_channel);
+//    write_buffer.append(contents, size * nmemb);
+//    ((std::string *) userp)->append((char *) contents, size * nmemb);
+    auto response_text = read_frame(callback_to_receiver_channel);
+    json response = json::parse(response_text.get());
+    size_t return_value = response["return_value"];
+    return size * nmemb;
+}
+
 std::pair<FILE*, FILE*> open_channel(const std::string &base_path, const std::string &subchannel) {
     FILE *input = fopen((base_path + "_to_receiver_" + subchannel).c_str(), "r");
     if (input == nullptr) {
@@ -86,20 +121,43 @@ std::pair<FILE*, FILE*> open_channel(const std::string &base_path, const std::st
     return std::make_pair(input, output);
 }
 
+void process_channel(const std::string base_path, const std::string channel_name);
+void open_callback_channel(const std::string &base_path);
+
 int main(int argc, char* argv[]) {
     if (argc < 2) {
         log("FIFO base path required, cannot proceed");
         exit(1);
     }
     std::string base_path = argv[1];
+    std::thread callback_thread(open_callback_channel, base_path);
+    process_channel(base_path, "main");
+    return 0;
+}
+
+void open_callback_channel(const std::string &base_path) {
+    std::tie(callback_to_receiver_channel, callback_from_receiver_channel) = open_channel(base_path, "callback"); // TODO: may block
+}
+
+void process_channel(const std::string base_path, const std::string channel_name) {
     FILE *input, *output;
-    std::tie(input, output) = open_channel(base_path, "main");
+
+    std::tie(input, output) = open_channel(base_path, channel_name);
 
 //    do_get();
     while (true) {
         auto read_buffer = read_frame(input);
 
         auto request = json::parse(read_buffer.get());
+
+        if (request.find("register_channel") != request.end()) {
+            printf("register_channel! \n");
+            std::string new_channel_name = request["register_channel"];
+            std::thread new_thread(process_channel, base_path, new_channel_name);
+            new_thread.detach();
+            continue;
+        }
+
         std::string method = request["methodName"];
         std::string assignedID = request["assignedID"];
         printf("Method is %s \n", method.c_str());
@@ -153,8 +211,14 @@ int main(int argc, char* argv[]) {
             resp["return_value"] = res;
             response = resp.dump();
         } else if (method == "__read_data") {
+            json args = request["args"];
+            check(args.size() == 1);
+            json variable_name = args[0];
+            check(variable_name["type"] == "raw");
             json resp;
-            resp["return_value"] = write_buffer;
+            std::string persistence_key = variable_name["value"];
+            const char* value = (const char*) persistence[persistence_key];
+            resp["return_value"] = value;
             response = resp.dump();
         }
         if (read_buffer == nullptr) { // TODO: Better way to stop receiver?
@@ -167,5 +231,4 @@ int main(int argc, char* argv[]) {
         printf("Response %s \n", response.c_str());
         printf("Written %d \n", written);
     }
-    return 0;
 }
