@@ -165,9 +165,11 @@ open class BlockingRequestGenerator(private val channelManager: ForeignChannelMa
 }
 
 open class ThreadLocalRequestGenerator(private val channelManager: ForeignChannelManager) : RequestGenerator, ForeignChannelManager by channelManager, SimpleTextFraming() {
+    val logger = LoggerFactory.getLogger(ThreadLocalRequestGenerator::class.java)
+
     private val localChannel: ThreadLocal<ForeignChannelManager.BidirectionalChannel> = ThreadLocal.withInitial {
         val channelID = Thread.currentThread().id.toString()
-        println("Open new channel $channelID")
+        logger.info("Open new channel $channelID")
         channelManager.createBidirectionalChannel(channelID)
         val mainChannel = channelManager.getBidirectionalChannel()
         write(mainChannel.writer, "{\"register_channel\": \"$channelID\"}") // TODO
