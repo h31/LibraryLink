@@ -19,10 +19,7 @@ buildscript {
 repositories {
     jcenter()
     maven {
-        url 'https://repo.gradle.org/gradle/libs-releases'
-    }
-    maven {
-        url  "https://dl.bintray.com/artyom-h31/LibraryMigration"
+        url 'https://www.h31.ishere.ru/ModelParser'
     }
 }
 
@@ -36,7 +33,7 @@ dependencies {
     compile 'com.fasterxml.jackson.core:jackson-databind:2.9.5'
     compile 'com.fasterxml.jackson.module:jackson-module-kotlin:2.9.5'
     compile 'com.github.javaparser:javaparser-core:3.6.9'
-    compile 'ru.spbstu.kspt.librarymigration:modelparser:0.3'
+    compile 'ru.spbstu.kspt.librarymigration:modelparser:0.4-SNAPSHOT'
     testCompile 'junit:junit:4.12'
 }
 
