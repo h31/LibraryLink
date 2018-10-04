@@ -1,4 +1,7 @@
 library Requests {
+ imports {
+   requests;
+ }
  types {
    Requests (Requests.Requests);
    Response (Requests.Response);
