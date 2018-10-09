@@ -1,3 +1,6 @@
+import ru.spbstu.kspt.librarylink.DummyRunner
+import ru.spbstu.kspt.librarylink.LibraryLink
+
 fun main(args: Array<String>) {
     doCurl()
 }

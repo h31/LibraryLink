@@ -1,7 +1,8 @@
 import org.slf4j.LoggerFactory
+import ru.spbstu.kspt.librarylink.*
 
 class CurlWrapper(runner: ReceiverRunner = LibraryLink.runner,
-           private val exchange: ProcessDataExchange = SimpleTextProcessDataExchange(runner)) : ProcessDataExchange by exchange {
+                  private val exchange: ProcessDataExchange = SimpleTextProcessDataExchange(runner)) : ProcessDataExchange by exchange {
     val logger = LoggerFactory.getLogger(Curl::class.java)
 
     inner class Curl(val storedName: String) : Handle(storedName)

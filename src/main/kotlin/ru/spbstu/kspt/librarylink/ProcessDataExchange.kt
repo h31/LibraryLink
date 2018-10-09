@@ -1,3 +1,5 @@
+package ru.spbstu.kspt.librarylink
+
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.fasterxml.jackson.databind.DatabindContext

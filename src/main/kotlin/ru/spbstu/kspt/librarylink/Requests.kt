@@ -1,3 +1,5 @@
+package ru.spbstu.kspt.librarylink
+
 import org.slf4j.LoggerFactory
 import java.util.*
 
@@ -19,7 +21,7 @@ class Requests(runner: ReceiverRunner = LibraryLink.runner,
 
     fun getHeaders(): Headers = Headers()
 
-    inner class Response(private val storedName: String): Handle(storedName) {
+    inner class Response(private val storedName: String): ru.spbstu.kspt.librarylink.Handle(storedName) {
         fun statusCode(): Int {
             val response = makeRequest(Request(objectID = storedName, methodName = "status_code",
                     doGetReturnValue = true, import = "", args = listOf(), isProperty = true))
@@ -40,7 +42,7 @@ class Requests(runner: ReceiverRunner = LibraryLink.runner,
         }
     }
 
-    inner class Headers: Handle() {
+    inner class Headers: ru.spbstu.kspt.librarylink.Handle() {
         val storedName: String
         init {
             val response = makeRequest(Request(methodName = "dict", args = listOf()))

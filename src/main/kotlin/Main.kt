@@ -1,5 +1,10 @@
+import ru.spbstu.kspt.librarylink.LibraryLink
+import ru.spbstu.kspt.librarylink.Python3Runner
+import ru.spbstu.kspt.librarylink.Requests
+
 fun main(args: Array<String>) {
     doRequests()
+    LibraryLink.runner.stop()
     while (true) {
         System.gc()
         Thread.sleep(1000)
