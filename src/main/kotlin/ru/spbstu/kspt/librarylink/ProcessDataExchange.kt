@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver
 import com.fasterxml.jackson.databind.jsontype.impl.TypeIdResolverBase
 import com.fasterxml.jackson.module.kotlin.KotlinModule
+import jnr.unixsocket.UnixSocketAddress
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.Reader
@@ -16,6 +17,22 @@ import java.lang.ref.PhantomReference
 import java.lang.ref.ReferenceQueue
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.concurrent.thread
+import jnr.unixsocket.UnixServerSocketChannel
+import jnr.enxio.channels.NativeSelectorProvider
+import jnr.unixsocket.UnixServerSocket
+import jnr.unixsocket.UnixSocketChannel
+import java.net.Socket
+import java.nio.channels.SelectionKey
+import sun.nio.ch.IOUtil.configureBlocking
+import java.nio.ByteBuffer
+import java.nio.channels.Channels
+import java.nio.channels.SocketChannel
+import kotlin.reflect.jvm.internal.impl.descriptors.ModuleDescriptor.DefaultImpls.accept
+
+
+
+
+
 
 fun mkfifo(path: String) {
     val exitCode = Runtime.getRuntime().exec(arrayOf("mkfifo", path)).waitFor()
@@ -56,7 +73,8 @@ open class Python3Runner(pathToScript: String, channelPrefix: String) : Receiver
             .start()
 
     final override val isMultiThreaded = false
-    final override val foreignChannelManager = FIFOChannelManager(this, channelPrefix)
+//    final override val foreignChannelManager = FIFOChannelManager(this, channelPrefix)
+    final override val foreignChannelManager = UnixSocketChannelManager(channelPrefix)
     override val requestGenerator = this.defaultRequestGenerator()
 
     val logger = LoggerFactory.getLogger(Python3Runner::class.java)
@@ -74,6 +92,89 @@ class DummyRunner(override val isMultiThreaded: Boolean = false,
             if (isMultiThreaded) ThreadLocalRequestGenerator(foreignChannelManager) else BlockingRequestGenerator(foreignChannelManager)
 
     override fun stop() = Unit // TODO: Use a callback
+}
+
+open class UnixSocketChannelManager(val channelPrefix: String) : ForeignChannelManager {
+    val logger = LoggerFactory.getLogger(UnixSocketChannelManager::class.java)
+
+    override fun getBidirectionalChannel(): ForeignChannelManager.BidirectionalChannel = runClient()
+
+    override fun getBidirectionalChannel(subchannel: String): ForeignChannelManager.BidirectionalChannel = runClient()
+
+    override fun getBidirectionalCallbackChannel(subchannel: String): ForeignChannelManager.BidirectionalChannel = runClient()
+
+    override fun createBidirectionalChannel(subchannel: String) = Unit
+
+    override fun stopChannelInteraction() {
+        TODO("not implemented")
+    }
+
+    private fun runClient(): ForeignChannelManager.BidirectionalChannel {
+        val socketPath = File("${channelPrefix}.sock")
+        val address = UnixSocketAddress(socketPath)
+        val channel = UnixSocketChannel.open(address)
+        logger.info("connected to " + channel.getRemoteSocketAddress())
+
+        val reader = Channels.newReader(channel, "UTF-8")
+        val writer = Channels.newWriter(channel, "UTF-8")
+
+        return ForeignChannelManager.BidirectionalChannel(reader, writer)
+    }
+
+    /**
+     * https://crunchify.com/java-nio-non-blocking-io-with-server-client-example-java-nio-bytebuffer-and-channels-selector-java-nio-vs-io/
+     */
+    private fun runServer() {
+        val socketPath = File("${channelPrefix}.sock")
+        val address = UnixSocketAddress(socketPath)
+        val channel = UnixServerSocketChannel.open()
+
+        val selector = NativeSelectorProvider.getInstance().openSelector()
+        channel.configureBlocking(false)
+        channel.socket().bind(address)
+        channel.register(selector, channel.validOps(), null)
+        while (true) {
+            logger.info("i'm a server and i'm waiting for new connection and buffer select...");
+            // Selects a set of keys whose corresponding channels are ready for I/O operations
+            selector.select();
+
+            // token representing the registration of a SelectableChannel with a Selector
+            val crunchifyKeys = selector.selectedKeys()
+            val crunchifyIterator = crunchifyKeys.iterator()
+            while (crunchifyIterator.hasNext()) {
+                val myKey = crunchifyIterator.next()
+
+                // Tests whether this key's channel is ready to accept a new socket connection
+                if (myKey.isAcceptable) {
+                    val crunchifyClient = channel.accept()
+
+                    // Adjusts this channel's blocking mode to false
+                    crunchifyClient.configureBlocking(false)
+
+                    // Operation-set bit for read operations
+                    crunchifyClient.register(selector, SelectionKey.OP_READ)
+                    logger.info("Connection Accepted: " + crunchifyClient.getLocalAddress() + "\n")
+
+                    // Tests whether this key's channel is ready for reading
+                } else if (myKey.isReadable) {
+
+                    val crunchifyClient = myKey.channel() as SocketChannel
+                    val crunchifyBuffer = ByteBuffer.allocate(256)
+                    crunchifyClient.read(crunchifyBuffer)
+                    val result = String(crunchifyBuffer.array()).trim({ it <= ' ' })
+
+                    logger.info("Message received: $result")
+
+                    if (result == "Crunchify") {
+                        crunchifyClient.close()
+                        logger.info("\nIt's time to close connection as we got last company name 'Crunchify'")
+                        logger.info("\nServer will keep running. Try running client again to establish new connection")
+                    }
+                }
+                crunchifyIterator.remove()
+            }
+        }
+    }
 }
 
 open class FIFOChannelManager(val runner: ReceiverRunner, val channelPrefix: String) : ForeignChannelManager {
