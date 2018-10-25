@@ -2,6 +2,7 @@ package benchmark
 
 import org.openjdk.jmh.annotations.*
 import org.openjdk.jmh.infra.Blackhole
+import ru.spbstu.kspt.librarylink.DummyRunner
 import ru.spbstu.kspt.librarylink.LibraryLink
 import ru.spbstu.kspt.librarylink.Python3Runner
 import ru.spbstu.kspt.librarylink.Requests
@@ -16,18 +17,18 @@ open class WrapperState {
 
     @Setup
     fun setup() {
-        LibraryLink.runner = Python3Runner("src/main/python/main.py", "/tmp/wrapperfifo")
+        LibraryLink.runner = DummyRunner(true, "/tmp/linktest")
         val requests = Requests()
-        val headers = requests.getHeaders()
-        headers.update("X-Test", "Value")
-        resp = requests.get("https://api.github.com/user", headers)
+//        val headers = requests.getHeaders()
+//        headers.update("X-Test", "Value")
+        resp = requests.get("https://api.github.com/user")
     }
 }
 
 open class StatusCodeBenchmark {
     @BenchmarkMode(Mode.Throughput)
-    @Warmup(iterations = 1, time = 1, timeUnit = TimeUnit.SECONDS)
-    @Measurement(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
+    @Warmup(iterations = 10, time = 1, timeUnit = TimeUnit.SECONDS)
+    @Measurement(iterations = 100, time = 1, timeUnit = TimeUnit.SECONDS)
     @Fork(value = 1)
     @Benchmark
     fun statusCode(state: WrapperState, blackhole: Blackhole) {

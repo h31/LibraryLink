@@ -14,6 +14,7 @@ fun main(args: Array<String>) {
 fun doRequests() {
     LibraryLink.runner = Python3Runner("src/main/python/main.py", "/tmp/wrapperfifo")
     val requests = Requests()
+    Thread.sleep(1000) // TODO: Another way?
     val headers = requests.getHeaders()
     headers.update("X-Test", "Value")
     val resp = requests.get("https://api.github.com/user", headers)

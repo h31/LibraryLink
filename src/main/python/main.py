@@ -1,9 +1,12 @@
 import base64
 import json
 import logging
+import os
 import socket
 import sys
 from collections import MutableMapping
+from threading import Thread
+from typing import Union
 
 
 class FIFOChannelManager:
@@ -30,28 +33,38 @@ class FIFOChannelManager:
 
 class UnixSocketServerChannelManager:
     def __init__(self, base_path):
+        print("Remove previous socket...")
+        os.unlink(base_path)
         print("Opening socket...")
         self.server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.server.bind(base_path)
-        self.socket = self.server.accept()
+        self.server.listen(5)
 
-    def write(self, data):
-        return self.socket.write(data)
+    def accept(self):
+        socket, address = self.server.accept()
+        return UnixSocketServerChannel(socket)
+
+class UnixSocketServerChannel:
+    def __init__(self, socket):
+        self.socket = socket
+
+    def write(self, data: str):
+        return self.socket.send(data.encode())
 
     def read(self, length):
-        return self.socket.read(length)
+        return self.socket.recv(length)
 
     def flush(self):
-        self.socket.flush()
+        print("Not needed")
+        # self.socket.flush()
 
     def close(self):
-        self.socket.close()
         self.socket.close()
 
 
 
 class SimpleTextFraming:
-    def __init__(self, channel: FIFOChannelManager):
+    def __init__(self, channel: Union[FIFOChannelManager, UnixSocketServerChannel]):
         self.channel = channel
 
     def read(self):
@@ -116,15 +129,16 @@ class RequestsReceiver():
                                                     self.decode_args(message['args']))
         return command
 
-    def __init__(self, base_path):
-        self.channel = FIFOChannelManager(base_path)
+    def __init__(self, channel: UnixSocketServerChannel):
+        self.channel = channel
         self.framing = SimpleTextFraming(self.channel)
-        self.persistence = {}
         logging.info("Opened!")
+
+    persistence = {}
 
     def delete_from_persistence(self, var_name):
         logging.info("Delete {} from persistence".format(var_name))
-        del self.persistence[var_name]
+        del RequestsReceiver.persistence[var_name]
 
     # def legacy_code(self):
     #     1 + 2
@@ -146,7 +160,7 @@ class RequestsReceiver():
                 logging.info("Exit")
                 break
             message = json.loads(message_text)
-            local = self.persistence.copy()
+            local = RequestsReceiver.persistence.copy()
             response = {}
             if 'delete' in message and message['delete']:
                 self.delete_from_persistence(message['delete'])
@@ -156,11 +170,11 @@ class RequestsReceiver():
                 logging.debug("Persistence before exec is {}".format(local))
                 exec(command, globals(), local)
                 var_name = message['assignedID']
-                self.persistence[var_name] = local[var_name]
+                RequestsReceiver.persistence[var_name] = local[var_name]
                 if 'doGetReturnValue' in message and message['doGetReturnValue']:
                     return_value = eval(message['assignedID'], globals(), local)
                     response["return_value"] = self.encode_return_value(return_value)
-            logging.info("Persistence is {}".format(self.persistence))
+            logging.info("Persistence is {}".format(RequestsReceiver.persistence))
             response_text = json.dumps(response)
             self.framing.write(response_text)
 
@@ -174,5 +188,10 @@ if __name__ == "__main__":
         logging.critical("FIFO base path required, cannot proceed")
         exit(1)
     base_path = sys.argv[1]
-    receiver = RequestsReceiver(base_path)
-    receiver.receive()
+    channel_manager = UnixSocketServerChannelManager(base_path)
+    while True:
+        channel = channel_manager.accept()
+        receiver = RequestsReceiver(channel)
+        thread = Thread(target=receiver.receive)
+        thread.start()
+        # receiver.receive()

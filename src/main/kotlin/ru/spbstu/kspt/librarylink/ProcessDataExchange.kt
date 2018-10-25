@@ -68,7 +68,7 @@ interface ReceiverRunner {
 }
 
 open class Python3Runner(pathToScript: String, channelPrefix: String) : ReceiverRunner {
-    private val pythonProcess: Process = ProcessBuilder("python3", pathToScript, channelPrefix)
+    private val pythonProcess: Process = ProcessBuilder("python3", System.getProperty("user.dir") + "/" + pathToScript, channelPrefix) // TODO
             .redirectError(ProcessBuilder.Redirect.INHERIT)
             .start()
 
@@ -87,7 +87,8 @@ open class Python3Runner(pathToScript: String, channelPrefix: String) : Receiver
 
 class DummyRunner(override val isMultiThreaded: Boolean = false,
                   channelPrefix: String) : ReceiverRunner {
-    override val foreignChannelManager: ForeignChannelManager = FIFOChannelManager(this, channelPrefix)
+//    override val foreignChannelManager: ForeignChannelManager = FIFOChannelManager(this, channelPrefix)
+    override val foreignChannelManager: ForeignChannelManager = UnixSocketChannelManager(channelPrefix)
     override val requestGenerator: RequestGenerator =
             if (isMultiThreaded) ThreadLocalRequestGenerator(foreignChannelManager) else BlockingRequestGenerator(foreignChannelManager)
 
@@ -110,7 +111,7 @@ open class UnixSocketChannelManager(val channelPrefix: String) : ForeignChannelM
     }
 
     private fun runClient(): ForeignChannelManager.BidirectionalChannel {
-        val socketPath = File("${channelPrefix}.sock")
+        val socketPath = File(channelPrefix)
         val address = UnixSocketAddress(socketPath)
         val channel = UnixSocketChannel.open(address)
         logger.info("connected to " + channel.getRemoteSocketAddress())
