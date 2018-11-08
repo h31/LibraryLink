@@ -16,13 +16,13 @@ library Requests {
  }
 
  automaton Requests {
-   state Created;
-   shift Created -> self (get);
+   state Constructed;
+   shift Constructed -> self (get);
  }
 
  automaton Response {
-   state Created;
-   shift Created -> self (status_code);
+   state Constructed;
+   shift Constructed -> self (status_code);
  }
 
  fun Requests.get(url: URL): Response {

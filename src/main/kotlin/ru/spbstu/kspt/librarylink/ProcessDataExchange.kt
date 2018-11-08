@@ -8,30 +8,22 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver
 import com.fasterxml.jackson.databind.jsontype.impl.TypeIdResolverBase
 import com.fasterxml.jackson.module.kotlin.KotlinModule
+import jnr.enxio.channels.NativeSelectorProvider
+import jnr.unixsocket.UnixServerSocketChannel
 import jnr.unixsocket.UnixSocketAddress
+import jnr.unixsocket.UnixSocketChannel
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.Reader
 import java.io.Writer
 import java.lang.ref.PhantomReference
 import java.lang.ref.ReferenceQueue
-import java.util.concurrent.atomic.AtomicInteger
-import kotlin.concurrent.thread
-import jnr.unixsocket.UnixServerSocketChannel
-import jnr.enxio.channels.NativeSelectorProvider
-import jnr.unixsocket.UnixServerSocket
-import jnr.unixsocket.UnixSocketChannel
-import java.net.Socket
-import java.nio.channels.SelectionKey
-import sun.nio.ch.IOUtil.configureBlocking
 import java.nio.ByteBuffer
 import java.nio.channels.Channels
+import java.nio.channels.SelectionKey
 import java.nio.channels.SocketChannel
-import kotlin.reflect.jvm.internal.impl.descriptors.ModuleDescriptor.DefaultImpls.accept
-
-
-
-
+import java.util.concurrent.atomic.AtomicInteger
+import kotlin.concurrent.thread
 
 
 fun mkfifo(path: String) {
@@ -228,13 +220,46 @@ open class FIFOChannelManager(val runner: ReceiverRunner, val channelPrefix: Str
 
 interface Framing {
     fun write(writer: Writer, message: String)
+    fun writeMultiple(writer: Writer, messages: List<String>)
     fun read(reader: Reader): String
 }
+
+//open class BorderFraming : Framing {
+//    override fun write(writer: Writer, message: String) {
+//        writer.write(message)
+//        writer.write(0)
+//        writer.flush()
+//    }
+//
+//    override fun writeMultiple(writer: Writer, messages: List<String>) {
+//        val sb = StringBuffer()
+//        for (message in messages) {
+//            sb.append(message)
+//            sb.append(String(ByteArray(1) { num -> 0 }))
+//        }
+//        writer.write(sb.toString())
+//        writer.flush()
+//    }
+//
+//    override fun read(reader: Reader): String {
+//        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+//    }
+//}
 
 open class SimpleTextFraming : Framing {
     override fun write(writer: Writer, message: String) {
         writer.write("%04d".format(message.length))
         writer.write(message)
+        writer.flush()
+    }
+
+    override fun writeMultiple(writer: Writer, messages: List<String>) {
+        val sb = StringBuilder()
+        for (message in messages) {
+            sb.append("%04d".format(message.length))
+            sb.append(message)
+        }
+        writer.write(sb.toString())
         writer.flush()
     }
 
@@ -253,17 +278,32 @@ open class SimpleTextFraming : Framing {
 
 interface RequestGenerator {
     fun sendRequest(requestMessage: String): String
+    fun sendMultipleRequests(requestMessages: List<String>): List<String>
 }
 
 open class BlockingRequestGenerator(private val channelManager: ForeignChannelManager) : RequestGenerator, ForeignChannelManager by channelManager, SimpleTextFraming() {
+    private val channel by lazy {
+        getBidirectionalChannel()
+    }
+
     override fun sendRequest(requestMessage: String): String {
-        val channel = getBidirectionalChannel()
         val (reader, writer) = channel
 
         synchronized(channel) {
             write(writer, requestMessage)
             val response = read(reader)
             return response
+        }
+    }
+
+    override fun sendMultipleRequests(requestMessages: List<String>): List<String> {
+        val (reader, writer) = channel
+
+        synchronized(channel) {
+            writeMultiple(writer, requestMessages)
+            return requestMessages.map {
+                read(reader)
+            }
         }
     }
 }
@@ -287,6 +327,17 @@ open class ThreadLocalRequestGenerator(private val channelManager: ForeignChanne
         val response = read(reader)
         return response
     }
+
+    override fun sendMultipleRequests(requestMessages: List<String>): List<String> {
+        val (reader, writer) = localChannel.get()
+
+        requestMessages.forEach {requestMessage ->
+            write(writer, requestMessage)
+        }
+        return requestMessages.map {
+            read(reader)
+        }
+    }
 }
 
 data class Request @JvmOverloads constructor(
@@ -294,8 +345,10 @@ data class Request @JvmOverloads constructor(
         val objectID: String = "",
         var args: List<Argument> = listOf(),
         val import: String = "",
+        @JsonProperty("static")
         val isStatic: Boolean = false,
         val doGetReturnValue: Boolean = false,
+        @JsonProperty("property")
         val isProperty: Boolean = false,
         val assignedID: String = AssignedIDCounter.getNextID())
 
@@ -401,6 +454,7 @@ class HandlePhantomReference<T>(referent: T, q: ReferenceQueue<T>, val assignedI
 interface ProcessDataExchange {
     fun makeRequest(request: Request): ProcessExchangeResponse
     fun registerCallback(funcName: String, receiver: CallbackReceiver)
+    fun registerPrefetch(request: Request)
 }
 
 interface CallbackReceiver {
@@ -442,6 +496,8 @@ open class SimpleTextProcessDataExchange(runner: ReceiverRunner,
 
     private val callbackDataExchange = CallbackDataExchange(runner.foreignChannelManager, SimpleTextFraming())
 
+    private val logFileWriter = File("link.log").writer()
+
     init {
         thread {
             logger.info("Waiting to ReferenceQueue elements")
@@ -457,7 +513,14 @@ open class SimpleTextProcessDataExchange(runner: ReceiverRunner,
         }
     }
 
+    private fun logMessage(requestMessage: String) {
+        logFileWriter.write(requestMessage + "\n")
+        logFileWriter.flush()
+    }
+
     private fun makeRequest(requestMessage: String): ChannelResponse {
+        logMessage(requestMessage)
+//        val responseText = sendMultipleRequests(listOf(requestMessage, requestMessage)).first()
         val responseText = sendRequest(requestMessage)
         val response = mapper.readValue(responseText, ChannelResponse::class.java)
         return response
@@ -483,5 +546,12 @@ open class SimpleTextProcessDataExchange(runner: ReceiverRunner,
         logger.info("Wrote $description")
     }
 
-    override fun registerCallback(funcName: String, receiver: CallbackReceiver) = callbackDataExchange.registerCallback(funcName, receiver)
+    override fun registerCallback(funcName: String, receiver: CallbackReceiver) =
+            callbackDataExchange.registerCallback(funcName, receiver)
+
+    private var prefetchedRequest: Request? = null
+
+    override fun registerPrefetch(request: Request) {
+        prefetchedRequest = request
+    }
 }
