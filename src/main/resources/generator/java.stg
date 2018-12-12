@@ -1,0 +1,86 @@
+wrapperClass(libraryName, wrappedClasses) ::= <<
+<imports()>
+
+public class <libraryName>Java {
+    <wrapperFields()>
+
+    <wrapperConstructors()>
+
+    <entitiesMaker()>
+
+    <entities(wrappedClasses)>
+}
+>>
+
+imports() ::= <<
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import ru.spbstu.kspt.librarylink.*;
+
+import java.util.*;
+>>
+
+wrapperFields() ::= <<
+private Logger logger = LoggerFactory.getLogger(<libraryName>Java.class);
+
+private ProcessDataExchange exchange;
+>>
+
+wrapperConstructors() ::= <<
+public <libraryName>Java() {
+    ReceiverRunner runner = LibraryLink.runner;
+    exchange = new SimpleTextProcessDataExchange(runner, runner.getRequestGenerator());
+}
+
+public <libraryName>Java(ReceiverRunner runner,
+                    ProcessDataExchange exchange) {
+    this.exchange = exchange;
+}
+>>
+
+entities(wrappedClasses) ::= <<
+<wrappedClasses:entity()>
+>>
+
+entitiesMaker() ::= <<
+Headers getHeaders() {
+    return new Headers();
+}
+>>
+
+doCall() ::= <<
+ProcessExchangeResponse peResponse = exchange.makeRequest(request);
+logger.info("Wrote get");
+return new Response(peResponse.getAssignedID());
+>>
+
+requestObjectCreation(methodProperties, requestProperties) ::= <<
+<bigList(methodProperties.args)>
+Request request = new Request(<requestProperties.methodName>, <requestProperties.objectID>, args, <requestProperties.import>,
+        <requestProperties.static>, <requestProperties.doGetReturnValue>, <requestProperties.property>);
+>>
+
+bigList(args) ::= <<
+List\<Argument\> args = Arrays.asList(<args:argObject(); separator=", ">);
+>>
+
+argObject(arg) ::= <<
+new <arg.argumentClass>(<arg.name>, "<arg.name>")
+>>
+
+args(argObject) ::= <<
+<argObject.type> <argObject.name>
+>>
+
+method(methodObject) ::= <<
+Response <methodObject.name>(<methodObject.args:args(); separator=", ">) {
+    <requestObjectCreation(methodObject, methodObject.request)>
+    <doCall()>
+}
+>>
+
+entity(wrappedClass) ::= <<
+class <wrappedClass.name> extends Handle {
+    <wrappedClass.methods:method(); separator="\n\n">
+}
+>>

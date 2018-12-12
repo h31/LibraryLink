@@ -79,6 +79,8 @@ interface Argument {
     val value: Any?
     val key: String?
     val param: Param
+
+    fun argumentClass() = this.javaClass.getSimpleName()
 }
 
 data class StringArgument(override val value: String,
@@ -147,10 +149,7 @@ fun getVariableType(param: Param): String = when (param) {
 }
 
 fun generate() {
-    val modelStream = Test().javaClass.classLoader.getResourceAsStream("Requests.lsl")
-    val ast = ModelParser().parse(modelStream)
-    val library = ModelParser().postprocess(ast)
-    println(prettyPrinter(library.toString()))
+    val library = readLibraryModel()
 
 //    val originalCall = library.edges.filterIsInstance<CallEdge>().single { it.methodName == "get" }
 //    originalCall.isStatic = true
@@ -164,7 +163,7 @@ fun generate() {
     wrapperClass.addField("ProcessDataExchange", "exchange").setPrivate(true)
     wrapperClass.members.add(generateConstructor(wrapperClass.nameAsString))
     for (type in library.machineTypes.values.filter { it.contains('.') }) {
-        val actualName = type.split('.').last().replace("$", "")
+        val actualName = getRealClassName(type)
         val clazz = ClassOrInterfaceDeclaration(EnumSet.noneOf(Modifier::class.java), false, actualName)
 //        clazz.isStatic = true
         clazz.addExtendedType("Handle")
@@ -200,4 +199,17 @@ fun generate() {
 //    myClass.addField(String::class.java, "name", Modifier.PRIVATE)
     val code = compilationUnit.toString()
     println(code)
+}
+
+fun getRealClassName(type: String): String {
+    val actualName = type.split('.').last().replace("$", "")
+    return actualName
+}
+
+fun readLibraryModel(): Library {
+    val modelStream = Test().javaClass.classLoader.getResourceAsStream("Requests.lsl")
+    val ast = ModelParser().parse(modelStream)
+    val library = ModelParser().postprocess(ast)
+    println(prettyPrinter(library.toString()))
+    return library
 }
