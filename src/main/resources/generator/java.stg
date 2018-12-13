@@ -39,33 +39,44 @@ public <libraryName>Java(ReceiverRunner runner,
 >>
 
 entities(wrappedClasses) ::= <<
-<wrappedClasses:entity()>
+<wrappedClasses:entity(); separator="\n\n">
 >>
 
-entitiesMaker() ::= <<
-Headers getHeaders() {
-    return new Headers();
-}
->>
+entitiesMaker() ::= <<>>
 
-doCall() ::= <<
+doCall(methodObject) ::= <<
 ProcessExchangeResponse peResponse = exchange.makeRequest(request);
-logger.info("Wrote get");
-return new Response(peResponse.getAssignedID());
+<if(methodObject.referenceReturn)>
+<returnExprReference(methodObject)>
+<else>
+<returnExprPrimitive(methodObject)>
+<endif>
+>>
+
+returnExprReference(methodObject) ::= <<
+return new <methodObject.returnValue>(peResponse.getAssignedID());
+>>
+
+returnExprPrimitive(methodObject) ::= <<
+return (<methodObject.returnValue>) peResponse.getReturnValue();
 >>
 
 requestObjectCreation(methodProperties, requestProperties) ::= <<
 <bigList(methodProperties.args)>
-Request request = new Request(<requestProperties.methodName>, <requestProperties.objectID>, args, <requestProperties.import>,
+Request request = new Request("<requestProperties.methodName>", "<requestProperties.objectID>", args, "<requestProperties.import>",
         <requestProperties.static>, <requestProperties.doGetReturnValue>, <requestProperties.property>);
 >>
 
 bigList(args) ::= <<
-List\<Argument\> args = Arrays.asList(<args:argObject(); separator=", ">);
+List\<Argument> args = Arrays.asList(<args:argObject(); separator=", ">);
 >>
 
 argObject(arg) ::= <<
-new <arg.argumentClass>(<arg.name>, "<arg.name>")
+<if (arg.reference)>
+new ReferenceArgument(<arg.name>.getAssignedID(), "<arg.name>")
+<else>
+new StringArgument(<arg.name>, "<arg.name>")
+<endif>
 >>
 
 args(argObject) ::= <<
@@ -73,14 +84,30 @@ args(argObject) ::= <<
 >>
 
 method(methodObject) ::= <<
-Response <methodObject.name>(<methodObject.args:args(); separator=", ">) {
+public <methodObject.returnValue> <methodObject.name>(<methodObject.args:args(); separator=", ">) {
     <requestObjectCreation(methodObject, methodObject.request)>
-    <doCall()>
+    <doCall(methodObject)>
+}
+>>
+
+constructor(methodObject, className) ::= <<
+public <className>(<methodObject.args:args(); separator=", ">) {
+    <requestObjectCreation(methodObject, methodObject.request)>
+    ProcessExchangeResponse peResponse = exchange.makeRequest(request);
+    setAssignedID(peResponse.getAssignedID());
+}
+>>
+
+preinitConstructor(className) ::= <<
+public <className>(String storedName) {
+    super(storedName);
 }
 >>
 
 entity(wrappedClass) ::= <<
 class <wrappedClass.name> extends Handle {
+    <wrappedClass.constructor:constructor(wrappedClass.name); separator="\n\n">
+    <preinitConstructor(wrappedClass.name)>
     <wrappedClass.methods:method(); separator="\n\n">
 }
 >>

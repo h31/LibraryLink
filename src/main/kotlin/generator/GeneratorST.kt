@@ -1,20 +1,63 @@
 package generator
 
-import com.github.javaparser.JavaParser
-import com.github.javaparser.ast.CompilationUnit
-import com.github.javaparser.ast.Modifier
-import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration
-import java.beans.Beans.getInstanceOf
 import org.stringtemplate.v4.ST
 import org.stringtemplate.v4.STGroupFile
-import org.stringtemplate.v4.STGroup
-import ru.spbstu.kspt.librarymigration.CallEdge
-import ru.spbstu.kspt.librarymigration.Library
-import ru.spbstu.kspt.librarymigration.TemplateEdge
+import ru.spbstu.kspt.librarymigration.parser.LibraryDecl
 import ru.spbstu.kspt.librarymigration.parser.ModelParser
-import java.util.*
 
-fun generateST(library: Library, st: ST) {
+val primitiveTypes = listOf("String", "int")
+
+fun generateST(library: LibraryDecl, st: ST) {
+    val methods = mutableMapOf<String, Method>()
+
+    val types = library.types.map { it.semanticType to it.codeType }.toMap()
+
+    for (function in library.functions) {
+        val objectId = function.staticName?.staticName ?: ""
+        val property = function.properties.any { it.key == "type" && it.value == "get" }
+        val static = function.staticName != null
+        val args = function.args.map { Arg(type = checkNotNull(types[it.type]),
+                name = it.name, isReference = calcIsReference(types[it.type]!!)) } // TODO
+        val request = Request(
+                methodName = function.name,
+                objectID = objectId,
+                args = listOf(),
+                doGetReturnValue = function.returnValue != null,
+                import = library.imports.firstOrNull() ?: "", // TODO
+                isProperty = property,
+                isStatic = static)
+        val method = Method(function.name, args)
+        method.request = request
+        method.returnValue = types[function.returnValue]
+        method.referenceReturn = method.returnValue !in primitiveTypes
+        methods += method.name to method
+    }
+
+    for (automaton in library.automata) {
+        val classMethods = automaton.shifts.filterNot { it.from == "Created" }.flatMap { it.functions }.map { checkNotNull(methods[it]) }
+        val constructor = automaton.shifts.filter { it.from == "Created" }.flatMap { it.functions }.map { checkNotNull(methods[it]) }.singleOrNull()
+        val clazz = WrappedClass(
+                automaton.name,
+                classMethods,
+                constructor
+        )
+        st.add("wrappedClasses", clazz)
+    }
+    st.add("libraryName", library.name)
+//    val wrappedClass = WrappedClass(
+//            "Requests",
+//            listOf(
+//                    Method("get", listOf(
+//                            Arg("String", "url", "StringArgument")
+//                    )),
+//                    Method("get", listOf(
+//                            Arg("String", "url", "StringArgument"),
+//                            Arg("Headers", "headers", "ReferenceArgument")
+//                    ))
+//            )
+//    )
+//    st.add("wrappedClasses", wrappedClass)
+
 //    for (type in library.machineTypes.values.filter { it.contains('.') }) {
 //        val actualName = getRealClassName(type)
 ////        if (type != "Requests.Requests") { // TODO: Very dirty!
@@ -48,36 +91,39 @@ fun generateST(library: Library, st: ST) {
 //    println(code)
 }
 
-data class WrappedClass(val name: String, val methods: List<Method>)
+fun calcIsReference(type: String) = type !in primitiveTypes
+
+data class WrappedClass(val name: String, val methods: List<Method>, val constructor: Method?)
 
 data class Method(val name: String, val args: List<Arg>) {
-    fun isSingleArg() = args.size == 1
     var request: Request = Request("methodName", "ObjectID", listOf(), "import", true, false, true)
+    var returnValue: String? = null
+    var referenceReturn: Boolean = true
 }
 
-data class Arg(val type: String, val name: String, val argumentClass: String)
+data class Arg(val type: String, val name: String, val isReference: Boolean)
 
 fun main(args: Array<String>) {
     val group = STGroupFile("generator/java.stg")
     val st = group.getInstanceOf("wrapperClass")
 //    st.add("type", "int")
-    st.add("libraryName", "Requests")
-    val wrappedClass = WrappedClass(
-            "Requests",
-            listOf(
-                    Method("get", listOf(
-                            Arg("String", "url", "StringArgument")
-                    )),
-                    Method("get", listOf(
-                            Arg("String", "url", "StringArgument"),
-                            Arg("Headers", "headers", "ReferenceArgument")
-                    ))
-            )
-    )
-    st.add("wrappedClasses", wrappedClass)
+//    val wrappedClass = WrappedClass(
+//            "Requests",
+//            listOf(
+//                    Method("get", listOf(
+//                            Arg("String", "url", "StringArgument")
+//                    )),
+//                    Method("get", listOf(
+//                            Arg("String", "url", "StringArgument"),
+//                            Arg("Headers", "headers", "ReferenceArgument")
+//                    ))
+//            )
+//    )
+//    st.add("wrappedClasses", wrappedClass)
 //    st.add("value", 0)
-    val library = readLibraryModel()
-    generateST(library, st)
+    val modelStream = Test().javaClass.classLoader.getResourceAsStream("Requests.lsl")
+    val ast = ModelParser().parse(modelStream)
+    generateST(ast, st)
     val result = st.render() // yields "int x = 0;"
     println(result)
 }

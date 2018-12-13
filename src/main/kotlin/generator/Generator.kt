@@ -78,32 +78,32 @@ interface Argument {
     val type: String
     val value: Any?
     val key: String?
-    val param: Param
+    val param: Param?
 
     fun argumentClass() = this.javaClass.getSimpleName()
 }
 
 data class StringArgument(override val value: String,
                           override val key: String? = null,
-                          override val param: Param) : Argument {
+                          override val param: Param? = null) : Argument {
     override val type = "string"
 }
 
 data class NumArgument(override val value: String,
                        override val key: String? = null,
-                       override val param: Param) : Argument {
+                       override val param: Param? = null) : Argument {
     override val type = "num"
 }
 
 data class RawArgument(override val value: String,
                        override val key: String? = null,
-                       override val param: Param) : Argument {
+                       override val param: Param? = null) : Argument {
     override val type = "raw"
 }
 
 data class ReferenceArgument(override val value: String,
                              override val key: String? = null,
-                             override val param: Param) : Argument {
+                             override val param: Param? = null) : Argument {
     override val type = "raw"
 }
 
@@ -179,7 +179,7 @@ fun generate() {
             val methodBody = method.createBody()
             val request = makeRequest(edge)
             for (arg in request.args) {
-                method.addParameter(JavaParser.parseType(getVariableType(arg.param)), arg.value.toString())
+//                method.addParameter(JavaParser.parseType(getVariableType(arg.param)), arg.value.toString()) // TODO: Broken
             }
             val statements = generateStatements(request, edge.linkedEdge?.dst?.machine?.type())
             for (s in statements) {
