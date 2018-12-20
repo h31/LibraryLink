@@ -69,7 +69,7 @@ public class RequestsJava {
         }
     }
 
-    class Headers extends Handle {
+    public class Headers extends Handle {
         public Headers() {
             ProcessExchangeResponse response = exchange.makeRequest(new Request("dict"));
             String storedName = response.getAssignedID();

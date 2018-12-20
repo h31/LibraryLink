@@ -4,6 +4,7 @@ import org.stringtemplate.v4.ST
 import org.stringtemplate.v4.STGroupFile
 import ru.spbstu.kspt.librarymigration.parser.LibraryDecl
 import ru.spbstu.kspt.librarymigration.parser.ModelParser
+import java.io.InputStream
 
 val primitiveTypes = listOf("String", "int")
 
@@ -16,8 +17,10 @@ fun generateST(library: LibraryDecl, st: ST) {
         val objectId = function.staticName?.staticName ?: ""
         val property = function.properties.any { it.key == "type" && it.value == "get" }
         val static = function.staticName != null
-        val args = function.args.map { Arg(type = checkNotNull(types[it.type]),
-                name = it.name, isReference = calcIsReference(types[it.type]!!)) } // TODO
+        val args = function.args.map {
+            Arg(type = checkNotNull(types[it.type]),
+                    name = it.name, isReference = calcIsReference(types[it.type]!!))
+        } // TODO
         val request = Request(
                 methodName = function.name,
                 objectID = objectId,
@@ -103,6 +106,8 @@ data class Method(val name: String, val args: List<Arg>) {
 
 data class Arg(val type: String, val name: String, val isReference: Boolean)
 
+fun InputStream.parseModel() = ModelParser().parse(this)
+
 fun main(args: Array<String>) {
     val group = STGroupFile("generator/java.stg")
     val st = group.getInstanceOf("wrapperClass")
@@ -121,9 +126,20 @@ fun main(args: Array<String>) {
 //    )
 //    st.add("wrappedClasses", wrappedClass)
 //    st.add("value", 0)
-    val modelStream = Test().javaClass.classLoader.getResourceAsStream("Requests.lsl")
-    val ast = ModelParser().parse(modelStream)
-    generateST(ast, st)
-    val result = st.render() // yields "int x = 0;"
+    val classLoader = Test().javaClass.classLoader
+    val libraryModelAST = classLoader.getResourceAsStream("Requests.lsl").parseModel()
+    val pythonModelAST = classLoader.getResourceAsStream("Python.lsl").parseModel()
+    val mergedAST = mergeASTs(libraryModelAST.name, libraryModelAST, pythonModelAST)
+    generateST(mergedAST, st)
+    val result = st.render()
     println(result)
 }
+
+fun mergeASTs(name: String, vararg mergedASTs: LibraryDecl) = LibraryDecl(
+        name = name,
+        imports = mergedASTs.flatMap { it.imports },
+        automata = mergedASTs.flatMap { it.automata },
+        types = mergedASTs.flatMap { it.types },
+        converters = mergedASTs.flatMap { it.converters },
+        functions = mergedASTs.flatMap { it.functions }
+)

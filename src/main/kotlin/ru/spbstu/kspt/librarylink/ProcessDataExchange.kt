@@ -33,6 +33,9 @@ fun mkfifo(path: String) {
 
 object LibraryLink {
     lateinit var runner: ReceiverRunner
+    val exchange: ProcessDataExchange by lazy {
+        SimpleTextProcessDataExchange(runner)
+    }
 }
 
 interface ForeignChannelManager {

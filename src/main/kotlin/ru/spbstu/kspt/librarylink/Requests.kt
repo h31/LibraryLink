@@ -3,8 +3,7 @@ package ru.spbstu.kspt.librarylink
 import org.slf4j.LoggerFactory
 import java.util.*
 
-class Requests(runner: ReceiverRunner = LibraryLink.runner,
-               private val exchange: ProcessDataExchange = SimpleTextProcessDataExchange(runner)) : ProcessDataExchange by exchange {
+class Requests(private val exchange: ProcessDataExchange = LibraryLink.exchange) : ProcessDataExchange by exchange {
     val logger = LoggerFactory.getLogger(Requests::class.java)
 
     fun get(url: String, headers: Headers? = null): Response {
@@ -18,8 +17,6 @@ class Requests(runner: ReceiverRunner = LibraryLink.runner,
         val response = Response(peResponse.assignedID)
         return response
     }
-
-    fun getHeaders(): Headers = Headers()
 
     inner class Response(private val storedName: String): ru.spbstu.kspt.librarylink.Handle(storedName) {
         fun statusCode(): Int {
@@ -41,17 +38,17 @@ class Requests(runner: ReceiverRunner = LibraryLink.runner,
             return response.returnValue as? Map<String, String> ?: throw IllegalArgumentException()
         }
     }
+}
 
-    inner class Headers: ru.spbstu.kspt.librarylink.Handle() {
-        val storedName: String
-        init {
-            val response = makeRequest(Request(methodName = "dict", args = listOf()))
-            storedName = response.assignedID
-            registerReference(storedName)
-        }
+class Headers(private val exchange: ProcessDataExchange = LibraryLink.exchange): ru.spbstu.kspt.librarylink.Handle(), ProcessDataExchange by exchange {
+    val storedName: String
+    init {
+        val response = makeRequest(Request(methodName = "dict", args = listOf()))
+        storedName = response.assignedID
+        registerReference(storedName)
+    }
 
-        fun update(key: String, value: String) {
-            makeRequest(Request(objectID = storedName, methodName = "update", args = listOf(RawArgument("{\"$key\": \"$value\"}"))))
-        }
+    fun update(key: String, value: String) {
+        makeRequest(Request(objectID = storedName, methodName = "update", args = listOf(RawArgument("{\"$key\": \"$value\"}"))))
     }
 }

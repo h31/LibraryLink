@@ -28,12 +28,10 @@ private ProcessDataExchange exchange;
 
 wrapperConstructors() ::= <<
 public <libraryName>Java() {
-    ReceiverRunner runner = LibraryLink.runner;
-    exchange = new SimpleTextProcessDataExchange(runner, runner.getRequestGenerator());
+    this.exchange = LibraryLink.exchange;
 }
 
-public <libraryName>Java(ReceiverRunner runner,
-                    ProcessDataExchange exchange) {
+public <libraryName>Java(ProcessDataExchange exchange) {
     this.exchange = exchange;
 }
 >>
@@ -99,13 +97,19 @@ public <className>(<methodObject.args:args(); separator=", ">) {
 >>
 
 preinitConstructor(className) ::= <<
+public <className>(String storedName, ProcessDataExchange exchange) {
+    super(storedName);
+    this.exchange = exchange;
+}
 public <className>(String storedName) {
     super(storedName);
+    this.exchange = LibraryLink.exchange;
 }
 >>
 
 entity(wrappedClass) ::= <<
 class <wrappedClass.name> extends Handle {
+    <wrapperFields()>
     <wrappedClass.constructor:constructor(wrappedClass.name); separator="\n\n">
     <preinitConstructor(wrappedClass.name)>
     <wrappedClass.methods:method(); separator="\n\n">

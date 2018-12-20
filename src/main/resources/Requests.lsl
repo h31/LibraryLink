@@ -9,7 +9,6 @@ library Requests {
    URL (String);
    StatusCode (int);
    Content (ByteArray);
-   Headers (Headers);
  }
 
  converters {
@@ -22,25 +21,16 @@ library Requests {
    shift Constructed -> self (get);
  }
 
- automaton Headers {
-   state Created, Constructed;
-   shift Created -> Constructed (dict);
- }
-
  automaton Response {
    state Constructed;
    shift Constructed -> self (status_code);
  }
 
- fun Requests.get(url: URL, headers: Headers): Response {
+ fun Requests.get(url: URL, headers: Dict): Response {
    static "requests";
  }
 
  fun Response.status_code(): StatusCode {
    property "type" = "get";
- }
-
- fun Headers.dict(): Headers {
-   static "";
  }
 }
