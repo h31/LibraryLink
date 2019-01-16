@@ -1,0 +1,117 @@
+wrapperClass(libraryName, wrappedClasses) ::= <<
+<imports()>
+
+public class <libraryName>Kotlin {
+    <wrapperFields()>
+
+    <wrapperConstructors()>
+
+    <entitiesMaker()>
+
+    <entities(wrappedClasses)>
+}
+>>
+
+imports() ::= <<
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import ru.spbstu.kspt.librarylink.*;
+
+import java.util.*;
+>>
+
+wrapperFields() ::= <<
+private Logger logger = LoggerFactory.getLogger(<libraryName>Kotlin.class);
+
+private ProcessDataExchange exchange;
+>>
+
+wrapperConstructors() ::= <<
+public <libraryName>Kotlin() {
+    this.exchange = LibraryLink.exchange;
+}
+
+public <libraryName>Kotlin(ProcessDataExchange exchange) {
+    this.exchange = exchange;
+}
+>>
+
+entities(wrappedClasses) ::= <<
+<wrappedClasses:entity(); separator="\n\n">
+>>
+
+entitiesMaker() ::= <<>>
+
+doCall(methodObject) ::= <<
+ProcessExchangeResponse peResponse = exchange.makeRequest(request);
+<if(methodObject.referenceReturn)>
+<returnExprReference(methodObject)>
+<else>
+<returnExprPrimitive(methodObject)>
+<endif>
+>>
+
+returnExprReference(methodObject) ::= <<
+return new <methodObject.returnValue>(peResponse.getAssignedID());
+>>
+
+returnExprPrimitive(methodObject) ::= <<
+return (<methodObject.returnValue>) peResponse.getReturnValue();
+>>
+
+requestObjectCreation(methodProperties, requestProperties) ::= <<
+<bigList(methodProperties.args)>
+Request request = new Request("<requestProperties.methodName>", "<requestProperties.objectID>", args, "<requestProperties.import>",
+        <requestProperties.static>, <requestProperties.doGetReturnValue>, <requestProperties.property>);
+>>
+
+bigList(args) ::= <<
+List\<Argument> args = Arrays.asList(<args:argObject(); separator=", ">);
+>>
+
+argObject(arg) ::= <<
+<if (arg.reference)>
+new ReferenceArgument(<arg.name>.getAssignedID(), "<arg.name>")
+<else>
+new StringArgument(<arg.name>, "<arg.name>")
+<endif>
+>>
+
+args(argObject) ::= <<
+<argObject.type> <argObject.name>
+>>
+
+method(methodObject) ::= <<
+public <methodObject.returnValue> <methodObject.name>(<methodObject.args:args(); separator=", ">) {
+    <requestObjectCreation(methodObject, methodObject.request)>
+    <doCall(methodObject)>
+}
+>>
+
+constructor(methodObject, className) ::= <<
+public <className>(<methodObject.args:args(); separator=", ">) {
+    <requestObjectCreation(methodObject, methodObject.request)>
+    ProcessExchangeResponse peResponse = exchange.makeRequest(request);
+    setAssignedID(peResponse.getAssignedID());
+}
+>>
+
+preinitConstructor(className) ::= <<
+public <className>(String storedName, ProcessDataExchange exchange) {
+    super(storedName);
+    this.exchange = exchange;
+}
+public <className>(String storedName) {
+    super(storedName);
+    this.exchange = LibraryLink.exchange;
+}
+>>
+
+entity(wrappedClass) ::= <<
+class <wrappedClass.name> extends Handle {
+    <wrapperFields()>
+    <wrappedClass.constructor:constructor(wrappedClass.name); separator="\n\n">
+    <preinitConstructor(wrappedClass.name)>
+    <wrappedClass.methods:method(); separator="\n\n">
+}
+>>

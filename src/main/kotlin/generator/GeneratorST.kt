@@ -109,7 +109,11 @@ data class Arg(val type: String, val name: String, val isReference: Boolean)
 fun InputStream.parseModel() = ModelParser().parse(this)
 
 fun main(args: Array<String>) {
-    val group = STGroupFile("generator/java.stg")
+    generateWrapper(args.first())
+}
+
+private fun generateWrapper(template: String) {
+    val group = STGroupFile("generator/$template.stg")
     val st = group.getInstanceOf("wrapperClass")
 //    st.add("type", "int")
 //    val wrappedClass = WrappedClass(
