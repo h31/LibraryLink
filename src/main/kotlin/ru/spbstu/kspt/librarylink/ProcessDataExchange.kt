@@ -8,20 +8,14 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver
 import com.fasterxml.jackson.databind.jsontype.impl.TypeIdResolverBase
 import com.fasterxml.jackson.module.kotlin.KotlinModule
-import jnr.enxio.channels.NativeSelectorProvider
-import jnr.unixsocket.UnixServerSocketChannel
 import jnr.unixsocket.UnixSocketAddress
 import jnr.unixsocket.UnixSocketChannel
 import org.slf4j.LoggerFactory
-import java.io.File
-import java.io.Reader
-import java.io.Writer
+import java.io.*
 import java.lang.ref.PhantomReference
 import java.lang.ref.ReferenceQueue
 import java.nio.ByteBuffer
 import java.nio.channels.Channels
-import java.nio.channels.SelectionKey
-import java.nio.channels.SocketChannel
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.concurrent.thread
 
@@ -39,8 +33,8 @@ object LibraryLink {
 }
 
 interface ForeignChannelManager {
-    data class BidirectionalChannel(val reader: Reader,
-                                    val writer: Writer)
+    data class BidirectionalChannel(val inputStream: InputStream,
+                                    val outputStream: OutputStream)
 
     fun getBidirectionalChannel(): BidirectionalChannel
     fun getBidirectionalChannel(subchannel: String): BidirectionalChannel
@@ -111,65 +105,10 @@ open class UnixSocketChannelManager(val channelPrefix: String) : ForeignChannelM
         val channel = UnixSocketChannel.open(address)
         logger.info("connected to " + channel.getRemoteSocketAddress())
 
-        val reader = Channels.newReader(channel, "UTF-8")
-        val writer = Channels.newWriter(channel, "UTF-8")
+        val inputStream = Channels.newInputStream(channel)
+        val outputStream = Channels.newOutputStream(channel)
 
-        return ForeignChannelManager.BidirectionalChannel(reader, writer)
-    }
-
-    /**
-     * https://crunchify.com/java-nio-non-blocking-io-with-server-client-example-java-nio-bytebuffer-and-channels-selector-java-nio-vs-io/
-     */
-    private fun runServer() {
-        val socketPath = File("${channelPrefix}.sock")
-        val address = UnixSocketAddress(socketPath)
-        val channel = UnixServerSocketChannel.open()
-
-        val selector = NativeSelectorProvider.getInstance().openSelector()
-        channel.configureBlocking(false)
-        channel.socket().bind(address)
-        channel.register(selector, channel.validOps(), null)
-        while (true) {
-            logger.info("i'm a server and i'm waiting for new connection and buffer select...");
-            // Selects a set of keys whose corresponding channels are ready for I/O operations
-            selector.select();
-
-            // token representing the registration of a SelectableChannel with a Selector
-            val crunchifyKeys = selector.selectedKeys()
-            val crunchifyIterator = crunchifyKeys.iterator()
-            while (crunchifyIterator.hasNext()) {
-                val myKey = crunchifyIterator.next()
-
-                // Tests whether this key's channel is ready to accept a new socket connection
-                if (myKey.isAcceptable) {
-                    val crunchifyClient = channel.accept()
-
-                    // Adjusts this channel's blocking mode to false
-                    crunchifyClient.configureBlocking(false)
-
-                    // Operation-set bit for read operations
-                    crunchifyClient.register(selector, SelectionKey.OP_READ)
-                    logger.info("Connection Accepted: " + crunchifyClient.getLocalAddress() + "\n")
-
-                    // Tests whether this key's channel is ready for reading
-                } else if (myKey.isReadable) {
-
-                    val crunchifyClient = myKey.channel() as SocketChannel
-                    val crunchifyBuffer = ByteBuffer.allocate(256)
-                    crunchifyClient.read(crunchifyBuffer)
-                    val result = String(crunchifyBuffer.array()).trim({ it <= ' ' })
-
-                    logger.info("Message received: $result")
-
-                    if (result == "Crunchify") {
-                        crunchifyClient.close()
-                        logger.info("\nIt's time to close connection as we got last company name 'Crunchify'")
-                        logger.info("\nServer will keep running. Try running client again to establish new connection")
-                    }
-                }
-                crunchifyIterator.remove()
-            }
-        }
+        return ForeignChannelManager.BidirectionalChannel(inputStream, outputStream)
     }
 }
 
@@ -183,8 +122,8 @@ open class FIFOChannelManager(val runner: ReceiverRunner, val channelPrefix: Str
         makeFIFO(subchannel)
     }
 
-    val writer: Writer
-    val reader: Reader
+    val writer: OutputStream
+    val reader: InputStream
 
     fun makeFIFO(subchannel: String): Pair<File, File> {
         val outputFile = File("${channelPrefix}_to_receiver_${subchannel}")
@@ -200,17 +139,17 @@ open class FIFOChannelManager(val runner: ReceiverRunner, val channelPrefix: Str
 
     private fun openFIFOChannel(subchannel: String): ForeignChannelManager.BidirectionalChannel {
         val (outputFile, inputFile) = makeFIFO(subchannel)
-        val channelWriter = outputFile.writer()
+        val channelWriter = outputFile.outputStream() // TODO: Rename variable
         logger.info("Output opened!")
-        val channelReader = inputFile.reader()
+        val channelReader = inputFile.inputStream()
         logger.info("Input opened!")
         return ForeignChannelManager.BidirectionalChannel(channelReader, channelWriter)
     }
 
     init {
         val channel = openFIFOChannel("main")
-        writer = channel.writer
-        reader = channel.reader
+        writer = channel.outputStream
+        reader = channel.inputStream
     }
 
     override fun stopChannelInteraction() {
@@ -222,19 +161,19 @@ open class FIFOChannelManager(val runner: ReceiverRunner, val channelPrefix: Str
 }
 
 interface Framing {
-    fun write(writer: Writer, message: String)
-    fun writeMultiple(writer: Writer, messages: List<String>)
-    fun read(reader: Reader): String
+    fun write(message: ByteArray)
+    fun read(): ByteArray
+    var buffering: Boolean
 }
 
 //open class BorderFraming : Framing {
-//    override fun write(writer: Writer, message: String) {
-//        writer.write(message)
-//        writer.write(0)
-//        writer.flush()
+//    override fun write(os: OutputStream, message: ByteArray) {
+//        os.write(message)
+//        os.write(0)
+//        os.flush()
 //    }
 //
-//    override fun writeMultiple(writer: Writer, messages: List<String>) {
+//    override fun writeMultiple(writer: OutputStream, messages: ByteArray) {
 //        val sb = StringBuffer()
 //        for (message in messages) {
 //            sb.append(message)
@@ -249,24 +188,15 @@ interface Framing {
 //    }
 //}
 
-open class SimpleTextFraming : Framing {
-    override fun write(writer: Writer, message: String) {
-        writer.write("%04d".format(message.length))
-        writer.write(message)
+open class SimpleTextFraming(val writer: Writer, val reader: Reader) : Framing {
+    override fun write(message: ByteArray) {
+        val decodedMsg = message.toString()
+        writer.write("%04d".format(decodedMsg.length))
+        writer.write(decodedMsg)
         writer.flush()
     }
 
-    override fun writeMultiple(writer: Writer, messages: List<String>) {
-        val sb = StringBuilder()
-        for (message in messages) {
-            sb.append("%04d".format(message.length))
-            sb.append(message)
-        }
-        writer.write(sb.toString())
-        writer.flush()
-    }
-
-    override fun read(reader: Reader): String {
+    override fun read(): ByteArray {
         val lengthBuffer = CharArray(4)
         var receivedDataSize = reader.read(lengthBuffer)
         check(receivedDataSize == 4)
@@ -275,71 +205,88 @@ open class SimpleTextFraming : Framing {
         val actualData = CharArray(length)
         receivedDataSize = reader.read(actualData)
         check(receivedDataSize == length)
-        return String(actualData)
+        return String(actualData).toByteArray()
     }
+
+    override var buffering: Boolean = false
+        set(value) {
+            TODO()
+        }
 }
+
+open class SimpleBinaryFraming(baseInputStream: InputStream, baseOutputStream: OutputStream) : Framing {
+    val bufferSize = 128 * 1024
+    val inputStream = BufferedInputStream(baseInputStream, bufferSize)
+    val outputStream = BufferedOutputStream(baseOutputStream, bufferSize)
+
+    override fun write(message: ByteArray) {
+        outputStream.write(message.size.toByteArray())
+        outputStream.write(message)
+        if (buffering) {
+            outputStream.flush()
+        }
+    }
+
+    override fun read(): ByteArray {
+        val lengthBuffer = ByteArray(4)
+        var receivedDataSize = inputStream.read(lengthBuffer)
+        check(receivedDataSize == 4)
+        val length = lengthBuffer.toInt()
+
+        val actualData = ByteArray(length)
+        receivedDataSize = inputStream.read(actualData)
+        check(receivedDataSize == length)
+        return actualData
+    }
+
+    override var buffering: Boolean = false
+        set(value) {
+            field = value
+            outputStream.flush()
+        }
+}
+
+fun Int.toByteArray(): ByteArray = ByteBuffer.allocate(4).putInt(this).array()
+
+fun ByteArray.toInt(): Int = ByteBuffer.wrap(this).int
 
 interface RequestGenerator {
-    fun sendRequest(requestMessage: String): String
-    fun sendMultipleRequests(requestMessages: List<String>): List<String>
+    fun sendRequest(requestMessage: ByteArray): ByteArray
 }
 
-open class BlockingRequestGenerator(private val channelManager: ForeignChannelManager) : RequestGenerator, ForeignChannelManager by channelManager, SimpleTextFraming() {
-    private val channel by lazy {
-        getBidirectionalChannel()
+open class BlockingRequestGenerator(private val channelManager: ForeignChannelManager) : RequestGenerator, ForeignChannelManager by channelManager {
+    val framing by lazy {
+        val channel = getBidirectionalChannel()
+        SimpleBinaryFraming(channel.inputStream, channel.outputStream)
     }
 
-    override fun sendRequest(requestMessage: String): String {
-        val (reader, writer) = channel
-
-        synchronized(channel) {
-            write(writer, requestMessage)
-            val response = read(reader)
+    override fun sendRequest(requestMessage: ByteArray): ByteArray {
+        synchronized(framing) {
+            framing.write(requestMessage)
+            val response = framing.read()
             return response
         }
     }
-
-    override fun sendMultipleRequests(requestMessages: List<String>): List<String> {
-        val (reader, writer) = channel
-
-        synchronized(channel) {
-            writeMultiple(writer, requestMessages)
-            return requestMessages.map {
-                read(reader)
-            }
-        }
-    }
 }
 
-open class ThreadLocalRequestGenerator(private val channelManager: ForeignChannelManager) : RequestGenerator, ForeignChannelManager by channelManager, SimpleTextFraming() {
+open class ThreadLocalRequestGenerator(private val channelManager: ForeignChannelManager) : RequestGenerator, ForeignChannelManager by channelManager {
     val logger = LoggerFactory.getLogger(ThreadLocalRequestGenerator::class.java)
 
-    private val localChannel: ThreadLocal<ForeignChannelManager.BidirectionalChannel> = ThreadLocal.withInitial {
+    private val localFraming: ThreadLocal<Framing> = ThreadLocal.withInitial {
         val channelID = Thread.currentThread().id.toString()
         logger.info("Open new channel $channelID")
         channelManager.createBidirectionalChannel(channelID)
-        val mainChannel = channelManager.getBidirectionalChannel()
-        write(mainChannel.writer, "{\"register_channel\": \"$channelID\"}") // TODO
-        return@withInitial channelManager.getBidirectionalChannel(channelID)
+//        val mainChannel = channelManager.getBidirectionalChannel()
+//        write(mainChannel.writer, "{\"register_channel\": \"$channelID\"}") // TODO
+        val channel = channelManager.getBidirectionalChannel(channelID)
+        SimpleBinaryFraming(channel.inputStream, channel.outputStream)
     }
 
-    override fun sendRequest(requestMessage: String): String {
-        val (reader, writer) = localChannel.get()
-
-        write(writer, requestMessage)
-        val response = read(reader)
+    override fun sendRequest(requestMessage: ByteArray): ByteArray {
+        val framing = localFraming.get()
+        framing.write(requestMessage)
+        val response = framing.read()
         return response
-    }
-
-    override fun sendMultipleRequests(requestMessages: List<String>): List<String> {
-        val (reader, writer) = localChannel.get()
-
-        requestMessages.forEach {requestMessage ->
-            write(writer, requestMessage)
-        }
-        return requestMessages.map {
-            read(reader)
-        }
     }
 }
 
@@ -464,32 +411,32 @@ interface CallbackReceiver {
     operator fun invoke(request: Request): Any?
 }
 
-open class CallbackDataExchange(val channelManager: ForeignChannelManager,
-                                val framing: Framing) : Framing by framing {
-    private val logger = LoggerFactory.getLogger(CallbackDataExchange::class.java)
-
-    private val mapper = ObjectMapper().registerModule(KotlinModule())
-
-    private val callbackReceiversMap: MutableMap<String, CallbackReceiver> = mutableMapOf()
-
-    fun registerCallback(funcName: String, receiver: CallbackReceiver) {
-        callbackReceiversMap += funcName to receiver
-    }
-
-    fun run() = thread {
-        val channel = channelManager.getBidirectionalCallbackChannel("") // TODO: subchannel name?
-
-        val callbackRequest = read(channel.reader)
-        val request = mapper.readValue(callbackRequest, Request::class.java)
-        logger.info("Received callback request $request")
-        val callback = callbackReceiversMap[request.methodName] ?: TODO()
-        val returnValue = callback(request)
-        val response = mapOf("return_value" to returnValue)
-        val message = mapper.writeValueAsString(response)
-        logger.info("Responded with $message")
-        write(channel.writer, message)
-    }
-}
+//open class CallbackDataExchange(val channelManager: ForeignChannelManager,
+//                                val framing: Framing) : Framing by framing {
+//    private val logger = LoggerFactory.getLogger(CallbackDataExchange::class.java)
+//
+//    private val mapper = ObjectMapper().registerModule(KotlinModule())
+//
+//    private val callbackReceiversMap: MutableMap<String, CallbackReceiver> = mutableMapOf()
+//
+//    fun registerCallback(funcName: String, receiver: CallbackReceiver) {
+//        callbackReceiversMap += funcName to receiver
+//    }
+//
+////    fun run() = thread {
+////        val channel = channelManager.getBidirectionalCallbackChannel("") // TODO: subchannel name?
+////
+////        val callbackRequest = read(channel.reader)
+////        val request = mapper.readValue(callbackRequest, Request::class.java)
+////        logger.info("Received callback request $request")
+////        val callback = callbackReceiversMap[request.methodName] ?: TODO()
+////        val returnValue = callback(request)
+////        val response = mapOf("return_value" to returnValue)
+////        val message = mapper.writeValueAsString(response)
+////        logger.info("Responded with $message")
+////        write(channel.writer, message)
+////    }
+//}
 
 open class SimpleTextProcessDataExchange(runner: ReceiverRunner,
                                          val requestGenerator: RequestGenerator = runner.requestGenerator) : ProcessDataExchange, RequestGenerator by requestGenerator {
@@ -497,7 +444,7 @@ open class SimpleTextProcessDataExchange(runner: ReceiverRunner,
 
     val logger = LoggerFactory.getLogger(ProcessDataExchange::class.java)
 
-    private val callbackDataExchange = CallbackDataExchange(runner.foreignChannelManager, SimpleTextFraming())
+//    private val callbackDataExchange = CallbackDataExchange(runner.foreignChannelManager)
 
     private val logFileWriter = File("link.log").writer()
 
@@ -511,9 +458,9 @@ open class SimpleTextProcessDataExchange(runner: ReceiverRunner,
                 makeRequest(message)
             }
         }
-        if (runner.isMultiThreaded) {
-            callbackDataExchange.run()
-        }
+//        if (runner.isMultiThreaded) {
+//            callbackDataExchange.run()
+//        }
     }
 
     private fun logMessage(requestMessage: String) {
@@ -524,7 +471,7 @@ open class SimpleTextProcessDataExchange(runner: ReceiverRunner,
     private fun makeRequest(requestMessage: String): ChannelResponse {
         logMessage(requestMessage)
 //        val responseText = sendMultipleRequests(listOf(requestMessage, requestMessage)).first()
-        val responseText = sendRequest(requestMessage)
+        val responseText = sendRequest(requestMessage.toByteArray())
         val response = mapper.readValue(responseText, ChannelResponse::class.java)
         return response
     }
@@ -549,8 +496,8 @@ open class SimpleTextProcessDataExchange(runner: ReceiverRunner,
         logger.info("Wrote $description")
     }
 
-    override fun registerCallback(funcName: String, receiver: CallbackReceiver) =
-            callbackDataExchange.registerCallback(funcName, receiver)
+    override fun registerCallback(funcName: String, receiver: CallbackReceiver) = TODO()
+//            callbackDataExchange.registerCallback(funcName, receiver)
 
     private var prefetchedRequest: Request? = null
 
