@@ -112,54 +112,6 @@ open class UnixSocketChannelManager(val channelPrefix: String) : ForeignChannelM
     }
 }
 
-open class FIFOChannelManager(val runner: ReceiverRunner, val channelPrefix: String) : ForeignChannelManager {
-    val logger = LoggerFactory.getLogger(FIFOChannelManager::class.java)
-
-    override fun getBidirectionalChannel() = ForeignChannelManager.BidirectionalChannel(reader, writer)
-    override fun getBidirectionalChannel(subchannel: String) = openFIFOChannel(subchannel)
-    override fun getBidirectionalCallbackChannel(subchannel: String) = openFIFOChannel("callback") // TODO: Use subchannel name?
-    override fun createBidirectionalChannel(subchannel: String) {
-        makeFIFO(subchannel)
-    }
-
-    val writer: OutputStream
-    val reader: InputStream
-
-    fun makeFIFO(subchannel: String): Pair<File, File> {
-        val outputFile = File("${channelPrefix}_to_receiver_${subchannel}")
-        val inputFile = File("${channelPrefix}_from_receiver_${subchannel}")
-        if (!outputFile.exists()) {
-            mkfifo(outputFile.path)
-        }
-        if (!inputFile.exists()) {
-            mkfifo(inputFile.path)
-        }
-        return Pair(outputFile, inputFile)
-    }
-
-    private fun openFIFOChannel(subchannel: String): ForeignChannelManager.BidirectionalChannel {
-        val (outputFile, inputFile) = makeFIFO(subchannel)
-        val channelWriter = outputFile.outputStream() // TODO: Rename variable
-        logger.info("Output opened!")
-        val channelReader = inputFile.inputStream()
-        logger.info("Input opened!")
-        return ForeignChannelManager.BidirectionalChannel(channelReader, channelWriter)
-    }
-
-    init {
-        val channel = openFIFOChannel("main")
-        writer = channel.outputStream
-        reader = channel.inputStream
-    }
-
-    override fun stopChannelInteraction() {
-        reader.close()
-        writer.close()
-        logger.info("Main channel stopped")
-        runner.stop()
-    }
-}
-
 interface Framing {
     fun write(message: ByteArray)
     fun read(): ByteArray
