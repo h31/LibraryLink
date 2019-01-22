@@ -7,6 +7,15 @@ import sys
 from collections import MutableMapping
 from threading import Thread
 from typing import Union
+from enum import Enum
+
+
+class Tag(Enum):
+    REQUEST = 0
+    RESPONSE = 1
+    CALLBACK_REQUEST = 2
+    CALLBACK_RESPONSE = 3
+    OPEN_CHANNEL = 4
 
 
 class FIFOChannelManager:
@@ -44,12 +53,13 @@ class UnixSocketServerChannelManager:
         socket, address = self.server.accept()
         return UnixSocketServerChannel(socket)
 
+
 class UnixSocketServerChannel:
     def __init__(self, socket):
         self.socket = socket
 
-    def write(self, data: str):
-        return self.socket.send(data.encode())
+    def write(self, data: bytes):
+        return self.socket.send(data)
 
     def read(self, length):
         return self.socket.recv(length)
@@ -62,24 +72,29 @@ class UnixSocketServerChannel:
         self.socket.close()
 
 
-
-class SimpleTextFraming:
+class SimpleBinaryFraming:
     def __init__(self, channel: Union[FIFOChannelManager, UnixSocketServerChannel]):
         self.channel = channel
 
     def read(self):
-        length_text = self.channel.read(4)
-        if len(length_text) == 0:
+        length_binary = self.channel.read(4)
+        if len(length_binary) == 0:
             logging.info("Empty request, exiting")
             raise Exception()
-        logging.info("Received length: {}".format(length_text))
-        length = int(length_text)
+        length = int.from_bytes(length_binary, byteorder='little')
+        logging.info("Received length: {}".format(length))
+
+        tag_binary = self.channel.read(4)
+        tag = int.from_bytes(tag_binary, byteorder='little')
+        logging.info("Received tag: {}".format(tag))
+
         message_text = self.channel.read(length)
         logging.info("Received message: {}".format(message_text))
         return message_text
 
-    def write(self, data):
-        self.channel.write("{0:04d}".format(len(data)))
+    def write(self, data, tag):
+        self.channel.write(len(data).to_bytes(4, byteorder='little'))
+        self.channel.write(tag.to_bytes(4, byteorder='little'))
         self.channel.write(data)
         self.channel.flush()
         logging.info("Wrote " + data)
@@ -131,7 +146,7 @@ class RequestsReceiver():
 
     def __init__(self, channel: UnixSocketServerChannel):
         self.channel = channel
-        self.framing = SimpleTextFraming(self.channel)
+        self.framing = SimpleBinaryFraming(self.channel)
         logging.info("Opened!")
 
     persistence = {}
@@ -176,7 +191,7 @@ class RequestsReceiver():
                     response["return_value"] = self.encode_return_value(return_value)
             logging.info("Persistence is {}".format(RequestsReceiver.persistence))
             response_text = json.dumps(response)
-            self.framing.write(response_text)
+            self.framing.write(response_text, Tag.RESPONSE.value)
 
         logging.info("Exit")
         self.framing.channel.close()
