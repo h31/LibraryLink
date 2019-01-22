@@ -39,6 +39,7 @@ dependencies {
     compile 'com.fasterxml.jackson.module:jackson-module-kotlin:2.9.5'
     compile 'com.github.javaparser:javaparser-core:3.6.9'
     compile 'ru.spbstu.kspt.librarymigration:modelparser:0.4-SNAPSHOT'
+    compile 'io.javalin:javalin:2.5.0'
     compile group: 'com.github.jnr', name: 'jnr-unixsocket', version: '0.20'
     compile group: 'org.antlr', name: 'ST4', version: '4.1'
     testCompile 'junit:junit:4.12'
