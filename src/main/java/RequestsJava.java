@@ -20,8 +20,8 @@ public class RequestsJava {
     }
 
     Response get(String url) {
-        List<Argument> args = Collections.singletonList(new StringArgument(url, null));
-        Request request = new Request("get", "requests", args, "requests",
+        List<Argument> args = Collections.singletonList(new InPlaceArgument(url, null));
+        MethodCallRequest request = new MethodCallRequest("get", "requests", args,
                 false, false);
         ProcessExchangeResponse peResponse = exchange.makeRequest(request);
         logger.info("Wrote get");
@@ -30,9 +30,9 @@ public class RequestsJava {
 
     Response get(String url, Headers headers) {
         List<Argument> args = Arrays.asList(
-                new StringArgument(url, null),
-                new ReferenceArgument(headers.getAssignedID(), "headers"));
-        Request request = new Request("get", "requests", args, "requests",
+                new InPlaceArgument(url, null),
+                new PersistenceArgument(headers.getAssignedID(), "headers"));
+        MethodCallRequest request = new MethodCallRequest("get", "requests", args,
                 false, false);
         ProcessExchangeResponse peResponse = exchange.makeRequest(request);
         logger.info("Wrote get");
@@ -48,22 +48,22 @@ public class RequestsJava {
             super(storedName);
         }
         int statusCode() {
-            Request request = new Request("status_code", getAssignedID(),
-                    Collections.emptyList(), "", false, true, true);
+            MethodCallRequest request = new MethodCallRequest("status_code", getAssignedID(),
+                    Collections.emptyList(), false, true, true);
             ProcessExchangeResponse response = exchange.makeRequest(request);
             return (int) response.getReturnValue();
         }
 
         byte[] content() {
-            Request request = new Request("content", getAssignedID(),
-                    Collections.emptyList(), "", false, true, true);
+            MethodCallRequest request = new MethodCallRequest("content", getAssignedID(),
+                    Collections.emptyList(), false, true, true);
             ProcessExchangeResponse response = exchange.makeRequest(request);
             return Base64.getDecoder().decode((String) Objects.requireNonNull(response.getReturnValue()));
         }
 
         Map<String, String> headers() {
-            Request request = new Request("headers", getAssignedID(),
-                    Collections.emptyList(), "", false, true, true);
+            MethodCallRequest request = new MethodCallRequest("headers", getAssignedID(),
+                    Collections.emptyList(),  false, true, true);
             ProcessExchangeResponse response = exchange.makeRequest(request);
             return (Map<String, String>) response.getReturnValue();
         }
@@ -71,14 +71,15 @@ public class RequestsJava {
 
     public class Headers extends Handle {
         public Headers() {
-            ProcessExchangeResponse response = exchange.makeRequest(new Request("dict"));
+            ProcessExchangeResponse response = exchange.makeRequest(new MethodCallRequest("dict"));
             String storedName = response.getAssignedID();
             registerReference(storedName);
         }
 
         void update(String key, String value) {
-            exchange.makeRequest(new Request("update", getAssignedID(),
-                    Collections.singletonList(new RawArgument(String.format("{\"%s\": \"%s\"}", key, value), null))));
+            exchange.makeRequest(new EvalRequest("%s.update{%s: %s}",
+                    Arrays.asList(new PersistenceArgument(getAssignedID(), null), new InPlaceArgument(key, null), new InPlaceArgument(value, null)),
+                    false, getAssignedID()));
         }
     }
 }

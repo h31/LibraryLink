@@ -10,12 +10,12 @@ class Receiver {
 
     private val logger = LoggerFactory.getLogger(Receiver::class.java)
 
-    fun processRequest(request: Request): ChannelResponse {
+    fun processRequest(request: MethodCallRequest): ChannelResponse {
         return ChannelResponse(123)
     }
 
     fun processRequest(request: ByteArray): ByteArray {
-        val decodedRequest = mapper.readValue(request, Request::class.java)
+        val decodedRequest = mapper.readValue(request, MethodCallRequest::class.java)
         logger.info("Received callback request $request")
         val returnValue = processRequest(decodedRequest)
         val response = ChannelResponse(returnValue)

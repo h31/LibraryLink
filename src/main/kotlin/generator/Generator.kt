@@ -110,7 +110,7 @@ data class ReferenceArgument(override val value: String,
 fun generateStatements(request: Request, returnValueType: String?): List<Statement> {
     val argsStmt = generateArgsStatement(request.args)
     val objectID = if (request.objectID == "") "getAssignedID()" else "\"${request.objectID}\""
-    val statement = JavaParser.parseStatement("Request request = new Request(\"${request.methodName}\", $objectID, args, \"${request.import}\"," +
+    val statement = JavaParser.parseStatement("MethodCallRequest request = new MethodCallRequest(\"${request.methodName}\", $objectID, args, \"${request.import}\"," +
             "${request.isStatic}, ${request.doGetReturnValue}, ${request.isProperty});\n")
     val makeRequest = JavaParser.parseStatement("ProcessExchangeResponse response = exchange.makeRequest(request);")
     if (returnValueType != null) {

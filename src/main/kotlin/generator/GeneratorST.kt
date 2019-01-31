@@ -51,11 +51,11 @@ fun generateST(library: LibraryDecl, st: ST) {
 //            "Requests",
 //            listOf(
 //                    Method("get", listOf(
-//                            Arg("String", "url", "StringArgument")
+//                            Arg("String", "url", "InPlaceArgument")
 //                    )),
 //                    Method("get", listOf(
-//                            Arg("String", "url", "StringArgument"),
-//                            Arg("Headers", "headers", "ReferenceArgument")
+//                            Arg("String", "url", "InPlaceArgument"),
+//                            Arg("Headers", "headers", "PersistenceArgument")
 //                    ))
 //            )
 //    )
@@ -120,11 +120,11 @@ private fun generateWrapper(template: String) {
 //            "Requests",
 //            listOf(
 //                    Method("get", listOf(
-//                            Arg("String", "url", "StringArgument")
+//                            Arg("String", "url", "InPlaceArgument")
 //                    )),
 //                    Method("get", listOf(
-//                            Arg("String", "url", "StringArgument"),
-//                            Arg("Headers", "headers", "ReferenceArgument")
+//                            Arg("String", "url", "InPlaceArgument"),
+//                            Arg("Headers", "headers", "PersistenceArgument")
 //                    ))
 //            )
 //    )

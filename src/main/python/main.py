@@ -1,4 +1,5 @@
 import base64
+import copy
 import json
 import logging
 import os
@@ -16,6 +17,9 @@ class Tag(Enum):
     CALLBACK_REQUEST = 2
     CALLBACK_RESPONSE = 3
     OPEN_CHANNEL = 4
+    DELETE_FROM_PERSISTENCE = 5
+    START_BUFFERING = 6
+    STOP_BUFFERING = 7
 
 
 class FIFOChannelManager:
@@ -90,7 +94,7 @@ class SimpleBinaryFraming:
 
         message_text = self.channel.read(length)
         logging.info("Received message: {}".format(message_text))
-        return message_text
+        return tag, message_text
 
     def write(self, data, tag):
         self.channel.write(len(data).to_bytes(4, byteorder='little'))
@@ -168,18 +172,56 @@ class RequestsReceiver():
     #         var_name = message['store']
     #         self.persistence[var_name] = local[var_name]
 
+    def callback_handler(self, template, *args, **kwargs):
+        request = copy.deepcopy(template)
+        req_args = []
+        for arg in args:
+            if arg is int or arg is str:
+                type = "inplace"
+            else:
+                type = "persistence"
+            request["args"] += {"value": arg, "type": type}
+
+        self.framing.write(json.dumps(request), Tag.CALLBACK_REQUEST)
+        tag, value = self.framing.read()
+        assert tag == Tag.CALLBACK_RESPONSE
+        return value["return_value"]
+
+    def dynamically_inherit_class(self, base, method_names):
+        class MyClass(base):
+            pass
+
+        new_class = MyClass
+        for method_name in method_names:
+            callback_wrapper = self.create_callback(method_name)
+            new_class.__setattr__(method_name, callback_wrapper)
+        return new_class
+
+    def create_callback(self, callback_name):
+        request = {
+            "methodName": callback_name,
+            "objectID": "",
+            "args": [],
+            "static": False,
+            "doGetReturnValue": False,
+            "property": False,
+            "assignedID": "",
+        }
+
+        return lambda *args, **kwargs: self.callback_handler(request, args, kwargs)
+
     def receive(self):
         while True:
-            message_text = self.framing.read()
+            tag, message_text = self.framing.read()
             if message_text == "exit":
                 logging.info("Exit")
                 break
             message = json.loads(message_text)
             local = RequestsReceiver.persistence.copy()
             response = {}
-            if 'delete' in message and message['delete']:
+            if tag == Tag.DELETE_FROM_PERSISTENCE.value and 'delete' in message and message['delete']:
                 self.delete_from_persistence(message['delete'])
-            if 'methodName' in message:
+            elif tag == Tag.REQUEST and 'methodName' in message:
                 command = self.prepare_command(message)
                 logging.debug("Exec: " + command)
                 logging.debug("Persistence before exec is {}".format(local))

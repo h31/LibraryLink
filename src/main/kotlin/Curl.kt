@@ -8,7 +8,7 @@ class CurlWrapper(runner: ReceiverRunner = LibraryLink.runner,
     inner class Curl(val storedName: String) : Handle(storedName)
 
     inner class WriteDataHandler : CallbackReceiver {
-        override fun invoke(request: Request): Any? {
+        override fun invoke(request: MethodCallRequest): Any? {
             val contents = CharStar(request.args[0].value as String, exchange)
             val size = (request.args[1].value as String).toLong()
             val nmemb = (request.args[2].value as String).toLong()
@@ -26,19 +26,19 @@ class CurlWrapper(runner: ReceiverRunner = LibraryLink.runner,
     }
 
     fun curl_easy_init(): Curl {
-        val response = makeRequest(Request(methodName = "curl_easy_init"))
+        val response = makeRequest(MethodCallRequest(methodName = "curl_easy_init"))
         return Curl(response.assignedID)
     }
 
     fun curl_easy_setopt(handle: Curl, option: String, parameter: String): Int {
-        val response = makeRequest(Request(methodName = "curl_easy_setopt",
-                args = listOf(ReferenceArgument(handle.storedName), NumArgument(option), StringArgument(parameter))))
+        val response = makeRequest(MethodCallRequest(methodName = "curl_easy_setopt",
+                args = listOf(PersistenceArgument(handle.storedName), InPlaceArgument(option), InPlaceArgument(parameter))))
         return response.returnValue as Int
     }
 
     fun curl_easy_perform(handle: Curl): Int {
-        val response = makeRequest(Request(methodName = "curl_easy_perform",
-                args = listOf(ReferenceArgument(handle.storedName))))
+        val response = makeRequest(MethodCallRequest(methodName = "curl_easy_perform",
+                args = listOf(PersistenceArgument(handle.storedName))))
         return response.returnValue as Int
     }
 

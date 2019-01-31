@@ -107,7 +107,10 @@ enum class Tag(val code: Int) {
     RESPONSE(1),
     CALLBACK_REQUEST(2),
     CALLBACK_RESPONSE(3),
-    OPEN_CHANNEL(4);
+    OPEN_CHANNEL(4),
+    DELETE_FROM_PERSISTENCE(5),
+    START_BUFFERING(6),
+    STOP_BUFFERING(7);
 
     companion object {
         private val reverseValues: Map<Int, Tag> = values().associate { it.code to it }
@@ -261,17 +264,48 @@ open class ThreadLocalRequestGenerator(private val channelManager: ForeignChanne
     }
 }
 
-data class Request @JvmOverloads constructor(
+interface Request
+
+interface Identifiable {
+    val assignedID: String
+}
+
+data class MethodCallRequest @JvmOverloads constructor(
         val methodName: String,
         val objectID: String = "",
         var args: List<Argument> = listOf(),
-        val import: String = "",
         @JsonProperty("static")
         val isStatic: Boolean = false,
         val doGetReturnValue: Boolean = false,
         @JsonProperty("property")
         val isProperty: Boolean = false,
-        val assignedID: String = AssignedIDCounter.getNextID())
+        override val assignedID: String = AssignedIDCounter.getNextID()) : Request, Identifiable
+
+data class ImportRequest(
+        val importedName: String
+) : Request
+
+data class EvalRequest(
+        val executedCode: String,
+        var args: List<Argument> = listOf(),
+        val doGetReturnValue: Boolean = false,
+        override val assignedID: String = AssignedIDCounter.getNextID()
+) : Request, Identifiable
+
+data class DynamicInheritRequest(
+        val automatonName: String,
+        val methodArguments: Map<String, List<Argument>>,
+        override val assignedID: String = AssignedIDCounter.getNextID()
+) : Request, Identifiable
+
+data class DynamicCallbackRequest(
+        val arguments: List<Argument>,
+        override val assignedID: String = AssignedIDCounter.getNextID()
+) : Request, Identifiable
+
+data class PersistenceFetchRequest(
+        val key: String
+) : Request
 
 @JsonTypeInfo(
         use = JsonTypeInfo.Id.NAME,
@@ -306,31 +340,21 @@ public class ArgumentIdResolver : TypeIdResolverBase() {
 
     override fun typeFromId(context: DatabindContext, id: String): JavaType {
         val argClass = when (id) {
-            "raw" -> ReferenceArgument::class.java
-            else -> ReferenceArgument::class.java
+            "raw" -> PersistenceArgument::class.java
+            else -> PersistenceArgument::class.java
         }
-        return context.constructSpecializedType(superType, ReferenceArgument::class.java)
+        return context.constructSpecializedType(superType, PersistenceArgument::class.java)
     }
 }
 
-data class StringArgument(override val value: String,
-                          override val key: String? = null) : Argument {
-    override val type = "string"
+data class InPlaceArgument(override val value: Any,
+                           override val key: String? = null) : Argument {
+    override val type = "inplace"
 }
 
-data class NumArgument(override val value: String,
-                       override val key: String? = null) : Argument {
-    override val type = "num"
-}
-
-data class RawArgument(override val value: String,
-                       override val key: String? = null) : Argument {
-    override val type = "raw"
-}
-
-data class ReferenceArgument(override val value: String,
-                             override val key: String? = null) : Argument {
-    override val type = "raw"
+data class PersistenceArgument(override val value: String,
+                               override val key: String? = null) : Argument {
+    override val type = "persistence"
 }
 
 object AssignedIDCounter {
@@ -360,7 +384,7 @@ open class Handle() {
 
 open class DataHandle(assignedID: String, val dataExchange: ProcessDataExchange) : Handle(assignedID) {
     fun asString(): String {
-        val content = dataExchange.makeRequest(Request("__read_data", args = listOf(ReferenceArgument(assignedID))))
+        val content = dataExchange.makeRequest(MethodCallRequest("__read_data", args = listOf(PersistenceArgument(assignedID))))
         return content.returnValue as String
     }
 }
@@ -375,11 +399,11 @@ class HandlePhantomReference<T>(referent: T, q: ReferenceQueue<T>, val assignedI
 interface ProcessDataExchange {
     fun makeRequest(request: Request): ProcessExchangeResponse
     fun registerCallback(funcName: String, receiver: CallbackReceiver)
-    fun registerPrefetch(request: Request)
+    fun registerPrefetch(request: MethodCallRequest)
 }
 
 interface CallbackReceiver {
-    operator fun invoke(request: Request): Any?
+    operator fun invoke(request: MethodCallRequest): Any?
 }
 
 open class CallbackDataExchange {
@@ -394,7 +418,7 @@ open class CallbackDataExchange {
     }
 
     fun handleRequest(callbackRequest: ByteArray): ByteArray {
-        val request = mapper.readValue(callbackRequest, Request::class.java)
+        val request = mapper.readValue(callbackRequest, MethodCallRequest::class.java)
         logger.info("Received callback request $request")
         val callback = callbackReceiversMap[request.methodName] ?: TODO()
         val returnValue = callback(request)
@@ -441,7 +465,7 @@ open class SimpleTextProcessDataExchange(val runner: ReceiverRunner,
         val message = mapper.writeValueAsString(request)
         val channelResponse = makeChannelRequest(message)
         logger.info("Wrote $request")
-        val response = ProcessExchangeResponse(returnValue = channelResponse.returnValue, assignedID = request.assignedID)
+        val response = ProcessExchangeResponse(returnValue = channelResponse.returnValue, assignedID = if (request is Identifiable) request.assignedID else "") // TODO
         logger.info("Received $response")
         return response
     }
@@ -460,9 +484,9 @@ open class SimpleTextProcessDataExchange(val runner: ReceiverRunner,
     override fun registerCallback(funcName: String, receiver: CallbackReceiver) =
             runner.callbackDataExchange.registerCallback(funcName, receiver)
 
-    private var prefetchedRequest: Request? = null
+    private var prefetchedRequest: MethodCallRequest? = null
 
-    override fun registerPrefetch(request: Request) {
+    override fun registerPrefetch(request: MethodCallRequest) {
         prefetchedRequest = request
     }
 }
