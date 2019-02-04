@@ -7,6 +7,7 @@ class Requests(private val exchange: ProcessDataExchange = LibraryLink.exchange)
     val logger = LoggerFactory.getLogger(Requests::class.java)
 
     fun get(url: String, headers: Headers? = null): Response {
+        makeRequest(ImportRequest("requests"))
         val args = mutableListOf<Argument>(InPlaceArgument(url))
         if (headers != null) {
             args += PersistenceArgument(headers.storedName, key = "headers")

@@ -101,7 +101,7 @@ class SimpleBinaryFraming:
         self.channel.write(tag.to_bytes(4, byteorder='little'))
         self.channel.write(data)
         self.channel.flush()
-        logging.info("Wrote " + data)
+        logging.info("Wrote " + data.decode())
 
 
 class RequestsReceiver():
@@ -118,13 +118,18 @@ class RequestsReceiver():
     def decode_args(args):
         decoded_args = []
         for arg in args:
+            arg_value = arg['value']
             decoded_arg = ""
+            if arg['type'] == "inplace" and isinstance(arg_value, str):
+                decoded_arg += '"' + arg_value + '"'
+            elif arg['type'] == "persistence":
+                decoded_arg += arg_value
+            else:
+                raise Exception()
+
             if arg['key']:
                 decoded_arg = "{} = ".format(arg['key'])
-            if arg['type'] == "string":
-                decoded_arg += '"' + arg['value'] + '"'
-            else:
-                decoded_arg += arg['value']
+
             decoded_args.append(decoded_arg)
         return ", ".join(decoded_args)
 
@@ -154,10 +159,14 @@ class RequestsReceiver():
         logging.info("Opened!")
 
     persistence = {}
+    persistence_globals = {}
 
     def delete_from_persistence(self, var_name):
         logging.info("Delete {} from persistence".format(var_name))
-        del RequestsReceiver.persistence[var_name]
+        if var_name in RequestsReceiver.persistence:
+            del RequestsReceiver.persistence[var_name]
+        elif var_name in RequestsReceiver.persistence_globals:
+            del RequestsReceiver.persistence_globals[var_name]
 
     # def legacy_code(self):
     #     1 + 2
@@ -176,7 +185,7 @@ class RequestsReceiver():
         request = copy.deepcopy(template)
         req_args = []
         for arg in args:
-            if arg is int or arg is str:
+            if isinstance(arg, int) or isinstance(arg, str):
                 type = "inplace"
             else:
                 type = "persistence"
@@ -221,19 +230,22 @@ class RequestsReceiver():
             response = {}
             if tag == Tag.DELETE_FROM_PERSISTENCE.value and 'delete' in message and message['delete']:
                 self.delete_from_persistence(message['delete'])
-            elif tag == Tag.REQUEST and 'methodName' in message:
+            elif tag == Tag.REQUEST.value and 'importedName' in message:
+                exec("import {};".format(message['importedName']), RequestsReceiver.persistence_globals, RequestsReceiver.persistence)
+                logging.info("Imported")
+            elif tag == Tag.REQUEST.value and 'methodName' in message:
                 command = self.prepare_command(message)
                 logging.debug("Exec: " + command)
                 logging.debug("Persistence before exec is {}".format(local))
-                exec(command, globals(), local)
+                exec(command, RequestsReceiver.persistence_globals, local)
                 var_name = message['assignedID']
                 RequestsReceiver.persistence[var_name] = local[var_name]
                 if 'doGetReturnValue' in message and message['doGetReturnValue']:
-                    return_value = eval(message['assignedID'], globals(), local)
+                    return_value = eval(message['assignedID'], RequestsReceiver.persistence_globals, local)
                     response["return_value"] = self.encode_return_value(return_value)
             logging.info("Persistence is {}".format(RequestsReceiver.persistence))
             response_text = json.dumps(response)
-            self.framing.write(response_text, Tag.RESPONSE.value)
+            self.framing.write(response_text.encode(), Tag.RESPONSE.value)
 
         logging.info("Exit")
         self.framing.channel.close()
