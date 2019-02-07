@@ -32,13 +32,13 @@ class CurlWrapper(runner: ReceiverRunner = LibraryLink.runner,
 
     fun curl_easy_setopt(handle: Curl, option: String, parameter: String): Int {
         val response = makeRequest(MethodCallRequest(methodName = "curl_easy_setopt",
-                args = listOf(PersistenceArgument(handle.storedName), InPlaceArgument(option), InPlaceArgument(parameter))))
+                args = listOf(PersistenceArgument(handle), InPlaceArgument(option), InPlaceArgument(parameter))))
         return response.returnValue as Int
     }
 
     fun curl_easy_perform(handle: Curl): Int {
         val response = makeRequest(MethodCallRequest(methodName = "curl_easy_perform",
-                args = listOf(PersistenceArgument(handle.storedName))))
+                args = listOf(PersistenceArgument(handle))))
         return response.returnValue as Int
     }
 

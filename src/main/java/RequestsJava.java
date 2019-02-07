@@ -31,7 +31,7 @@ public class RequestsJava {
     Response get(String url, Headers headers) {
         List<Argument> args = Arrays.asList(
                 new InPlaceArgument(url, null),
-                new PersistenceArgument(headers.getAssignedID(), "headers"));
+                new PersistenceArgument(headers, "headers"));
         MethodCallRequest request = new MethodCallRequest("get", "requests", args,
                 false, false);
         ProcessExchangeResponse peResponse = exchange.makeRequest(request);
@@ -78,7 +78,7 @@ public class RequestsJava {
 
         void update(String key, String value) {
             exchange.makeRequest(new EvalRequest("%s.update{%s: %s}",
-                    Arrays.asList(new PersistenceArgument(getAssignedID(), null), new InPlaceArgument(key, null), new InPlaceArgument(value, null)),
+                    Arrays.asList(new PersistenceArgument(this, null), new InPlaceArgument(key, null), new InPlaceArgument(value, null)),
                     false, getAssignedID()));
         }
     }

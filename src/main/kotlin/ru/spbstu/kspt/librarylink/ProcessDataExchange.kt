@@ -17,6 +17,7 @@ import java.lang.ref.ReferenceQueue
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.channels.Channels
+import java.nio.charset.Charset
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.concurrent.thread
 
@@ -281,6 +282,12 @@ data class MethodCallRequest @JvmOverloads constructor(
         val isProperty: Boolean = false,
         override val assignedID: String = AssignedIDCounter.getNextID()) : Request, Identifiable
 
+data class ConstructorRequest(
+        val className: String,
+        var args: List<Argument> = listOf(),
+        override val assignedID: String = AssignedIDCounter.getNextID()
+) : Request, Identifiable
+
 data class ImportRequest(
         val importedName: String
 ) : Request
@@ -293,6 +300,7 @@ data class EvalRequest(
 ) : Request, Identifiable
 
 data class DynamicInheritRequest(
+        val importName: String,
         val automatonName: String,
         val methodArguments: Map<String, List<Argument>>,
         override val assignedID: String = AssignedIDCounter.getNextID()
@@ -352,8 +360,9 @@ data class InPlaceArgument(override val value: Any,
     override val type = "inplace"
 }
 
-data class PersistenceArgument(override val value: String,
-                               override val key: String? = null) : Argument {
+data class PersistenceArgument @JvmOverloads constructor(val handle: Handle,
+                                                         override val key: String? = null,
+                                                         override val value: String = handle.assignedID) : Argument {
     override val type = "persistence"
 }
 
@@ -384,7 +393,7 @@ open class Handle() {
 
 open class DataHandle(assignedID: String, val dataExchange: ProcessDataExchange) : Handle(assignedID) {
     fun asString(): String {
-        val content = dataExchange.makeRequest(MethodCallRequest("__read_data", args = listOf(PersistenceArgument(assignedID))))
+        val content = dataExchange.makeRequest(MethodCallRequest("__read_data", args = listOf(PersistenceArgument(this))))
         return content.returnValue as String
     }
 }
@@ -399,6 +408,7 @@ class HandlePhantomReference<T>(referent: T, q: ReferenceQueue<T>, val assignedI
 interface ProcessDataExchange {
     fun makeRequest(request: Request): ProcessExchangeResponse
     fun registerCallback(funcName: String, receiver: CallbackReceiver)
+    fun registerCallback(funcName: String, receiver: (request: MethodCallRequest) -> Any?)
     fun registerPrefetch(request: MethodCallRequest)
 }
 
@@ -411,9 +421,13 @@ open class CallbackDataExchange {
 
     private val mapper = ObjectMapper().registerModule(KotlinModule())
 
-    private val callbackReceiversMap: MutableMap<String, CallbackReceiver> = mutableMapOf()
+    private val callbackReceiversMap: MutableMap<String, (request: MethodCallRequest) -> Any?> = mutableMapOf()
 
     fun registerCallback(funcName: String, receiver: CallbackReceiver) {
+        callbackReceiversMap += funcName to { req -> receiver(req) }
+    }
+
+    fun registerCallback(funcName: String, receiver: (request: MethodCallRequest) -> Any?) {
         callbackReceiversMap += funcName to receiver
     }
 
@@ -424,7 +438,7 @@ open class CallbackDataExchange {
         val returnValue = callback(request)
         val response = ChannelResponse(returnValue)
         val message = mapper.writeValueAsBytes(response)
-        logger.info("Responded with $message")
+        logger.info("Responded with ${message.toString(Charset.defaultCharset())}")
         return message
     }
 }
@@ -482,6 +496,9 @@ open class SimpleTextProcessDataExchange(val runner: ReceiverRunner,
     }
 
     override fun registerCallback(funcName: String, receiver: CallbackReceiver) =
+            runner.callbackDataExchange.registerCallback(funcName, receiver)
+
+    override fun registerCallback(funcName: String, receiver: (request: MethodCallRequest) -> Any?) =
             runner.callbackDataExchange.registerCallback(funcName, receiver)
 
     private var prefetchedRequest: MethodCallRequest? = null
