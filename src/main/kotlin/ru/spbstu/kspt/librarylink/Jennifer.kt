@@ -6,7 +6,7 @@ class Jennifer(private val exchange: ProcessDataExchange = LibraryLink.exchange)
     val logger = LoggerFactory.getLogger(Jennifer::class.java)
 
     fun NewFile(packageName: String): File {
-        val args = mutableListOf<Argument>(InPlaceArgument(packageName))
+        val args = mutableListOf<Argument>(Argument(packageName))
         val peResponse = makeRequest(MethodCallRequest(objectID = "jennifer",
                 args = args, methodName = "NewFile", doGetReturnValue = false))
         logger.info("Wrote get")
@@ -40,7 +40,7 @@ class Jennifer(private val exchange: ProcessDataExchange = LibraryLink.exchange)
 
     inner class Statement(private val storedName: String) : ru.spbstu.kspt.librarylink.Handle(storedName) {
         fun Id(name: String): Statement {
-            val args = mutableListOf<Argument>(InPlaceArgument(name))
+            val args = mutableListOf<Argument>(Argument(name))
             val response = makeRequest(MethodCallRequest(objectID = storedName, methodName = "Id",
                     doGetReturnValue = false, args = args))
             val statement = Statement(response.assignedID)

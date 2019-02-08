@@ -20,7 +20,7 @@ public class RequestsJava {
     }
 
     Response get(String url) {
-        List<Argument> args = Collections.singletonList(new InPlaceArgument(url, null));
+        List<Argument> args = Collections.singletonList(new Argument(url, null));
         MethodCallRequest request = new MethodCallRequest("get", "requests", args,
                 false, false);
         ProcessExchangeResponse peResponse = exchange.makeRequest(request);
@@ -30,8 +30,8 @@ public class RequestsJava {
 
     Response get(String url, Headers headers) {
         List<Argument> args = Arrays.asList(
-                new InPlaceArgument(url, null),
-                new PersistenceArgument(headers, "headers"));
+                new Argument(url, null),
+                new Argument(headers, "headers"));
         MethodCallRequest request = new MethodCallRequest("get", "requests", args,
                 false, false);
         ProcessExchangeResponse peResponse = exchange.makeRequest(request);
@@ -78,7 +78,7 @@ public class RequestsJava {
 
         void update(String key, String value) {
             exchange.makeRequest(new EvalRequest("%s.update{%s: %s}",
-                    Arrays.asList(new PersistenceArgument(this, null), new InPlaceArgument(key, null), new InPlaceArgument(value, null)),
+                    Arrays.asList(new Argument(this, null), new Argument(key, null), new Argument(value, null)),
                     false, getAssignedID()));
         }
     }

@@ -8,9 +8,9 @@ class Requests(private val exchange: ProcessDataExchange = LibraryLink.exchange)
 
     fun get(url: String, headers: Headers? = null): Response {
         makeRequest(ImportRequest("requests"))
-        val args = mutableListOf<Argument>(InPlaceArgument(url))
+        val args = mutableListOf<Argument>(Argument(url))
         if (headers != null) {
-            args += PersistenceArgument(headers, key = "headers")
+            args += Argument(headers, key = "headers")
         }
         val peResponse = makeRequest(MethodCallRequest(objectID = "requests",
                 args = args, methodName = "get", doGetReturnValue = false))
@@ -50,6 +50,6 @@ class Headers(private val exchange: ProcessDataExchange = LibraryLink.exchange):
     }
 
     fun update(key: String, value: String) {
-        makeRequest(EvalRequest( executedCode = "%s.update{%s: %s}", args = listOf(PersistenceArgument(this), InPlaceArgument(key), InPlaceArgument(value))))
+        makeRequest(EvalRequest( executedCode = "%s.update{%s: %s}", args = listOf(Argument(this), Argument(key), Argument(value))))
     }
 }

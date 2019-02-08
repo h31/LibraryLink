@@ -315,62 +315,98 @@ data class PersistenceFetchRequest(
         val key: String
 ) : Request
 
-@JsonTypeInfo(
-        use = JsonTypeInfo.Id.NAME,
-        include = JsonTypeInfo.As.PROPERTY,
-        property = "type"
-)
-@JsonTypeIdResolver(ArgumentIdResolver::class)
-interface Argument {
+//@JsonTypeInfo(
+//        use = JsonTypeInfo.Id.NAME,
+//        include = JsonTypeInfo.As.PROPERTY,
+//        property = "type"
+//)
+//@JsonTypeIdResolver(ArgumentIdResolver::class)
+class Argument {
     val type: String
     val value: Any?
     val key: String?
-}
 
-public class ArgumentIdResolver : TypeIdResolverBase() {
-    lateinit var superType: JavaType
-
-    override fun init(baseType: JavaType) {
-        superType = baseType;
+    @JvmOverloads constructor(obj: Handle, key: String? = null) {
+        this.type = "persistence"
+        this.value = obj.assignedID
+        this.key = key
     }
 
-    override fun getMechanism(): JsonTypeInfo.Id {
-        return JsonTypeInfo.Id.NAME
+    @JvmOverloads constructor(obj: Class<out Handle>, key: String? = null) {
+        this.type = "persistence"
+        this.value = "class_${obj.canonicalName}" // TODO
+        this.key = key
     }
 
-    override fun idFromValueAndType(value: Any?, suggestedType: Class<*>?): String {
-        return (value as Argument).type
+    @JvmOverloads constructor(obj: Int, key: String? = null) {
+        this.type = "inplace"
+        this.value = obj
+        this.key = key
     }
 
-    override fun idFromValue(value: Any?): String {
-        return (value as Argument).type
+    @JvmOverloads constructor(obj: Boolean, key: String? = null) {
+        this.type = "inplace"
+        this.value = obj
+        this.key = key
     }
 
-    override fun typeFromId(context: DatabindContext, id: String): JavaType {
-        val argClass = when (id) {
-            "raw" -> PersistenceArgument::class.java
-            else -> PersistenceArgument::class.java
-        }
-        return context.constructSpecializedType(superType, PersistenceArgument::class.java)
+    @JvmOverloads constructor(obj: Byte, key: String? = null) {
+        this.type = "inplace"
+        this.value = obj
+        this.key = key
+    }
+
+    @JvmOverloads constructor(obj: String, key: String? = null) {
+        this.type = "inplace"
+        this.value = obj
+        this.key = key
     }
 }
 
-data class InPlaceArgument(override val value: Any,
-                           override val key: String? = null) : Argument {
-    override val type = "inplace"
-}
+//public class ArgumentIdResolver : TypeIdResolverBase() {
+//    lateinit var superType: JavaType
+//
+//    override fun init(baseType: JavaType) {
+//        superType = baseType;
+//    }
+//
+//    override fun getMechanism(): JsonTypeInfo.Id {
+//        return JsonTypeInfo.Id.NAME
+//    }
+//
+//    override fun idFromValueAndType(value: Any?, suggestedType: Class<*>?): String {
+//        return (value as Argument).type
+//    }
+//
+//    override fun idFromValue(value: Any?): String {
+//        return (value as Argument).type
+//    }
+//
+//    override fun typeFromId(context: DatabindContext, id: String): JavaType {
+//        val argClass = when (id) {
+//            "raw" -> PersistenceArgument::class.java
+//            else -> PersistenceArgument::class.java
+//        }
+//        return context.constructSpecializedType(superType, PersistenceArgument::class.java)
+//    }
+//}
 
-data class PersistenceArgument @JvmOverloads constructor(val handle: Handle,
-                                                         override val key: String? = null,
-                                                         override val value: String = handle.assignedID) : Argument {
-    override val type = "persistence"
-}
-
-data class ClassObjectArgument @JvmOverloads constructor(val clazz: Class<Handle>,
-                                                         override val key: String? = null,
-                                                         override val value: String) : Argument {
-    override val type = "persistence"
-}
+//data class InPlaceArgument(override val value: Any,
+//                           override val key: String? = null) : Argument {
+//    override val type = "inplace"
+//}
+//
+//data class PersistenceArgument @JvmOverloads constructor(val handle: Handle,
+//                                                         override val key: String? = null,
+//                                                         override val value: String = handle.assignedID) : Argument {
+//    override val type = "persistence"
+//}
+//
+//data class ClassObjectArgument @JvmOverloads constructor(val clazz: Class<Handle>,
+//                                                         override val key: String? = null,
+//                                                         override val value: String) : Argument {
+//    override val type = "persistence"
+//}
 
 object AssignedIDCounter {
     private val counter = AtomicInteger()
@@ -407,7 +443,7 @@ open class ClassDecl(clazz: Class<Handle>, private val exchange: ProcessDataExch
 
 open class DataHandle(assignedID: String, val dataExchange: ProcessDataExchange) : Handle(assignedID) {
     fun asString(): String {
-        val content = dataExchange.makeRequest(MethodCallRequest("__read_data", args = listOf(PersistenceArgument(this)))) // TODO
+        val content = dataExchange.makeRequest(MethodCallRequest("__read_data", args = listOf(Argument(this)))) // TODO
         return content.returnValue as String
     }
 }

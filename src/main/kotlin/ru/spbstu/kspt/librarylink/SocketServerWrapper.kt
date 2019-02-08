@@ -39,17 +39,17 @@ class SocketServerWrapper(private val exchange: ProcessDataExchange = LibraryLin
         }
     }
 
-    class TCPServer(server_addr: Tuple, handler: Class<BaseRequestHandler>, private val exchange: ProcessDataExchange = LibraryLink.exchange) : Handle() {
+    class TCPServer(server_addr: Tuple, handler: Class<out BaseRequestHandler>, private val exchange: ProcessDataExchange = LibraryLink.exchange) : Handle() {
         init {
             val resp = exchange.makeRequest(ConstructorRequest(
                     className = "socketserver.TCPServer",
-                    args = listOf(PersistenceArgument(server_addr), PersistenceArgument(handler))))
+                    args = listOf(Argument(server_addr), Argument(handler))))
             registerReference(resp.assignedID)
         }
 
         fun allow_reuse_address(value: Boolean) {
             val response = exchange.makeRequest(EvalRequest(executedCode = "{}.allow_reuse_address = {}",
-                    doGetReturnValue = true, args = listOf(PersistenceArgument(this), InPlaceArgument(value))))
+                    doGetReturnValue = true, args = listOf(Argument(this), Argument(value))))
         }
 
         fun serve_forever() {
@@ -65,7 +65,7 @@ class SocketServerWrapper(private val exchange: ProcessDataExchange = LibraryLin
             val resp = exchange.makeRequest(MethodCallRequest(
                     methodName = "recv",
                     objectID = assignedID,
-                    args = listOf(InPlaceArgument(size))
+                    args = listOf(Argument(size))
             ))
             val bytes = Bytes()
             bytes.registerReference(resp.assignedID)
@@ -82,7 +82,7 @@ class SocketServerWrapper(private val exchange: ProcessDataExchange = LibraryLin
             val resp = exchange.makeRequest(EvalRequest(
                     executedCode = "{}[{}]",
                     doGetReturnValue = true,
-                    args = listOf(PersistenceArgument(this), InPlaceArgument(i))
+                    args = listOf(Argument(this), Argument(i))
             ))
             return resp.returnValue as Byte
         }
@@ -91,7 +91,7 @@ class SocketServerWrapper(private val exchange: ProcessDataExchange = LibraryLin
             val resp = exchange.makeRequest(EvalRequest(
                     executedCode = "{}[{}] = {}",
                     doGetReturnValue = false,
-                    args = listOf(PersistenceArgument(this), InPlaceArgument(i), InPlaceArgument(value))
+                    args = listOf(Argument(this), Argument(i), Argument(value))
             ))
         }
     }
@@ -102,9 +102,9 @@ class Tuple(values: List<Any?>, private val exchange: ProcessDataExchange = Libr
         val resp = exchange.makeRequest(EvalRequest(
                 executedCode = generateSequence { "{}" }.take(values.size).joinToString(prefix = "(", postfix = ")"),
                 args = values.map { when (it) {
-                    is Int -> InPlaceArgument(it)
-                    is String -> InPlaceArgument(it)
-                    is Handle -> PersistenceArgument(it)
+                    is Int -> Argument(it)
+                    is String -> Argument(it)
+                    is Handle -> Argument(it)
                     else -> TODO()
                 } },
                 doGetReturnValue = true))
