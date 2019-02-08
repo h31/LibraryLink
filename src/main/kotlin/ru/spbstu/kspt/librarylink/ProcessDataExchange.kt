@@ -366,6 +366,12 @@ data class PersistenceArgument @JvmOverloads constructor(val handle: Handle,
     override val type = "persistence"
 }
 
+data class ClassObjectArgument @JvmOverloads constructor(val clazz: Class<Handle>,
+                                                         override val key: String? = null,
+                                                         override val value: String) : Argument {
+    override val type = "persistence"
+}
+
 object AssignedIDCounter {
     private val counter = AtomicInteger()
 
@@ -391,9 +397,17 @@ open class Handle() {
     }
 }
 
+open class ClassDecl(clazz: Class<Handle>, private val exchange: ProcessDataExchange = LibraryLink.exchange) : Handle() {
+    init {
+        val classID = exchange.makeRequest(DynamicInheritRequest(importName = "socketserver",
+                automatonName = "BaseRequestHandler", methodArguments = mapOf("handle" to listOf())))
+        registerReference(classID.assignedID)
+    }
+}
+
 open class DataHandle(assignedID: String, val dataExchange: ProcessDataExchange) : Handle(assignedID) {
     fun asString(): String {
-        val content = dataExchange.makeRequest(MethodCallRequest("__read_data", args = listOf(PersistenceArgument(this))))
+        val content = dataExchange.makeRequest(MethodCallRequest("__read_data", args = listOf(PersistenceArgument(this)))) // TODO
         return content.returnValue as String
     }
 }
@@ -408,7 +422,7 @@ class HandlePhantomReference<T>(referent: T, q: ReferenceQueue<T>, val assignedI
 interface ProcessDataExchange {
     fun makeRequest(request: Request): ProcessExchangeResponse
     fun registerCallback(funcName: String, receiver: CallbackReceiver)
-    fun registerCallback(funcName: String, receiver: (request: MethodCallRequest) -> Any?)
+    fun registerCallback(funcName: String, receiver: (request: MethodCallRequest, obj: Any?) -> Pair<Any?, Any?>)
     fun registerPrefetch(request: MethodCallRequest)
 }
 
@@ -421,13 +435,15 @@ open class CallbackDataExchange {
 
     private val mapper = ObjectMapper().registerModule(KotlinModule())
 
-    private val callbackReceiversMap: MutableMap<String, (request: MethodCallRequest) -> Any?> = mutableMapOf()
+    private val callbackReceiversMap: MutableMap<String, (request: MethodCallRequest, obj: Any?) -> Pair<Any?, Any?>> = mutableMapOf()
+
+    private val localPersistence: MutableMap<String, Any?> = mutableMapOf()
 
     fun registerCallback(funcName: String, receiver: CallbackReceiver) {
-        callbackReceiversMap += funcName to { req -> receiver(req) }
+        callbackReceiversMap += funcName to { req, _ -> receiver(req) to null } // TODO
     }
 
-    fun registerCallback(funcName: String, receiver: (request: MethodCallRequest) -> Any?) {
+    fun registerCallback(funcName: String, receiver: (request: MethodCallRequest, obj: Any?) -> Pair<Any?, Any?>) {
         callbackReceiversMap += funcName to receiver
     }
 
@@ -435,7 +451,11 @@ open class CallbackDataExchange {
         val request = mapper.readValue(callbackRequest, MethodCallRequest::class.java)
         logger.info("Received callback request $request")
         val callback = callbackReceiversMap[request.methodName] ?: TODO()
-        val returnValue = callback(request)
+        val obj = localPersistence[request.assignedID]
+        val (returnValue, createdObj) = callback(request, obj) // TODO
+        if (createdObj !== obj) {
+            localPersistence[request.assignedID] = createdObj
+        }
         val response = ChannelResponse(returnValue)
         val message = mapper.writeValueAsBytes(response)
         logger.info("Responded with ${message.toString(Charset.defaultCharset())}")
@@ -498,7 +518,7 @@ open class SimpleTextProcessDataExchange(val runner: ReceiverRunner,
     override fun registerCallback(funcName: String, receiver: CallbackReceiver) =
             runner.callbackDataExchange.registerCallback(funcName, receiver)
 
-    override fun registerCallback(funcName: String, receiver: (request: MethodCallRequest) -> Any?) =
+    override fun registerCallback(funcName: String, receiver: (request: MethodCallRequest, obj: Any?) -> Pair<Any?, Any?>) =
             runner.callbackDataExchange.registerCallback(funcName, receiver)
 
     private var prefetchedRequest: MethodCallRequest? = null

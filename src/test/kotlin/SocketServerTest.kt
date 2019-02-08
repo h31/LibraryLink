@@ -9,7 +9,7 @@ class SocketServerTest {
     fun runServer() {
         LibraryLink.runner = DummyRunner(true, "/tmp/linktest")
         val wrapper = SocketServerWrapper()
-        val addr = Tuple(listOf("127.0.0.1", 3915))
+        val addr = Tuple(listOf("127.0.0.1", 3917))
         val myHandler = Handler()
         val server = SocketServerWrapper.TCPServer(addr, myHandler)
         server.allow_reuse_address(true)

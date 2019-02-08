@@ -5,10 +5,30 @@ import logging
 import os
 import socket
 import sys
+import threading
 from collections import MutableMapping
 from threading import Thread
 from typing import Union
 from enum import Enum
+
+
+class AtomicCounter:
+    """An atomic, thread-safe incrementing counter.
+    https://gist.github.com/benhoyt/8c8a8d62debe8e5aa5340373f9c509c7
+    """
+
+    def __init__(self, initial=0):
+        """Initialize a new atomic counter to given initial value (default 0)."""
+        self.value = initial
+        self._lock = threading.Lock()
+
+    def increment(self, num=1):
+        """Atomically increment the counter by num (default 1) and return the
+        new value.
+        """
+        with self._lock:
+            self.value += num
+            return self.value - num  # TODO
 
 
 class Tag(Enum):
@@ -167,6 +187,7 @@ class RequestsReceiver():
 
     persistence = {}
     persistence_globals = globals()
+    callback_index = AtomicCounter()
 
     def delete_from_persistence(self, var_name):
         logging.info("Delete {} from persistence".format(var_name))
@@ -188,39 +209,50 @@ class RequestsReceiver():
     #         var_name = message['store']
     #         self.persistence[var_name] = local[var_name]
 
-    def callback_handler(self, template, *args, **kwargs):
+    def callback_argument(self, arg):
+        if isinstance(arg, int) or isinstance(arg, str):
+            return {"value": arg, "type": "inplace"}
+        else:
+            for key, value in RequestsReceiver.persistence.items():
+                if arg is value:
+                    logging.info("Found in the persistence!")
+                    return {"value": key, "type": "persistence"}
+            key = "callback_var" + str(RequestsReceiver.callback_index.increment())
+            logging.info("Put in the persistence as " + key)
+            RequestsReceiver.persistence[key] = arg
+            return {"value": key, "type": "persistence"}
+
+    def callback_handler(self, current_object, template, *args, **kwargs):
         request = copy.deepcopy(template)
-        req_args = []
+        request["assignedID"] = self.callback_argument(current_object)["value"]  # TODO
         for arg in args:
-            if isinstance(arg, int) or isinstance(arg, str):
-                type = "inplace"
-            else:
-                type = "persistence"
-                continue  # TODO
-            new_arg = {"value": arg, "type": type}
-            request["args"].append(new_arg)
+            request["args"].append(self.callback_argument(arg))
 
         self.framing.write(json.dumps(request).encode(), Tag.CALLBACK_REQUEST.value)
-        tag, value = self.framing.read()
-        assert tag == Tag.CALLBACK_RESPONSE.value
-        message = json.loads(value)
-        return message["return_value"]
+        while True:
+            tag, value = self.framing.read()
+            if tag == Tag.CALLBACK_RESPONSE.value:
+                message = json.loads(value)
+                return message["return_value"]
+            elif tag == Tag.REQUEST.value:
+                self.process_request(value, tag)
 
     def dynamically_inherit_class(self, import_name, base, methods):
         base_class = getattr(RequestsReceiver.persistence[import_name], base)
+
         class MyClass(base_class):
             pass
 
         new_class = MyClass
         for method_name, method_args in methods.items():
-            callback_wrapper = self.create_callback(method_name)
+            callback_wrapper = self.create_callback(base, method_name)
             setattr(new_class, method_name, callback_wrapper)
         return new_class
 
-    def create_callback(self, callback_name):
+    def create_callback(self, base_class, callback_name):
         request = {
             "methodName": callback_name,
-            "objectID": "",
+            "objectID": base_class,
             "args": [],
             "static": False,
             "doGetReturnValue": False,
@@ -228,7 +260,7 @@ class RequestsReceiver():
             "assignedID": "",
         }
 
-        return lambda *args, **kwargs: self.callback_handler(request, args, kwargs)
+        return lambda current_object, *args, **kwargs: self.callback_handler(current_object, request, args, kwargs)
 
     def receive(self):
         while True:
@@ -236,56 +268,60 @@ class RequestsReceiver():
             if message_text == "exit":
                 logging.info("Exit")
                 break
-            message = json.loads(message_text)
-            local = RequestsReceiver.persistence.copy()
-            response = {}
-            if tag == Tag.DELETE_FROM_PERSISTENCE.value and 'delete' in message and message['delete']:
-                self.delete_from_persistence(message['delete'])
-            elif tag == Tag.REQUEST.value and 'importedName' in message:
-                exec("import {};".format(message['importedName']), RequestsReceiver.persistence_globals,
-                     RequestsReceiver.persistence)
-                logging.info("Imported")
-            elif tag == Tag.REQUEST.value and 'methodName' in message:
-                command = self.prepare_command(message)
-                logging.debug("Exec: " + command)
-                logging.debug("Persistence before exec is {}".format(local))
-                exec(command, RequestsReceiver.persistence_globals, local)
-                var_name = message['assignedID']
-                RequestsReceiver.persistence[var_name] = local[var_name]
-                if 'doGetReturnValue' in message and message['doGetReturnValue']:
-                    return_value = eval(message['assignedID'], RequestsReceiver.persistence_globals, local)
-                    response["return_value"] = self.encode_return_value(return_value)
-            elif tag == Tag.REQUEST.value and 'executedCode' in message:
-                command = self.format_executed_code(message)
-                logging.debug("Exec: " + command)
-                logging.debug("Persistence before exec is {}".format(local))
-                exec(command, RequestsReceiver.persistence_globals, local)
-                var_name = message['assignedID']
-                RequestsReceiver.persistence[var_name] = local[var_name]
-                if 'doGetReturnValue' in message and message['doGetReturnValue']:
-                    return_value = eval(message['assignedID'], RequestsReceiver.persistence_globals, local)
-                    response["return_value"] = self.encode_return_value(return_value)
-            elif tag == Tag.REQUEST.value and 'automatonName' in message:
-                new_class = self.dynamically_inherit_class(message['importName'], message['automatonName'], message['methodArguments'])
-                var_name = message['assignedID']
-                RequestsReceiver.persistence[var_name] = new_class
-            elif tag == Tag.REQUEST.value and 'className' in message:
-                command = "{} = {}({})".format(message['assignedID'],
-                                               message['className'],
-                                               self.decode_args(message['args']))
-                logging.debug("Exec: " + command)
-                logging.debug("Persistence before exec is {}".format(local))
-                exec(command, RequestsReceiver.persistence_globals, local)
-                var_name = message['assignedID']
-                RequestsReceiver.persistence[var_name] = local[var_name]
-            else:
-                raise Exception(message_text)
-            logging.info("Persistence is {}".format(RequestsReceiver.persistence))
-            response_text = json.dumps(response)
-            self.framing.write(response_text.encode(), Tag.RESPONSE.value)
+            self.process_request(message_text, tag)
 
         logging.info("Exit")
         self.framing.channel.close()
+
+    def process_request(self, message_text, tag):
+        message = json.loads(message_text)
+        local = RequestsReceiver.persistence.copy()
+        response = {}
+        if tag == Tag.DELETE_FROM_PERSISTENCE.value and 'delete' in message and message['delete']:
+            self.delete_from_persistence(message['delete'])
+        elif tag == Tag.REQUEST.value and 'importedName' in message:
+            exec("import {};".format(message['importedName']), RequestsReceiver.persistence_globals,
+                 RequestsReceiver.persistence)
+            logging.info("Imported")
+        elif tag == Tag.REQUEST.value and 'methodName' in message:
+            command = self.prepare_command(message)
+            logging.debug("Exec: " + command)
+            logging.debug("Persistence before exec is {}".format(local))
+            exec(command, RequestsReceiver.persistence_globals, local)
+            var_name = message['assignedID']
+            RequestsReceiver.persistence[var_name] = local[var_name]
+            if 'doGetReturnValue' in message and message['doGetReturnValue']:
+                return_value = eval(message['assignedID'], RequestsReceiver.persistence_globals, local)
+                response["return_value"] = self.encode_return_value(return_value)
+        elif tag == Tag.REQUEST.value and 'executedCode' in message:
+            command = self.format_executed_code(message)
+            logging.debug("Exec: " + command)
+            logging.debug("Persistence before exec is {}".format(local))
+            exec(command, RequestsReceiver.persistence_globals, local)
+            var_name = message['assignedID']
+            RequestsReceiver.persistence[var_name] = local[var_name]
+            if 'doGetReturnValue' in message and message['doGetReturnValue']:
+                return_value = eval(message['assignedID'], RequestsReceiver.persistence_globals, local)
+                response["return_value"] = self.encode_return_value(return_value)
+        elif tag == Tag.REQUEST.value and 'automatonName' in message:
+            new_class = self.dynamically_inherit_class(message['importName'], message['automatonName'],
+                                                       message['methodArguments'])
+            var_name = message['assignedID']
+            RequestsReceiver.persistence[var_name] = new_class
+        elif tag == Tag.REQUEST.value and 'className' in message:
+            command = "{} = {}({})".format(message['assignedID'],
+                                           message['className'],
+                                           self.decode_args(message['args']))
+            logging.debug("Exec: " + command)
+            logging.debug("Persistence before exec is {}".format(local))
+            exec(command, RequestsReceiver.persistence_globals, local)
+            var_name = message['assignedID']
+            RequestsReceiver.persistence[var_name] = local[var_name]
+        else:
+            raise Exception(message_text)
+        logging.info("Persistence is {}".format(RequestsReceiver.persistence))
+        response_text = json.dumps(response)
+        self.framing.write(response_text.encode(), Tag.RESPONSE.value)
 
 
 if __name__ == "__main__":

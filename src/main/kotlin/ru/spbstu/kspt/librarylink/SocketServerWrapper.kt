@@ -3,15 +3,24 @@ package ru.spbstu.kspt.librarylink
 class SocketServerWrapper(private val exchange: ProcessDataExchange = LibraryLink.exchange) : ProcessDataExchange by exchange {
     init {
         makeRequest(ImportRequest("socketserver"))
+        exchange.registerCallback("handle") { req, obj ->
+            val self = obj ?: BaseRequestHandler(req.objectID)
+            val result = (self as BaseRequestHandler).handle()
+            Pair(result, self)
+        }
     }
 
-    open class BaseRequestHandler(private val exchange: ProcessDataExchange = LibraryLink.exchange) : Handle() {
+    open class BaseRequestHandler(existingID: String? = null, private val exchange: ProcessDataExchange = LibraryLink.exchange) : Handle() {
+        var obtainedID = false
+
         init {
-            val classID = exchange.makeRequest(DynamicInheritRequest(importName = "socketserver",
-                    automatonName = "BaseRequestHandler", methodArguments = mapOf("handle" to listOf())))
-//            val resp = exchange.makeRequest(ConstructorRequest(className = classID.assignedID))
-            registerReference(classID.assignedID)
-            exchange.registerCallback("handle") { (_) -> handle() }
+            if (existingID == null) {
+                // TODO
+//                val resp = exchange.makeRequest(ConstructorRequest(className = classID.assignedID))
+//                registerReference(classID.assignedID)
+            } else {
+                registerReference(existingID)
+            }
         }
 
         fun request(): Request {
@@ -30,7 +39,7 @@ class SocketServerWrapper(private val exchange: ProcessDataExchange = LibraryLin
         }
     }
 
-    class TCPServer(server_addr: Tuple, handler: BaseRequestHandler, private val exchange: ProcessDataExchange = LibraryLink.exchange) : Handle() {
+    class TCPServer(server_addr: Tuple, handler: Class<BaseRequestHandler>, private val exchange: ProcessDataExchange = LibraryLink.exchange) : Handle() {
         init {
             val resp = exchange.makeRequest(ConstructorRequest(
                     className = "socketserver.TCPServer",
