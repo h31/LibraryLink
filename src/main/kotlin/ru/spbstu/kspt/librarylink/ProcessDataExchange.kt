@@ -455,10 +455,13 @@ object HandleReferenceQueue {
 
 class HandlePhantomReference<T>(referent: T, q: ReferenceQueue<T>, val assignedID: String) : PhantomReference<T>(referent, q)
 
-interface ProcessDataExchange {
-    fun makeRequest(request: Request): ProcessExchangeResponse
+interface CallbackRegistrable {
     fun registerCallback(funcName: String, receiver: CallbackReceiver)
     fun registerCallback(funcName: String, receiver: (request: MethodCallRequest, obj: Any?) -> Pair<Any?, Any?>)
+}
+
+interface ProcessDataExchange : CallbackRegistrable {
+    fun makeRequest(request: Request): ProcessExchangeResponse
     fun registerPrefetch(request: MethodCallRequest)
 }
 
@@ -466,7 +469,7 @@ interface CallbackReceiver {
     operator fun invoke(request: MethodCallRequest): Any?
 }
 
-open class CallbackDataExchange {
+open class CallbackDataExchange : CallbackRegistrable {
     private val logger = LoggerFactory.getLogger(CallbackDataExchange::class.java)
 
     private val mapper = ObjectMapper().registerModule(KotlinModule())
@@ -475,11 +478,11 @@ open class CallbackDataExchange {
 
     private val localPersistence: MutableMap<String, Any?> = mutableMapOf()
 
-    fun registerCallback(funcName: String, receiver: CallbackReceiver) {
+    override fun registerCallback(funcName: String, receiver: CallbackReceiver) {
         callbackReceiversMap += funcName to { req, _ -> receiver(req) to null } // TODO
     }
 
-    fun registerCallback(funcName: String, receiver: (request: MethodCallRequest, obj: Any?) -> Pair<Any?, Any?>) {
+    override fun registerCallback(funcName: String, receiver: (request: MethodCallRequest, obj: Any?) -> Pair<Any?, Any?>) {
         callbackReceiversMap += funcName to receiver
     }
 
@@ -500,7 +503,8 @@ open class CallbackDataExchange {
 }
 
 open class SimpleTextProcessDataExchange(val runner: ReceiverRunner,
-                                         val requestGenerator: RequestGenerator = runner.requestGenerator) : ProcessDataExchange, RequestGenerator by requestGenerator {
+                                         val requestGenerator: RequestGenerator = runner.requestGenerator) : ProcessDataExchange,
+        RequestGenerator by requestGenerator, CallbackRegistrable by runner.callbackDataExchange {
     val mapper = ObjectMapper().registerModule(KotlinModule())
 
     val logger = LoggerFactory.getLogger(ProcessDataExchange::class.java)
@@ -550,12 +554,6 @@ open class SimpleTextProcessDataExchange(val runner: ReceiverRunner,
         makeChannelRequest(message)
         logger.info("Wrote $description")
     }
-
-    override fun registerCallback(funcName: String, receiver: CallbackReceiver) =
-            runner.callbackDataExchange.registerCallback(funcName, receiver)
-
-    override fun registerCallback(funcName: String, receiver: (request: MethodCallRequest, obj: Any?) -> Pair<Any?, Any?>) =
-            runner.callbackDataExchange.registerCallback(funcName, receiver)
 
     private var prefetchedRequest: MethodCallRequest? = null
 
