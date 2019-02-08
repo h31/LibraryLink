@@ -338,19 +338,13 @@ class Argument {
         this.key = key
     }
 
-    @JvmOverloads constructor(obj: Int, key: String? = null) {
+    @JvmOverloads constructor(obj: Number, key: String? = null) {
         this.type = "inplace"
         this.value = obj
         this.key = key
     }
 
     @JvmOverloads constructor(obj: Boolean, key: String? = null) {
-        this.type = "inplace"
-        this.value = obj
-        this.key = key
-    }
-
-    @JvmOverloads constructor(obj: Byte, key: String? = null) {
         this.type = "inplace"
         this.value = obj
         this.key = key
