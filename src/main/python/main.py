@@ -179,6 +179,13 @@ class RequestsReceiver():
         command = message['executedCode'].format(*tuple(args))
         return message['assignedID'] + " = " + command
 
+    def execute_command(self, command):
+        logging.debug("Persistence before exec is {}".format(RequestsReceiver.persistence))  # TODO: Thread safety?
+        logging.debug("Exec: " + command)
+        exec(command, RequestsReceiver.persistence_globals, RequestsReceiver.persistence)
+        # var_name = message['assignedID']
+        # RequestsReceiver.persistence[var_name] = local[var_name]
+
     def __init__(self, channel: UnixSocketServerChannel):
         self.channel = channel
         self.framing = SimpleBinaryFraming(self.channel)
@@ -272,36 +279,31 @@ class RequestsReceiver():
         logging.info("Exit")
         self.framing.channel.close()
 
+    def get_return_value(self, var_name):
+        # return_value = eval(message['assignedID'], RequestsReceiver.persistence_globals, local)
+        return_value = RequestsReceiver.persistence[var_name]
+        return self.encode_return_value(return_value)
+
     def process_request(self, message_text, tag):
         message = json.loads(message_text)
-        local = RequestsReceiver.persistence.copy()
         response = {}
         if tag == Tag.DELETE_FROM_PERSISTENCE.value and 'delete' in message and message['delete']:
             self.delete_from_persistence(message['delete'])
         elif tag == Tag.REQUEST.value and 'importedName' in message:
-            exec("import {};".format(message['importedName']), RequestsReceiver.persistence_globals,
-                 RequestsReceiver.persistence)
+            self.execute_command("import {};".format(message['importedName']))
             logging.info("Imported")
         elif tag == Tag.REQUEST.value and 'methodName' in message:
             command = self.prepare_command(message)
-            logging.debug("Exec: " + command)
-            logging.debug("Persistence before exec is {}".format(local))
-            exec(command, RequestsReceiver.persistence_globals, local)
-            var_name = message['assignedID']
-            RequestsReceiver.persistence[var_name] = local[var_name]
+            self.execute_command(command)
             if 'doGetReturnValue' in message and message['doGetReturnValue']:
-                return_value = eval(message['assignedID'], RequestsReceiver.persistence_globals, local)
-                response["return_value"] = self.encode_return_value(return_value)
+                var_name = message['assignedID']
+                response["return_value"] = self.get_return_value(var_name)
         elif tag == Tag.REQUEST.value and 'executedCode' in message:
             command = self.format_executed_code(message)
-            logging.debug("Exec: " + command)
-            logging.debug("Persistence before exec is {}".format(local))
-            exec(command, RequestsReceiver.persistence_globals, local)
-            var_name = message['assignedID']
-            RequestsReceiver.persistence[var_name] = local[var_name]
+            self.execute_command(command)
             if 'doGetReturnValue' in message and message['doGetReturnValue']:
-                return_value = eval(message['assignedID'], RequestsReceiver.persistence_globals, local)
-                response["return_value"] = self.encode_return_value(return_value)
+                var_name = message['assignedID']
+                response["return_value"] = self.get_return_value(var_name)
         elif tag == Tag.REQUEST.value and 'automatonName' in message:
             new_class = self.dynamically_inherit_class(message['importName'], message['automatonName'],
                                                        message['inherits'], message['methodArguments'])
@@ -311,11 +313,7 @@ class RequestsReceiver():
             command = "{} = {}({})".format(message['assignedID'],
                                            message['className'],
                                            self.decode_args(message['args']))
-            logging.debug("Exec: " + command)
-            logging.debug("Persistence before exec is {}".format(local))
-            exec(command, RequestsReceiver.persistence_globals, local)
-            var_name = message['assignedID']
-            RequestsReceiver.persistence[var_name] = local[var_name]
+            self.execute_command(command)
         else:
             raise Exception(message_text)
         logging.info("Persistence is {}".format(RequestsReceiver.persistence))
