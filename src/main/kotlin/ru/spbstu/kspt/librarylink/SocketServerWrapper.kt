@@ -90,6 +90,14 @@ class SocketServerWrapper(private val exchange: ProcessDataExchange = LibraryLin
     }
 
     class Bytes(private val exchange: ProcessDataExchange = LibraryLink.exchange) : Handle() {
+        constructor(source: String) : this() {
+            val resp = exchange.makeRequest(MethodCallRequest(
+                    methodName = "bytes",
+                    args = listOf(Argument(source), Argument("utf-8"))
+            ))
+            registerReference(resp.assignedID)
+        }
+
         operator fun get(i: Int): Byte {
             val resp = exchange.makeRequest(EvalRequest(
                     executedCode = "{}[{}]",

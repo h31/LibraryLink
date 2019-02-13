@@ -207,6 +207,7 @@ open class SimpleBinaryFraming(baseInputStream: InputStream, baseOutputStream: O
     override var buffering: Boolean = false
         set(value) {
             field = value
+            write(if (value) Tag.START_BUFFERING else Tag.STOP_BUFFERING, ByteArray(0))
             outputStream.flush()
         }
 }
@@ -217,10 +218,11 @@ fun ByteArray.toInt(): Int = ByteBuffer.wrap(this).order(ByteOrder.LITTLE_ENDIAN
 
 interface RequestGenerator {
     fun sendRequest(requestMessage: ByteArray): ByteArray
+    val framing: Framing
 }
 
 open class BlockingRequestGenerator(private val channelManager: ForeignChannelManager, val callbackDataExchange: CallbackDataExchange) : RequestGenerator, ForeignChannelManager by channelManager {
-    val framing by lazy {
+    override val framing by lazy {
         val channel = getBidirectionalChannel()
         SimpleBinaryFraming(channel.inputStream, channel.outputStream)
     }
@@ -250,6 +252,9 @@ open class ThreadLocalRequestGenerator(private val channelManager: ForeignChanne
         val channel = channelManager.getBidirectionalChannel(channelID)
         SimpleBinaryFraming(channel.inputStream, channel.outputStream)
     }
+
+    override val framing: Framing
+        get() = localFraming.get()
 
     override fun sendRequest(requestMessage: ByteArray): ByteArray {
         val framing = localFraming.get()

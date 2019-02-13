@@ -89,7 +89,8 @@ class UnixSocketServerChannel:
         return self.socket.recv(length)
 
     def flush(self):
-        print("Not needed")
+        pass
+        # print("Not needed")
         # self.socket.flush()
 
     def close(self):
@@ -182,7 +183,11 @@ class RequestsReceiver():
     def execute_command(self, command):
         logging.debug("Persistence before exec is {}".format(RequestsReceiver.persistence))  # TODO: Thread safety?
         logging.debug("Exec: " + command)
-        exec(command, RequestsReceiver.persistence_globals, RequestsReceiver.persistence)
+        try:
+            exec(command, RequestsReceiver.persistence_globals, RequestsReceiver.persistence)
+        except BaseException as e:
+            return e
+        return None
         # var_name = message['assignedID']
         # RequestsReceiver.persistence[var_name] = local[var_name]
 
@@ -294,14 +299,18 @@ class RequestsReceiver():
             logging.info("Imported")
         elif tag == Tag.REQUEST.value and 'methodName' in message:
             command = self.prepare_command(message)
-            self.execute_command(command)
-            if 'doGetReturnValue' in message and message['doGetReturnValue']:
+            exception = self.execute_command(command)
+            if exception is not None:
+                response['exceptionMessage'] = repr(exception)
+            elif 'doGetReturnValue' in message and message['doGetReturnValue']:
                 var_name = message['assignedID']
                 response["return_value"] = self.get_return_value(var_name)
         elif tag == Tag.REQUEST.value and 'executedCode' in message:
             command = self.format_executed_code(message)
-            self.execute_command(command)
-            if 'doGetReturnValue' in message and message['doGetReturnValue']:
+            exception = self.execute_command(command)
+            if exception is not None:
+                response['exceptionMessage'] = repr(exception)
+            elif 'doGetReturnValue' in message and message['doGetReturnValue']:
                 var_name = message['assignedID']
                 response["return_value"] = self.get_return_value(var_name)
         elif tag == Tag.REQUEST.value and 'automatonName' in message:
@@ -322,7 +331,7 @@ class RequestsReceiver():
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.ERROR)
     if len(sys.argv) < 2:
         logging.critical("FIFO base path required, cannot proceed")
         exit(1)
