@@ -3,11 +3,6 @@ package ru.spbstu.kspt.librarylink
 class SocketServerWrapper(private val exchange: ProcessDataExchange = LibraryLink.exchange) : ProcessDataExchange by exchange {
     init {
         makeRequest(ImportRequest("socketserver"))
-        exchange.registerCallback("handle") { req, obj ->
-            val self = obj ?: BaseRequestHandler(req.objectID)
-            val result = (self as BaseRequestHandler).handle()
-            Pair(result, self)
-        }
     }
 
     open class BaseRequestHandler(existingID: String? = null, private val exchange: ProcessDataExchange = LibraryLink.exchange) : Handle() {
@@ -18,6 +13,9 @@ class SocketServerWrapper(private val exchange: ProcessDataExchange = LibraryLin
                 // TODO
 //                val resp = exchange.makeRequest(ConstructorRequest(className = classID.assignedID))
 //                registerReference(classID.assignedID)
+                exchange.registerCallback("handle") { req, obj ->
+                    (obj as BaseRequestHandler).handle()
+                }
             } else {
                 registerReference(existingID)
             }
@@ -39,17 +37,31 @@ class SocketServerWrapper(private val exchange: ProcessDataExchange = LibraryLin
         }
     }
 
-    class TCPServer(server_addr: Tuple, handler: Class<out BaseRequestHandler>, private val exchange: ProcessDataExchange = LibraryLink.exchange) : Handle() {
+    class TCPServer(server_addr: Tuple, handler: ClassDecl<out BaseRequestHandler>, bind_and_activate: Boolean = true, private val exchange: ProcessDataExchange = LibraryLink.exchange) : Handle() {
         init {
             val resp = exchange.makeRequest(ConstructorRequest(
                     className = "socketserver.TCPServer",
-                    args = listOf(Argument(server_addr), Argument(handler))))
+                    args = listOf(Argument(server_addr), Argument(handler), Argument(bind_and_activate, key = "bind_and_activate"))))
             registerReference(resp.assignedID)
         }
 
         fun allow_reuse_address(value: Boolean) {
             val response = exchange.makeRequest(EvalRequest(executedCode = "{}.allow_reuse_address = {}",
-                    doGetReturnValue = true, args = listOf(Argument(this), Argument(value))))
+                    doGetReturnValue = false, args = listOf(Argument(this), Argument(value))))
+        }
+
+        fun server_bind() {
+            exchange.makeRequest(MethodCallRequest(
+                    methodName = "server_bind",
+                    objectID = assignedID
+            ))
+        }
+
+        fun server_activate() {
+            exchange.makeRequest(MethodCallRequest(
+                    methodName = "server_activate",
+                    objectID = assignedID
+            ))
         }
 
         fun serve_forever() {
@@ -84,7 +96,7 @@ class SocketServerWrapper(private val exchange: ProcessDataExchange = LibraryLin
                     doGetReturnValue = true,
                     args = listOf(Argument(this), Argument(i))
             ))
-            return resp.returnValue as Byte
+            return (resp.returnValue as Int).toByte()
         }
 
         operator fun set(i: Int, value: Byte) {
@@ -97,16 +109,27 @@ class SocketServerWrapper(private val exchange: ProcessDataExchange = LibraryLin
     }
 }
 
+fun len(handle: Handle): Int {
+    val resp = LibraryLink.exchange.makeRequest(MethodCallRequest(
+            methodName = "len",
+            args = listOf(Argument(handle)),
+            doGetReturnValue = true
+    ))
+    return resp.returnValue as Int
+}
+
 class Tuple(values: List<Any?>, private val exchange: ProcessDataExchange = LibraryLink.exchange) : Handle() {
     init {
         val resp = exchange.makeRequest(EvalRequest(
                 executedCode = generateSequence { "{}" }.take(values.size).joinToString(prefix = "(", postfix = ")"),
-                args = values.map { when (it) {
-                    is Int -> Argument(it)
-                    is String -> Argument(it)
-                    is Handle -> Argument(it)
-                    else -> TODO()
-                } },
+                args = values.map {
+                    when (it) {
+                        is Int -> Argument(it)
+                        is String -> Argument(it)
+                        is Handle -> Argument(it)
+                        else -> TODO()
+                    }
+                },
                 doGetReturnValue = true))
         registerReference(resp.assignedID)
     }

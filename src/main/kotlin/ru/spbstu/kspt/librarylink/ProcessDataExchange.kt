@@ -1,5 +1,6 @@
 package ru.spbstu.kspt.librarylink
 
+import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.fasterxml.jackson.databind.DatabindContext
@@ -302,6 +303,7 @@ data class EvalRequest(
 data class DynamicInheritRequest(
         val importName: String,
         val automatonName: String,
+        val inherits: String,
         val methodArguments: Map<String, List<Argument>>,
         override val assignedID: String = AssignedIDCounter.getNextID()
 ) : Request, Identifiable
@@ -353,6 +355,15 @@ class Argument {
     @JvmOverloads constructor(obj: String, key: String? = null) {
         this.type = "inplace"
         this.value = obj
+        this.key = key
+    }
+
+    @JsonCreator
+    constructor(@JsonProperty("type") type: String,
+                @JsonProperty("value") value: Any?,
+                @JsonProperty("key") key: String?) {
+        this.type = type
+        this.value = value
         this.key = key
     }
 }
@@ -427,11 +438,18 @@ open class Handle() {
     }
 }
 
-open class ClassDecl(clazz: Class<Handle>, private val exchange: ProcessDataExchange = LibraryLink.exchange) : Handle() {
+open class ClassDecl<T>(clazz: Class<T>, exchange: ProcessDataExchange = LibraryLink.exchange) : Handle() {
     init {
         val classID = exchange.makeRequest(DynamicInheritRequest(importName = "socketserver",
-                automatonName = "BaseRequestHandler", methodArguments = mapOf("handle" to listOf())))
+                automatonName = clazz.simpleName, inherits = clazz.superclass.simpleName,
+                methodArguments = mapOf("handle" to listOf())))
         registerReference(classID.assignedID)
+
+        exchange.registerConstructorCallback(clazz.simpleName) { req ->
+            val instance = clazz.constructors.first { !it.isSynthetic }.newInstance()
+            (instance as Handle).registerReference(req.assignedID)
+            instance
+        } // TODO: Args
     }
 }
 
@@ -451,7 +469,8 @@ class HandlePhantomReference<T>(referent: T, q: ReferenceQueue<T>, val assignedI
 
 interface CallbackRegistrable {
     fun registerCallback(funcName: String, receiver: CallbackReceiver)
-    fun registerCallback(funcName: String, receiver: (request: MethodCallRequest, obj: Any?) -> Pair<Any?, Any?>)
+    fun registerCallback(funcName: String, receiver: (request: MethodCallRequest, obj: Any) -> Any?)
+    fun registerConstructorCallback(className: String, receiver: (request: MethodCallRequest) -> Any?)
 }
 
 interface ProcessDataExchange : CallbackRegistrable {
@@ -468,7 +487,9 @@ open class CallbackDataExchange : CallbackRegistrable {
 
     private val mapper = ObjectMapper().registerModule(KotlinModule())
 
-    private val callbackReceiversMap: MutableMap<String, (request: MethodCallRequest, obj: Any?) -> Pair<Any?, Any?>> = mutableMapOf()
+    private val callbackReceiversMap: MutableMap<String, (request: MethodCallRequest, obj: Any) -> Any?> = mutableMapOf()
+
+    private val callbackConstructorsMap: MutableMap<String, (request: MethodCallRequest) -> Any?> = mutableMapOf()
 
     private val localPersistence: MutableMap<String, Any?> = mutableMapOf()
 
@@ -476,19 +497,24 @@ open class CallbackDataExchange : CallbackRegistrable {
         callbackReceiversMap += funcName to { req, _ -> receiver(req) to null } // TODO
     }
 
-    override fun registerCallback(funcName: String, receiver: (request: MethodCallRequest, obj: Any?) -> Pair<Any?, Any?>) {
+    override fun registerCallback(funcName: String, receiver: (request: MethodCallRequest, obj: Any) -> Any?) {
         callbackReceiversMap += funcName to receiver
+    }
+
+    override fun registerConstructorCallback(className: String, receiver: (request: MethodCallRequest) -> Any?) {
+        callbackConstructorsMap += className to receiver
     }
 
     fun handleRequest(callbackRequest: ByteArray): ByteArray {
         val request = mapper.readValue(callbackRequest, MethodCallRequest::class.java)
         logger.info("Received callback request $request")
-        val callback = callbackReceiversMap[request.methodName] ?: TODO()
-        val obj = localPersistence[request.assignedID]
-        val (returnValue, createdObj) = callback(request, obj) // TODO
-        if (createdObj !== obj) {
-            localPersistence[request.assignedID] = createdObj
+        val existingObject = localPersistence[request.assignedID]
+        val obj = existingObject ?: callbackConstructorsMap[request.objectID]?.invoke(request) ?: TODO() // TODO: Too Dirty
+        if (existingObject == null) {
+            localPersistence[request.assignedID] = obj
         }
+        val callback = callbackReceiversMap[request.methodName] ?: TODO()
+        val returnValue = callback(request, obj) // TODO
         val response = ChannelResponse(returnValue)
         val message = mapper.writeValueAsBytes(response)
         logger.info("Responded with ${message.toString(Charset.defaultCharset())}")

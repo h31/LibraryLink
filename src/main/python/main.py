@@ -137,18 +137,17 @@ class RequestsReceiver():
     @staticmethod
     def decode_arg(arg):
         arg_value = arg['value']
-        decoded_arg = ""
         if arg['type'] == "inplace" and isinstance(arg_value, str):
-            decoded_arg += '"' + arg_value + '"'
+            decoded_arg = '"' + arg_value + '"'
         elif arg['type'] == "inplace" and isinstance(arg_value, int):
-            decoded_arg += str(arg_value)
+            decoded_arg = str(arg_value)
         elif arg['type'] == "persistence":
-            decoded_arg += arg_value
+            decoded_arg = arg_value
         else:
             raise Exception()
 
         if arg['key']:
-            decoded_arg = "{} = ".format(arg['key'])
+            decoded_arg = "{} = {}".format(arg['key'], decoded_arg)
         return decoded_arg
 
     @staticmethod
@@ -211,16 +210,16 @@ class RequestsReceiver():
 
     def callback_argument(self, arg):
         if isinstance(arg, int) or isinstance(arg, str):
-            return {"value": arg, "type": "inplace"}
+            return {"value": arg, "type": "inplace", "key": None}
         else:
             for key, value in RequestsReceiver.persistence.items():
                 if arg is value:
                     logging.info("Found in the persistence!")
-                    return {"value": key, "type": "persistence"}
+                    return {"value": key, "type": "persistence", "key": None}
             key = "callback_var" + str(RequestsReceiver.callback_index.increment())
             logging.info("Put in the persistence as " + key)
             RequestsReceiver.persistence[key] = arg
-            return {"value": key, "type": "persistence"}
+            return {"value": key, "type": "persistence", "key": None}
 
     def callback_handler(self, current_object, template, *args, **kwargs):
         request = copy.deepcopy(template)
@@ -237,7 +236,7 @@ class RequestsReceiver():
             elif tag == Tag.REQUEST.value:
                 self.process_request(value, tag)
 
-    def dynamically_inherit_class(self, import_name, base, methods):
+    def dynamically_inherit_class(self, import_name, class_name, base, methods):
         base_class = getattr(RequestsReceiver.persistence[import_name], base)
 
         class MyClass(base_class):
@@ -245,14 +244,14 @@ class RequestsReceiver():
 
         new_class = MyClass
         for method_name, method_args in methods.items():
-            callback_wrapper = self.create_callback(base, method_name)
+            callback_wrapper = self.create_callback(class_name, method_name)
             setattr(new_class, method_name, callback_wrapper)
         return new_class
 
-    def create_callback(self, base_class, callback_name):
+    def create_callback(self, class_name, callback_name):
         request = {
             "methodName": callback_name,
-            "objectID": base_class,
+            "objectID": class_name,
             "args": [],
             "static": False,
             "doGetReturnValue": False,
@@ -305,7 +304,7 @@ class RequestsReceiver():
                 response["return_value"] = self.encode_return_value(return_value)
         elif tag == Tag.REQUEST.value and 'automatonName' in message:
             new_class = self.dynamically_inherit_class(message['importName'], message['automatonName'],
-                                                       message['methodArguments'])
+                                                       message['inherits'], message['methodArguments'])
             var_name = message['assignedID']
             RequestsReceiver.persistence[var_name] = new_class
         elif tag == Tag.REQUEST.value and 'className' in message:
