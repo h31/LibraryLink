@@ -301,7 +301,7 @@ class RequestsReceiver():
             command = self.prepare_command(message)
             exception = self.execute_command(command)
             if exception is not None:
-                response['exceptionMessage'] = repr(exception)
+                response['exception_message'] = repr(exception)
             elif 'doGetReturnValue' in message and message['doGetReturnValue']:
                 var_name = message['assignedID']
                 response["return_value"] = self.get_return_value(var_name)
@@ -309,7 +309,7 @@ class RequestsReceiver():
             command = self.format_executed_code(message)
             exception = self.execute_command(command)
             if exception is not None:
-                response['exceptionMessage'] = repr(exception)
+                response['exception_message'] = repr(exception)
             elif 'doGetReturnValue' in message and message['doGetReturnValue']:
                 var_name = message['assignedID']
                 response["return_value"] = self.get_return_value(var_name)
@@ -331,7 +331,7 @@ class RequestsReceiver():
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.ERROR)
+    logging.basicConfig(level=logging.DEBUG)
     if len(sys.argv) < 2:
         logging.critical("FIFO base path required, cannot proceed")
         exit(1)

@@ -13,6 +13,7 @@ import jnr.unixsocket.UnixSocketAddress
 import jnr.unixsocket.UnixSocketChannel
 import org.slf4j.LoggerFactory
 import java.io.*
+import java.lang.Exception
 import java.lang.ref.PhantomReference
 import java.lang.ref.ReferenceQueue
 import java.nio.ByteBuffer
@@ -424,7 +425,10 @@ object AssignedIDCounter {
     fun getNextID() = "var" + AssignedIDCounter.counter.getAndIncrement().toString()
 }
 
-class ChannelResponse(@JsonProperty("return_value") val returnValue: Any? = null)
+class ChannelResponse(
+        @JsonProperty("return_value") val returnValue: Any? = null,
+        @JsonProperty("exception_message") val exceptionMessage: String? = null
+)
 
 data class ProcessExchangeResponse(val returnValue: Any?,
                                    val assignedID: String) // TODO
@@ -436,10 +440,11 @@ open class Handle() {
         registerReference(assignedID)
     }
 
-    fun registerReference(assignedID: String) {
+    fun registerReference(assignedID: String): Handle {
         this.assignedID = assignedID
         val ref = HandlePhantomReference(this, HandleReferenceQueue.refqueue, assignedID)
         HandleReferenceQueue.references += ref
+        return this
     }
 }
 
@@ -527,6 +532,8 @@ open class CallbackDataExchange : CallbackRegistrable {
     }
 }
 
+class LibraryLinkException(message: String) : Exception(message)
+
 open class SimpleTextProcessDataExchange(val runner: ReceiverRunner,
                                          val requestGenerator: RequestGenerator = runner.requestGenerator) : ProcessDataExchange,
         RequestGenerator by requestGenerator, CallbackRegistrable by runner.callbackDataExchange {
@@ -562,8 +569,11 @@ open class SimpleTextProcessDataExchange(val runner: ReceiverRunner,
 
     override fun makeRequest(request: Request): ProcessExchangeResponse {
         val message = mapper.writeValueAsString(request)
-        val channelResponse = makeChannelRequest(message)
         logger.info("Wrote $request")
+        val channelResponse = makeChannelRequest(message)
+        if (channelResponse.exceptionMessage != null) {
+            throw LibraryLinkException(channelResponse.exceptionMessage)
+        }
         val response = ProcessExchangeResponse(returnValue = channelResponse.returnValue, assignedID = if (request is Identifiable) request.assignedID else "") // TODO
         logger.info("Received $response")
         return response
