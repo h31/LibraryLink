@@ -3,7 +3,7 @@ package main
 import (
 	"bufio"
 	"encoding/binary"
-	"encoding/json"
+	"exchange"
 	"fmt"
 	"github.com/dave/jennifer/jen"
 	"io/ioutil"
@@ -24,6 +24,17 @@ type Request struct {
 	Static           bool
 }
 
+const (
+	REQUEST                 = 0
+	RESPONSE                = 1
+	CALLBACK_REQUEST        = 2
+	CALLBACK_RESPONSE       = 3
+	OPEN_CHANNEL            = 4
+	DELETE_FROM_PERSISTENCE = 5
+	START_BUFFERING         = 6
+	STOP_BUFFERING          = 7
+)
+
 type Argument struct {
 	Type  string
 	Value interface{}
@@ -31,7 +42,7 @@ type Argument struct {
 }
 
 type ChannelResponse struct {
-	ReturnValue *string `json:"return_value,omitempty"`
+	ReturnValue interface{} `json:"return_value,omitempty"`
 }
 
 var persistence map[string]interface{} = make(map[string]interface{})
@@ -87,7 +98,6 @@ func readNumBytes(reader *bufio.Reader, num int) ([]byte, error) {
 	buffer := make([]byte, num)
 	marker := 0
 	for marker < num {
-		println(len(buffer[marker:]))
 		receivedDataLength, err := reader.Read(buffer[marker:])
 		if err != nil {
 			return buffer, err
@@ -97,9 +107,36 @@ func readNumBytes(reader *bufio.Reader, num int) ([]byte, error) {
 	return buffer, nil
 }
 
+func readProtobuf(request *Request, data []byte) {
+	rawReq := &exchange.MethodCallRequest{}
+	err := rawReq.Unmarshal(data)
+	if err != nil {
+		println(err.Error())
+		return // TODO
+	}
+	request.MethodName = *rawReq.MethodName
+	request.ObjectID = *rawReq.ObjectID
+	request.Args = make([]Argument, len(rawReq.Args))
+	for i, arg := range rawReq.Args {
+		switch *arg.Type {
+		case exchange.MethodCallRequest_PERSISTENCE:
+			request.Args[i].Type = "persistence"
+		case exchange.MethodCallRequest_INPLACE:
+			request.Args[i].Type = "inplace"
+		}
+		request.Args[i].Value = arg.Value
+		request.Args[i].Key = arg.Key
+	}
+	request.Static = *rawReq.Static
+	request.DoGetReturnValue = *rawReq.DoGetReturnValue
+	request.Property = *rawReq.Property
+	request.AssignedID = *rawReq.AssignedID
+}
+
 func handler(conn net.Conn) {
 	bufferedReader := bufio.NewReaderSize(conn, 16*1024)
 	bufferedWriter := bufio.NewWriterSize(conn, 16*1024)
+	var buffering = false
 	for {
 		requestLengthBinary, err := readNumBytes(bufferedReader, 4)
 		if err != nil {
@@ -108,20 +145,40 @@ func handler(conn net.Conn) {
 		reqLen := int(binary.LittleEndian.Uint32(requestLengthBinary))
 		log.Println("Length: ", reqLen)
 
-		readNumBytes(bufferedReader, 4) // TODO: Tag
+		tagBinary, err := readNumBytes(bufferedReader, 4) // TODO: Tag
+		tag := int(binary.LittleEndian.Uint32(tagBinary))
+		switch tag {
+		case START_BUFFERING:
+			log.Println("Buffering enabled")
+			buffering = true
+			continue
+		case STOP_BUFFERING:
+			log.Println("Buffering disabled")
+			buffering = false
+			bufferedWriter.Flush() // TODO
+			continue
+		case REQUEST:
+			log.Println("Actual request")
+		}
 
 		payload, err := readNumBytes(bufferedReader, reqLen)
 		log.Println("Payload: ", payload)
 
 		var req Request
-		err = json.Unmarshal(payload, &req)
-		if err != nil {
-			log.Fatal("Unmarshal error: ", err)
-		}
+		readProtobuf(&req, payload)
+		//err = json.Unmarshal(payload, &req)
+		//if err != nil {
+		//	log.Fatal("Unmarshal error: ", err)
+		//}
 
-		response := process(req)
-
-		responseData, err := json.Marshal(response)
+		//response := process(req)
+		//response := ChannelResponse{ReturnValue: 0}
+		//
+		//responseData, err := json.Marshal(response)
+		//responseData := []byte("{\"return_value\": 0}")
+		data := exchange.ChannelResponse_ReturnValueInt{ReturnValueInt: 0}
+		resp := exchange.ChannelResponse{ReturnValue: &data}
+		responseData, err := resp.Marshal()
 
 		encoded := make([]byte, 4)
 		binary.LittleEndian.PutUint32(encoded, uint32(len(responseData)))
@@ -134,7 +191,9 @@ func handler(conn net.Conn) {
 		if err != nil {
 			log.Fatal("Writing client error: ", err)
 		}
-		bufferedWriter.Flush()
+		if !buffering {
+			bufferedWriter.Flush()
+		}
 	}
 }
 

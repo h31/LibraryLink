@@ -2,18 +2,12 @@ package ru.spbstu.kspt.librarylink
 
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.fasterxml.jackson.annotation.JsonTypeInfo
-import com.fasterxml.jackson.databind.DatabindContext
-import com.fasterxml.jackson.databind.JavaType
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver
-import com.fasterxml.jackson.databind.jsontype.impl.TypeIdResolverBase
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import jnr.unixsocket.UnixSocketAddress
 import jnr.unixsocket.UnixSocketChannel
 import org.slf4j.LoggerFactory
 import java.io.*
-import java.lang.Exception
 import java.lang.ref.PhantomReference
 import java.lang.ref.ReferenceQueue
 import java.nio.ByteBuffer
@@ -22,6 +16,7 @@ import java.nio.channels.Channels
 import java.nio.charset.Charset
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.concurrent.thread
+import kotlin.reflect.KProperty
 
 
 fun mkfifo(path: String) {
@@ -31,9 +26,19 @@ fun mkfifo(path: String) {
 
 object LibraryLink {
     lateinit var runner: ReceiverRunner
-    val exchange: ProcessDataExchange by lazy {
-        SimpleTextProcessDataExchange(runner)
+    var defaultExchange: ProcessDataExchange? = null
+    var exchange: ProcessDataExchange by lazy {
+        val default = defaultExchange
+        if (default != null) {
+            default
+        } else {
+            SimpleTextProcessDataExchange(runner)
+        }
     }
+}
+
+private operator fun <T> Lazy<T>.setValue(libraryLink: LibraryLink, property: KProperty<*>, processDataExchange: ProcessDataExchange) {
+    libraryLink.defaultExchange = processDataExchange
 }
 
 interface ForeignChannelManager {
@@ -534,7 +539,65 @@ open class CallbackDataExchange : CallbackRegistrable {
 
 class LibraryLinkException(message: String) : Exception(message)
 
-open class SimpleTextProcessDataExchange(val runner: ReceiverRunner,
+open class ProtobufDataExchange(val runner: ReceiverRunner = LibraryLink.runner,
+                                val requestGenerator: RequestGenerator = runner.requestGenerator) : ProcessDataExchange,
+        RequestGenerator by requestGenerator, CallbackRegistrable by runner.callbackDataExchange {
+    override fun makeRequest(request: Request): ProcessExchangeResponse {
+        val responseBinary = when (request) {
+            is MethodCallRequest -> requestGenerator.sendRequest(request.toProtobuf())
+            is ImportRequest -> requestGenerator.sendRequest(request.toProtobuf())
+            else -> TODO()
+        }
+        val channelResponse = Exchange.ChannelResponse.parseFrom(responseBinary)
+        val assignedID = if (request is Identifiable) request.assignedID else "" // TODO
+        return when (channelResponse.returnValueCase) {
+            Exchange.ChannelResponse.ReturnValueCase.RETURN_VALUE_STRING ->
+                ProcessExchangeResponse(returnValue = channelResponse.returnValueString, assignedID = assignedID)
+            Exchange.ChannelResponse.ReturnValueCase.RETURN_VALUE_INT ->
+                ProcessExchangeResponse(returnValue = channelResponse.returnValueInt, assignedID = assignedID)
+            Exchange.ChannelResponse.ReturnValueCase.NO_RETURN_VALUE,
+            Exchange.ChannelResponse.ReturnValueCase.RETURNVALUE_NOT_SET,
+            null ->
+                ProcessExchangeResponse(returnValue = null, assignedID = assignedID)
+            Exchange.ChannelResponse.ReturnValueCase.EXCEPTION_MESSAGE ->
+                throw LibraryLinkException(channelResponse.exceptionMessage)
+        }
+    }
+
+    override fun registerPrefetch(request: MethodCallRequest) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    private fun MethodCallRequest.toProtobuf(): ByteArray {
+        val builder = Exchange.MethodCallRequest.newBuilder()
+        builder.methodName = this.methodName
+        builder.objectID = this.objectID
+        for (arg in this.args) {
+            val argBuilder = Exchange.MethodCallRequest.Argument.newBuilder()
+            argBuilder.type = when (arg.type) {
+                "persistence" -> Exchange.MethodCallRequest.ArgumentType.PERSISTENCE
+                "inplace" -> Exchange.MethodCallRequest.ArgumentType.INPLACE
+                else -> throw IllegalArgumentException("arg.type == ${arg.type}")
+            }
+            when (arg.value) {
+                is Number -> argBuilder.intValue = arg.value.toInt() // TODO: Long?
+                is String -> argBuilder.stringValue = arg.value
+            }
+            if (arg.key != null) argBuilder.key = arg.key
+            builder.addArgs(argBuilder)
+        }
+        builder.static = this.isStatic
+        builder.doGetReturnValue = this.doGetReturnValue
+        builder.property = this.isProperty
+        builder.assignedID = this.assignedID
+        return builder.build().toByteArray()
+    }
+
+    fun ImportRequest.toProtobuf(): ByteArray =
+            Exchange.ImportRequest.newBuilder().setImportedName(this.importedName).build().toByteArray()
+}
+
+open class SimpleTextProcessDataExchange(val runner: ReceiverRunner = LibraryLink.runner,
                                          val requestGenerator: RequestGenerator = runner.requestGenerator) : ProcessDataExchange,
         RequestGenerator by requestGenerator, CallbackRegistrable by runner.callbackDataExchange {
     val mapper = ObjectMapper().registerModule(KotlinModule())

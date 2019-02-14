@@ -4,6 +4,7 @@ apply plugin: "kotlin"
 apply plugin: 'application'
 apply plugin: 'antlr'
 apply plugin: "me.champeau.gradle.jmh"
+apply plugin: 'com.google.protobuf'
 
 buildscript {
     ext.kotlin_version = "1.3.21"
@@ -18,6 +19,7 @@ buildscript {
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath group: 'me.champeau.gradle', name: 'jmh-gradle-plugin', version: '0.4.8'
+        classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.8'
     }
 }
 
@@ -42,6 +44,7 @@ dependencies {
     compile 'io.javalin:javalin:2.5.0'
     compile group: 'com.github.jnr', name: 'jnr-unixsocket', version: '0.20'
     compile group: 'org.antlr', name: 'ST4', version: '4.1'
+    compile 'com.google.protobuf:protobuf-java:3.6.1'
     testCompile 'junit:junit:4.12'
 }
 
@@ -61,6 +64,12 @@ test {
 
 compileJava {
     sourceCompatibility = '1.8'
+}
+
+protobuf {
+    protoc {
+        artifact = 'com.google.protobuf:protoc:3.6.1'
+    }
 }
 
 generateGrammarSource {
