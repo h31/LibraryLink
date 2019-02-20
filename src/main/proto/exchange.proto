@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package exchange;
+
+option java_package = "ru.spbstu.kspt.librarylink";
+option java_outer_classname = "Exchange";
+
+message MethodCallRequest {
+    string methodName = 1;
+    string objectID = 2;
+    repeated Argument arg = 3;
+    bool static = 4;
+    bool doGetReturnValue = 5;
+    bool property = 6;
+    string assignedID = 7;
+}
+
+message Argument {
+    ArgumentType type = 1;
+    oneof value {
+        string string_value = 2;
+        int32 int_value = 3;
+    }
+    string key = 4;
+
+    enum ArgumentType {
+        PERSISTENCE = 0;
+        INPLACE = 1;
+    }
+}
+
+message ImportRequest {
+    string importedName = 1;
+}
+
+message ConstructorRequest {
+    string class_name = 1;
+    repeated Argument arg = 2;
+}
+
+message ChannelResponse {
+    oneof return_value {
+        string return_value_string = 1;
+        int32 return_value_int = 2;
+        string exception_message = 3;
+        bool no_return_value = 4;
+    }
+}
