@@ -15,6 +15,7 @@ open class BytesState {
     @Setup
     fun setup() {
         LibraryLink.runner = DummyRunner(false, "/tmp/linktest")
+        LibraryLink.exchange = ProtoBufDataExchange()
         val testString = "0".repeat(10000)
         bytes = SocketServerWrapper.Bytes(testString)
     }
@@ -25,7 +26,7 @@ open class Bytes {
     @Warmup(iterations = 10, time = 1, timeUnit = TimeUnit.SECONDS)
     @Measurement(iterations = 100, time = 1, timeUnit = TimeUnit.SECONDS)
     @Fork(value = 1)
-    @Benchmark
+//    @Benchmark
     fun statusCode(state: BytesState, blackhole: Blackhole) {
         val bytes = state.bytes
         val statusCode = bytes[0]

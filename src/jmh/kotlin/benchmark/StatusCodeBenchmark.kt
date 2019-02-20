@@ -2,10 +2,7 @@ package benchmark
 
 import org.openjdk.jmh.annotations.*
 import org.openjdk.jmh.infra.Blackhole
-import ru.spbstu.kspt.librarylink.DummyRunner
-import ru.spbstu.kspt.librarylink.LibraryLink
-import ru.spbstu.kspt.librarylink.Python3Runner
-import ru.spbstu.kspt.librarylink.Requests
+import ru.spbstu.kspt.librarylink.*
 import java.util.concurrent.TimeUnit
 
 /**
@@ -18,6 +15,7 @@ open class WrapperState {
     @Setup
     fun setup() {
         LibraryLink.runner = DummyRunner(true, "/tmp/linktest")
+        LibraryLink.exchange = ProtoBufDataExchange()
         val requests = Requests()
 //        val headers = requests.getHeaders()
 //        headers.update("X-Test", "Value")

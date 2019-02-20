@@ -539,15 +539,17 @@ open class CallbackDataExchange : CallbackRegistrable {
 
 class LibraryLinkException(message: String) : Exception(message)
 
-open class ProtobufDataExchange(val runner: ReceiverRunner = LibraryLink.runner,
+open class ProtoBufDataExchange(val runner: ReceiverRunner = LibraryLink.runner,
                                 val requestGenerator: RequestGenerator = runner.requestGenerator) : ProcessDataExchange,
         RequestGenerator by requestGenerator, CallbackRegistrable by runner.callbackDataExchange {
     override fun makeRequest(request: Request): ProcessExchangeResponse {
-        val responseBinary = when (request) {
-            is MethodCallRequest -> requestGenerator.sendRequest(request.toProtobuf())
-            is ImportRequest -> requestGenerator.sendRequest(request.toProtobuf())
+        val requestBinary = when (request) {
+            is MethodCallRequest -> request.toProtobuf()
+            is ImportRequest -> request.toProtobuf()
+            is ConstructorRequest -> request.toProtobuf()
             else -> TODO()
         }
+        val responseBinary = requestGenerator.sendRequest(requestBinary)
         val channelResponse = Exchange.ChannelResponse.parseFrom(responseBinary)
         val assignedID = if (request is Identifiable) request.assignedID else "" // TODO
         return when (channelResponse.returnValueCase) {
@@ -572,20 +574,7 @@ open class ProtobufDataExchange(val runner: ReceiverRunner = LibraryLink.runner,
         val builder = Exchange.MethodCallRequest.newBuilder()
         builder.methodName = this.methodName
         builder.objectID = this.objectID
-        for (arg in this.args) {
-            val argBuilder = Exchange.MethodCallRequest.Argument.newBuilder()
-            argBuilder.type = when (arg.type) {
-                "persistence" -> Exchange.MethodCallRequest.ArgumentType.PERSISTENCE
-                "inplace" -> Exchange.MethodCallRequest.ArgumentType.INPLACE
-                else -> throw IllegalArgumentException("arg.type == ${arg.type}")
-            }
-            when (arg.value) {
-                is Number -> argBuilder.intValue = arg.value.toInt() // TODO: Long?
-                is String -> argBuilder.stringValue = arg.value
-            }
-            if (arg.key != null) argBuilder.key = arg.key
-            builder.addArgs(argBuilder)
-        }
+        builder.addAllArg(this.args.map { it.toProtobuf() } )
         builder.static = this.isStatic
         builder.doGetReturnValue = this.doGetReturnValue
         builder.property = this.isProperty
@@ -593,8 +582,31 @@ open class ProtobufDataExchange(val runner: ReceiverRunner = LibraryLink.runner,
         return builder.build().toByteArray()
     }
 
-    fun ImportRequest.toProtobuf(): ByteArray =
-            Exchange.ImportRequest.newBuilder().setImportedName(this.importedName).build().toByteArray()
+    private fun ImportRequest.toProtobuf(): ByteArray =
+            Exchange.ImportRequest.newBuilder()
+                    .setImportedName(this.importedName)
+                    .build().toByteArray()
+
+    private fun ConstructorRequest.toProtobuf(): ByteArray =
+            Exchange.ConstructorRequest.newBuilder()
+                    .setClassName(this.className)
+                    .addAllArg(this.args.map { it.toProtobuf() })
+                    .build().toByteArray()
+
+    private fun Argument.toProtobuf(): Exchange.Argument {
+        val argBuilder = Exchange.Argument.newBuilder()
+        argBuilder.type = when (this.type) {
+            "persistence" -> Exchange.Argument.ArgumentType.PERSISTENCE
+            "inplace" -> Exchange.Argument.ArgumentType.INPLACE
+            else -> throw IllegalArgumentException("arg.type == ${this.type}")
+        }
+        when (this.value) {
+            is Number -> argBuilder.intValue = this.value.toInt() // TODO: Long?
+            is String -> argBuilder.stringValue = this.value
+        }
+        argBuilder.key = this.key ?: ""
+        return argBuilder.build()
+    }
 }
 
 open class SimpleTextProcessDataExchange(val runner: ReceiverRunner = LibraryLink.runner,

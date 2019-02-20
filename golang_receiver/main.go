@@ -114,23 +114,25 @@ func readProtobuf(request *Request, data []byte) {
 		println(err.Error())
 		return // TODO
 	}
-	request.MethodName = *rawReq.MethodName
-	request.ObjectID = *rawReq.ObjectID
+	request.MethodName = rawReq.MethodName
+	request.ObjectID = rawReq.ObjectID
 	request.Args = make([]Argument, len(rawReq.Args))
 	for i, arg := range rawReq.Args {
-		switch *arg.Type {
+		switch arg.Type {
 		case exchange.MethodCallRequest_PERSISTENCE:
 			request.Args[i].Type = "persistence"
 		case exchange.MethodCallRequest_INPLACE:
 			request.Args[i].Type = "inplace"
 		}
 		request.Args[i].Value = arg.Value
-		request.Args[i].Key = arg.Key
+		if arg.Key != "" {
+			request.Args[i].Key = &arg.Key
+		}
 	}
-	request.Static = *rawReq.Static
-	request.DoGetReturnValue = *rawReq.DoGetReturnValue
-	request.Property = *rawReq.Property
-	request.AssignedID = *rawReq.AssignedID
+	request.Static = rawReq.Static
+	request.DoGetReturnValue = rawReq.DoGetReturnValue
+	request.Property = rawReq.Property
+	request.AssignedID = rawReq.AssignedID
 }
 
 func handler(conn net.Conn) {
