@@ -5,6 +5,16 @@ package exchange;
 option java_package = "ru.spbstu.kspt.librarylink";
 option java_outer_classname = "Exchange";
 
+message Request {
+    oneof request {
+        MethodCallRequest method_call = 1;
+        ImportRequest importation = 2;
+        ConstructorRequest constructor = 3;
+        bool eval = 4;
+        bool dynamic_inherit = 5;
+    }
+}
+
 message MethodCallRequest {
     string methodName = 1;
     string objectID = 2;

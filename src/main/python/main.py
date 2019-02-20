@@ -10,6 +10,7 @@ from collections import MutableMapping
 from threading import Thread
 from typing import Union
 from enum import Enum
+import exchange_pb2
 
 
 class AtomicCounter:
@@ -40,6 +41,10 @@ class Tag(Enum):
     DELETE_FROM_PERSISTENCE = 5
     START_BUFFERING = 6
     STOP_BUFFERING = 7
+    # IMPORT_REQUEST = 8
+    # CONSTRUCTOR_REQUEST = 9
+    # EVAL_REQUEST = 10
+    # DYNAMIC_INHERIT_REQUEST = 11
 
 
 class FIFOChannelManager:
@@ -67,7 +72,8 @@ class FIFOChannelManager:
 class UnixSocketServerChannelManager:
     def __init__(self, base_path):
         print("Remove previous socket...")
-        os.unlink(base_path)
+        if os.path.exists(base_path):
+            os.unlink(base_path)
         print("Opening socket...")
         self.server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.server.bind(base_path)
@@ -114,7 +120,6 @@ class SimpleBinaryFraming:
         logging.info("Received tag: {}".format(tag))
 
         message_text = self.channel.read(length)
-        logging.info("Received message: {}".format(message_text))
         return tag, message_text
 
     def write(self, data, tag):
@@ -122,33 +127,22 @@ class SimpleBinaryFraming:
         self.channel.write(tag.to_bytes(4, byteorder='little'))
         self.channel.write(data)
         self.channel.flush()
-        logging.info("Wrote " + data.decode())
 
 
 class RequestsReceiver():
     @staticmethod
-    def encode_return_value(return_value):
-        if isinstance(return_value, bytes):
-            return base64.b64encode(return_value).decode()
-        elif isinstance(return_value, MutableMapping):
-            return dict(return_value)
-        else:
-            return return_value
-
-    @staticmethod
     def decode_arg(arg):
-        arg_value = arg['value']
-        if arg['type'] == "inplace" and isinstance(arg_value, str):
-            decoded_arg = '"' + arg_value + '"'
-        elif arg['type'] == "inplace" and isinstance(arg_value, int):
-            decoded_arg = str(arg_value)
-        elif arg['type'] == "persistence":
-            decoded_arg = arg_value
+        if arg.type == exchange_pb2.Argument.INPLACE and arg.HasField("string_value"):
+            decoded_arg = '"' + arg.string_value + '"'
+        elif arg.type == exchange_pb2.Argument.INPLACE and arg.HasField("int_value"):
+            decoded_arg = arg.int_value
+        elif arg.type == exchange_pb2.Argument.PERSISTENCE:
+            decoded_arg = arg.string_value
         else:
             raise Exception()
 
-        if arg['key']:
-            decoded_arg = "{} = {}".format(arg['key'], decoded_arg)
+        if arg.key:
+            decoded_arg = "{} = {}".format(arg.key, decoded_arg)
         return decoded_arg
 
     @staticmethod
@@ -160,25 +154,25 @@ class RequestsReceiver():
         return ", ".join(decoded_args)
 
     def prepare_command(self, message):
-        if 'property' in message and message['property']:
-            command = "{} = {}.{}".format(message['assignedID'],
-                                          message['objectID'],
-                                          message['methodName'])
-        elif message['objectID']:
-            command = "{} = {}.{}({})".format(message['assignedID'],
-                                              message['objectID'],
-                                              message['methodName'],
-                                              self.decode_args(message['args']))
+        if message.property:
+            command = "{} = {}.{}".format(message.assignedID,
+                                          message.objectID,
+                                          message.methodName)
+        elif message.objectID:
+            command = "{} = {}.{}({})".format(message.assignedID,
+                                              message.objectID,
+                                              message.methodName,
+                                              self.decode_args(message.arg))
         else:
-            command = "{} = {}({})".format(message['assignedID'],
-                                           message['methodName'],
-                                           self.decode_args(message['args']))
+            command = "{} = {}({})".format(message.assignedID,
+                                           message.methodName,
+                                           self.decode_args(message.arg))
         return command
 
     def format_executed_code(self, message):
-        args = [self.decode_arg(x) for x in message['args']]
-        command = message['executedCode'].format(*tuple(args))
-        return message['assignedID'] + " = " + command
+        args = [self.decode_arg(x) for x in message.args]
+        command = message.executedCode.format(*tuple(args))
+        return message.assignedID + " = " + command
 
     def execute_command(self, command):
         logging.debug("Persistence before exec is {}".format(RequestsReceiver.persistence))  # TODO: Thread safety?
@@ -188,7 +182,7 @@ class RequestsReceiver():
         except BaseException as e:
             return e
         return None
-        # var_name = message['assignedID']
+        # var_name = message.assignedID
         # RequestsReceiver.persistence[var_name] = local[var_name]
 
     def __init__(self, channel: UnixSocketServerChannel):
@@ -210,14 +204,14 @@ class RequestsReceiver():
     # def legacy_code(self):
     #     1 + 2
     #     if 'exec' in message:
-    #         exec(message['exec'], globals(), local)
+    #         exec(message.exec, globals(), local)
     #     if 'eval' in message:
-    #         return_value = eval(message['eval'], globals(), local)
+    #         return_value = eval(message.eval, globals(), local)
     #         logging.info("Result is {}".format(return_value))
     #         logging.info("Result type is {}".format(type(return_value)))
     #         response["return_value"] = self.encode_return_value(return_value)
     #     if 'store' in message:
-    #         var_name = message['store']
+    #         var_name = message.store
     #         self.persistence[var_name] = local[var_name]
 
     def callback_argument(self, arg):
@@ -274,60 +268,74 @@ class RequestsReceiver():
         return lambda current_object, *args, **kwargs: self.callback_handler(current_object, request, args, kwargs)
 
     def receive(self):
-        while True:
-            tag, message_text = self.framing.read()
-            if message_text == "exit":
-                logging.info("Exit")
-                break
-            self.process_request(message_text, tag)
+        try:
+            while True:
+                tag, message_text = self.framing.read()
+                if message_text == "exit":
+                    logging.info("Exit")
+                    break
+                self.process_request(message_text, tag)
+        except Exception:
+            import _thread
+            _thread.interrupt_main()
+            raise EOFError()  # TODO
+        finally:
+            logging.info("Exit")
+            self.framing.channel.close()
 
-        logging.info("Exit")
-        self.framing.channel.close()
-
-    def get_return_value(self, var_name):
-        # return_value = eval(message['assignedID'], RequestsReceiver.persistence_globals, local)
+    def put_return_value(self, var_name, response):
+        # return_value = eval(message.assignedID, RequestsReceiver.persistence_globals, local)
         return_value = RequestsReceiver.persistence[var_name]
-        return self.encode_return_value(return_value)
+        if isinstance(return_value, int):
+            response.return_value_int = return_value
+        elif isinstance(return_value, str):
+            response.return_value_string = return_value
+        else:
+            logging.info("Cannot encode value " + return_value)
 
     def process_request(self, message_text, tag):
-        message = json.loads(message_text)
-        response = {}
-        if tag == Tag.DELETE_FROM_PERSISTENCE.value and 'delete' in message and message['delete']:
-            self.delete_from_persistence(message['delete'])
-        elif tag == Tag.REQUEST.value and 'importedName' in message:
-            self.execute_command("import {};".format(message['importedName']))
+        request = exchange_pb2.Request()
+        request.ParseFromString(message_text)
+        logging.info("Received message: {}".format(request))
+        response = exchange_pb2.ChannelResponse()
+        if tag == Tag.DELETE_FROM_PERSISTENCE.value:
+            message = json.loads(message_text)  # TODO
+            self.delete_from_persistence(message.delete)
+        elif tag == Tag.REQUEST.value and request.HasField("importation"):
+            self.execute_command("import {};".format(request.importation.importedName))
             logging.info("Imported")
-        elif tag == Tag.REQUEST.value and 'methodName' in message:
-            command = self.prepare_command(message)
+        elif tag == Tag.REQUEST.value and request.HasField("method_call"):
+            command = self.prepare_command(request.method_call)
             exception = self.execute_command(command)
             if exception is not None:
-                response['exception_message'] = repr(exception)
-            elif 'doGetReturnValue' in message and message['doGetReturnValue']:
-                var_name = message['assignedID']
-                response["return_value"] = self.get_return_value(var_name)
-        elif tag == Tag.REQUEST.value and 'executedCode' in message:
-            command = self.format_executed_code(message)
+                response.exception_message = repr(exception)
+            elif request.method_call.doGetReturnValue:
+                var_name = request.method_call.assignedID
+                self.put_return_value(var_name, response)
+        elif tag == Tag.REQUEST.value and request.HasField("eval"):
+            command = self.format_executed_code(request.eval)
             exception = self.execute_command(command)
             if exception is not None:
-                response['exception_message'] = repr(exception)
-            elif 'doGetReturnValue' in message and message['doGetReturnValue']:
-                var_name = message['assignedID']
-                response["return_value"] = self.get_return_value(var_name)
-        elif tag == Tag.REQUEST.value and 'automatonName' in message:
-            new_class = self.dynamically_inherit_class(message['importName'], message['automatonName'],
-                                                       message['inherits'], message['methodArguments'])
-            var_name = message['assignedID']
+                response.exception_message = repr(exception)
+            elif request.eval.doGetReturnValue:
+                var_name = request.eval.assignedID
+                self.put_return_value(var_name, response)
+        elif tag == Tag.REQUEST.value and request.HasField("dynamic_inherit"):
+            new_class = self.dynamically_inherit_class(request.dynamic_inherit.importName, request.dynamic_inherit.automatonName,
+                                                       request.dynamic_inherit.inherits, request.dynamic_inherit.methodArguments)
+            var_name = request.dynamic_inherit.assignedID
             RequestsReceiver.persistence[var_name] = new_class
-        elif tag == Tag.REQUEST.value and 'className' in message:
-            command = "{} = {}({})".format(message['assignedID'],
-                                           message['className'],
-                                           self.decode_args(message['args']))
+        elif tag == Tag.REQUEST.value and request.HasField("constructor"):
+            command = "{} = {}({})".format(request.constructor.assignedID,
+                                           request.constructor.className,
+                                           self.decode_args(request.constructor.args))
             self.execute_command(command)
         else:
             raise Exception(message_text)
-        logging.info("Persistence is {}".format(RequestsReceiver.persistence))
-        response_text = json.dumps(response)
-        self.framing.write(response_text.encode(), Tag.RESPONSE.value)
+        logging.info("Persistence is {}", RequestsReceiver.persistence)
+        logging.info("Response is %s", response)
+        response_text = response.SerializeToString()
+        self.framing.write(response_text, Tag.RESPONSE.value)
 
 
 if __name__ == "__main__":

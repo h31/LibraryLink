@@ -543,12 +543,7 @@ open class ProtoBufDataExchange(val runner: ReceiverRunner = LibraryLink.runner,
                                 val requestGenerator: RequestGenerator = runner.requestGenerator) : ProcessDataExchange,
         RequestGenerator by requestGenerator, CallbackRegistrable by runner.callbackDataExchange {
     override fun makeRequest(request: Request): ProcessExchangeResponse {
-        val requestBinary = when (request) {
-            is MethodCallRequest -> request.toProtobuf()
-            is ImportRequest -> request.toProtobuf()
-            is ConstructorRequest -> request.toProtobuf()
-            else -> TODO()
-        }
+        val requestBinary = request.toProtobuf()
         val responseBinary = requestGenerator.sendRequest(requestBinary)
         val channelResponse = Exchange.ChannelResponse.parseFrom(responseBinary)
         val assignedID = if (request is Identifiable) request.assignedID else "" // TODO
@@ -570,7 +565,18 @@ open class ProtoBufDataExchange(val runner: ReceiverRunner = LibraryLink.runner,
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    private fun MethodCallRequest.toProtobuf(): ByteArray {
+    private fun Request.toProtobuf(): ByteArray {
+        val builder = Exchange.Request.newBuilder()
+        when (this) {
+            is MethodCallRequest -> builder.methodCall = this.toProtobuf()
+            is ImportRequest -> builder.import = this.toProtobuf()
+            is ConstructorRequest -> builder.constructor = this.toProtobuf()
+            else -> TODO()
+        }
+        return builder.build().toByteArray()
+    }
+
+    private fun MethodCallRequest.toProtobuf(): Exchange.MethodCallRequest {
         val builder = Exchange.MethodCallRequest.newBuilder()
         builder.methodName = this.methodName
         builder.objectID = this.objectID
@@ -579,19 +585,19 @@ open class ProtoBufDataExchange(val runner: ReceiverRunner = LibraryLink.runner,
         builder.doGetReturnValue = this.doGetReturnValue
         builder.property = this.isProperty
         builder.assignedID = this.assignedID
-        return builder.build().toByteArray()
+        return builder.build()
     }
 
-    private fun ImportRequest.toProtobuf(): ByteArray =
+    private fun ImportRequest.toProtobuf(): Exchange.ImportRequest =
             Exchange.ImportRequest.newBuilder()
                     .setImportedName(this.importedName)
-                    .build().toByteArray()
+                    .build()
 
-    private fun ConstructorRequest.toProtobuf(): ByteArray =
+    private fun ConstructorRequest.toProtobuf(): Exchange.ConstructorRequest =
             Exchange.ConstructorRequest.newBuilder()
                     .setClassName(this.className)
                     .addAllArg(this.args.map { it.toProtobuf() })
-                    .build().toByteArray()
+                    .build()
 
     private fun Argument.toProtobuf(): Exchange.Argument {
         val argBuilder = Exchange.Argument.newBuilder()
@@ -625,7 +631,7 @@ open class SimpleTextProcessDataExchange(val runner: ReceiverRunner = LibraryLin
                 val ref = HandleReferenceQueue.refqueue.remove() as HandlePhantomReference
                 logger.info("${ref.assignedID} was deleted, sending a message")
                 val message = mapper.writeValueAsString(mapOf("delete" to ref.assignedID))
-                makeChannelRequest(message)
+                makeChannelRequest(message) // TODO
             }
         }
     }
