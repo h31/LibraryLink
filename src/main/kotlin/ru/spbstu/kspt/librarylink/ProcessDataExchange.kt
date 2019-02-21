@@ -14,6 +14,7 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.channels.Channels
 import java.nio.charset.Charset
+import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.concurrent.thread
 import kotlin.reflect.KProperty
@@ -224,7 +225,20 @@ fun ByteArray.toInt(): Int = ByteBuffer.wrap(this).order(ByteOrder.LITTLE_ENDIAN
 
 interface RequestGenerator {
     fun sendRequest(requestMessage: ByteArray): ByteArray
+    fun sendRequests(requestMessages: List<ByteArray>): List<ByteArray>
     val framing: Framing
+
+    fun readResponse(framing: Framing, callbackDataExchange: CallbackDataExchange): ByteArray {
+        while (true) {
+            val response = framing.read()
+            if (response.first == Tag.CALLBACK_REQUEST) {
+                val callbackResponse = callbackDataExchange.handleRequest(response.second)
+                framing.write(Tag.CALLBACK_RESPONSE, callbackResponse)
+            } else {
+                return response.second
+            }
+        }
+    }
 }
 
 open class BlockingRequestGenerator(private val channelManager: ForeignChannelManager, val callbackDataExchange: CallbackDataExchange) : RequestGenerator, ForeignChannelManager by channelManager {
@@ -234,17 +248,24 @@ open class BlockingRequestGenerator(private val channelManager: ForeignChannelMa
     }
 
     override fun sendRequest(requestMessage: ByteArray): ByteArray {
-        synchronized(framing) {
+        return synchronized(framing) {
             framing.write(Tag.REQUEST, requestMessage)
-            while (true) {
-                val response = framing.read()
-                if (response.first == Tag.CALLBACK_REQUEST) {
-                    val callbackResponse = callbackDataExchange.handleRequest(response.second)
-                    framing.write(Tag.CALLBACK_RESPONSE, callbackResponse)
-                } else {
-                    return response.second
-                }
+            readResponse(framing, callbackDataExchange)
+        }
+    }
+
+    override fun sendRequests(requestMessages: List<ByteArray>): List<ByteArray> {
+        return synchronized(framing) {
+            framing.buffering = true
+            for (message in requestMessages) {
+                framing.write(Tag.REQUEST, message)
             }
+            framing.buffering = false
+            val responses = mutableListOf<ByteArray>()
+            for (message in requestMessages) {
+                responses += readResponse(framing, callbackDataExchange)
+            }
+            responses
         }
     }
 }
@@ -265,15 +286,20 @@ open class ThreadLocalRequestGenerator(private val channelManager: ForeignChanne
     override fun sendRequest(requestMessage: ByteArray): ByteArray {
         val framing = localFraming.get()
         framing.write(Tag.REQUEST, requestMessage)
-        while (true) {
-            val response = framing.read()
-            if (response.first == Tag.CALLBACK_REQUEST) {
-                val callbackResponse = callbackDataExchange.handleRequest(response.second)
-                framing.write(Tag.CALLBACK_RESPONSE, callbackResponse)
-            } else {
-                return response.second
-            }
+        return readResponse(framing, callbackDataExchange)
+    }
+
+    override fun sendRequests(requestMessages: List<ByteArray>): List<ByteArray> {
+        framing.buffering = true
+        for (message in requestMessages) {
+            framing.write(Tag.REQUEST, message)
         }
+        framing.buffering = false
+        val responses = mutableListOf<ByteArray>()
+        for (message in requestMessages) {
+            responses += readResponse(framing, callbackDataExchange)
+        }
+        return responses
     }
 }
 
@@ -291,8 +317,9 @@ data class MethodCallRequest @JvmOverloads constructor(
         val isStatic: Boolean = false,
         val doGetReturnValue: Boolean = false,
         @JsonProperty("property")
-        val isProperty: Boolean = false,
-        override val assignedID: String = AssignedIDCounter.getNextID()) : Request, Identifiable
+        val isProperty: Boolean = false) : Request, Identifiable {
+    override val assignedID: String = AssignedIDCounter.getNextID()
+}
 
 data class ConstructorRequest(
         val className: String,
@@ -339,31 +366,36 @@ class Argument {
     val value: Any?
     val key: String?
 
-    @JvmOverloads constructor(obj: Handle, key: String? = null) {
+    @JvmOverloads
+    constructor(obj: Handle, key: String? = null) {
         this.type = "persistence"
         this.value = obj.assignedID
         this.key = key
     }
 
-    @JvmOverloads constructor(obj: Class<out Handle>, key: String? = null) {
+    @JvmOverloads
+    constructor(obj: Class<out Handle>, key: String? = null) {
         this.type = "persistence"
         this.value = "class_${obj.canonicalName}" // TODO
         this.key = key
     }
 
-    @JvmOverloads constructor(obj: Number, key: String? = null) {
+    @JvmOverloads
+    constructor(obj: Number, key: String? = null) {
         this.type = "inplace"
         this.value = obj
         this.key = key
     }
 
-    @JvmOverloads constructor(obj: Boolean, key: String? = null) {
+    @JvmOverloads
+    constructor(obj: Boolean, key: String? = null) {
         this.type = "inplace"
         this.value = obj
         this.key = key
     }
 
-    @JvmOverloads constructor(obj: String, key: String? = null) {
+    @JvmOverloads
+    constructor(obj: String, key: String? = null) {
         this.type = "inplace"
         this.value = obj
         this.key = key
@@ -490,7 +522,6 @@ interface CallbackRegistrable {
 
 interface ProcessDataExchange : CallbackRegistrable {
     fun makeRequest(request: Request): ProcessExchangeResponse
-    fun registerPrefetch(request: MethodCallRequest)
 }
 
 interface CallbackReceiver {
@@ -524,7 +555,8 @@ open class CallbackDataExchange : CallbackRegistrable {
         val request = mapper.readValue(callbackRequest, MethodCallRequest::class.java)
         logger.info("Received callback request $request")
         val existingObject = localPersistence[request.assignedID]
-        val obj = existingObject ?: callbackConstructorsMap[request.objectID]?.invoke(request) ?: TODO() // TODO: Too Dirty
+        val obj = existingObject ?: callbackConstructorsMap[request.objectID]?.invoke(request)
+        ?: TODO() // TODO: Too Dirty
         if (existingObject == null) {
             localPersistence[request.assignedID] = obj
         }
@@ -543,33 +575,50 @@ open class ProtoBufDataExchange(val runner: ReceiverRunner = LibraryLink.runner,
                                 val requestGenerator: RequestGenerator = runner.requestGenerator) : ProcessDataExchange,
         RequestGenerator by requestGenerator, CallbackRegistrable by runner.callbackDataExchange {
     override fun makeRequest(request: Request): ProcessExchangeResponse {
-        val requestBinary = request.toProtobuf()
-        val responseBinary = requestGenerator.sendRequest(requestBinary)
+        val cached = currentSequence.poll()
+        val responseBinary: ByteArray = if (cached != null && cached.first == request) {
+            cached.second
+        } else {
+            if (currentSequence.isNotEmpty()) currentSequence.clear()
+            val list = cacheManager.getPrefetchRequests(request)
+            if (list.isEmpty()) {
+                val requestBinary = request.toProtobuf()
+                requestGenerator.sendRequest(requestBinary)
+            } else {
+                val requestBinaries = list.map { it.toProtobuf() }
+                val newElements = requestGenerator.sendRequests(requestBinaries)
+                list.zip(newElements).toCollection(currentSequence)
+                currentSequence.poll().second
+            }
+        }
         val channelResponse = Exchange.ChannelResponse.parseFrom(responseBinary)
         val assignedID = if (request is Identifiable) request.assignedID else "" // TODO
-        return when (channelResponse.returnValueCase) {
+        return channelResponse.toProcessExchangeResponse(assignedID)
+    }
+
+    private val cacheManager = CacheManager("LinkCache.cfg")
+    private val currentSequence = ArrayDeque<Pair<Request, ByteArray>>()
+
+    private fun Exchange.ChannelResponse.toProcessExchangeResponse(assignedID: String): ProcessExchangeResponse {
+        return when (this.returnValueCase) {
             Exchange.ChannelResponse.ReturnValueCase.RETURN_VALUE_STRING ->
-                ProcessExchangeResponse(returnValue = channelResponse.returnValueString, assignedID = assignedID)
+                ProcessExchangeResponse(returnValue = this.returnValueString, assignedID = assignedID)
             Exchange.ChannelResponse.ReturnValueCase.RETURN_VALUE_INT ->
-                ProcessExchangeResponse(returnValue = channelResponse.returnValueInt, assignedID = assignedID)
+                ProcessExchangeResponse(returnValue = this.returnValueInt, assignedID = assignedID)
             Exchange.ChannelResponse.ReturnValueCase.NO_RETURN_VALUE,
             Exchange.ChannelResponse.ReturnValueCase.RETURNVALUE_NOT_SET,
             null ->
                 ProcessExchangeResponse(returnValue = null, assignedID = assignedID)
             Exchange.ChannelResponse.ReturnValueCase.EXCEPTION_MESSAGE ->
-                throw LibraryLinkException(channelResponse.exceptionMessage)
+                throw LibraryLinkException(this.exceptionMessage)
         }
-    }
-
-    override fun registerPrefetch(request: MethodCallRequest) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
     private fun Request.toProtobuf(): ByteArray {
         val builder = Exchange.Request.newBuilder()
         when (this) {
             is MethodCallRequest -> builder.methodCall = this.toProtobuf()
-            is ImportRequest -> builder.import = this.toProtobuf()
+            is ImportRequest -> builder.importation = this.toProtobuf()
             is ConstructorRequest -> builder.constructor = this.toProtobuf()
             else -> TODO()
         }
@@ -580,7 +629,7 @@ open class ProtoBufDataExchange(val runner: ReceiverRunner = LibraryLink.runner,
         val builder = Exchange.MethodCallRequest.newBuilder()
         builder.methodName = this.methodName
         builder.objectID = this.objectID
-        builder.addAllArg(this.args.map { it.toProtobuf() } )
+        builder.addAllArg(this.args.map { it.toProtobuf() })
         builder.static = this.isStatic
         builder.doGetReturnValue = this.doGetReturnValue
         builder.property = this.isProperty
@@ -670,10 +719,48 @@ open class SimpleTextProcessDataExchange(val runner: ReceiverRunner = LibraryLin
         makeChannelRequest(message)
         logger.info("Wrote $description")
     }
+}
 
-    private var prefetchedRequest: MethodCallRequest? = null
+class CacheManager(fileName: String) {
+    private val allowedMethodCallSequences = mutableSetOf<Pair<String, String>>()
+    private var lastRequest: Request? = null
+    private val currentSequence = mutableListOf<MethodCallRequest>()
+    private val requestSequences = mutableMapOf<Request, List<Request>>()
+    private final val MAX_SIZE = 5
 
-    override fun registerPrefetch(request: MethodCallRequest) {
-        prefetchedRequest = request
+    init {
+        File(fileName).forEachLine { line ->
+            val elements = line.split(" ")
+            check(elements.size == 2)
+            allowedMethodCallSequences += elements.first() to elements.last()
+        }
+    }
+
+    private fun addToSequence(request: Request): List<Request> {
+        if (request !is MethodCallRequest) {
+            return emptyList()
+        }
+        if (currentSequence.isEmpty()) {
+            currentSequence += request
+            return emptyList()
+        }
+        val name1 = currentSequence.last().methodName
+        val name2 = request.methodName
+        if (name1 to name2 in allowedMethodCallSequences && currentSequence.size < MAX_SIZE) {
+            currentSequence += request
+            return emptyList()
+        } else {
+            if (currentSequence.size > 1) {
+                requestSequences += currentSequence.first() to currentSequence.toList()
+            }
+            currentSequence.clear()
+        }
+        currentSequence += request
+        return emptyList()
+    }
+
+    fun getPrefetchRequests(request: Request): List<Request> {
+//        return requestSequences[request] ?: addToSequence(request)
+        return emptyList()
     }
 }

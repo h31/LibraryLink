@@ -13,6 +13,8 @@ class RequestsTest {
 //        val headers = requests.getHeaders()
 //        headers.update("X-Test", "Value")
         val resp = requests.get("https://api.github.com/user")
-        println(resp.statusCode())
+        for (i in 0..100) {
+            println(resp.statusCode())
+        }
     }
 }
