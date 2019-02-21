@@ -2,6 +2,7 @@ import base64
 import copy
 import json
 import logging
+import cProfile
 import os
 import socket
 import sys
@@ -113,11 +114,11 @@ class SimpleBinaryFraming:
             logging.info("Empty request, exiting")
             exit(0)  # TODO
         length = int.from_bytes(length_binary, byteorder='little')
-        logging.info("Received length: {}".format(length))
+        logging.info("Received length: {}", length)
 
         tag_binary = self.channel.read(4)
         tag = int.from_bytes(tag_binary, byteorder='little')
-        logging.info("Received tag: {}".format(tag))
+        logging.info("Received tag: {}", tag)
 
         message_text = self.channel.read(length)
         return tag, message_text
@@ -175,8 +176,8 @@ class RequestsReceiver():
         return message.assignedID + " = " + command
 
     def execute_command(self, command):
-        logging.debug("Persistence before exec is {}".format(RequestsReceiver.persistence))  # TODO: Thread safety?
-        logging.debug("Exec: " + command)
+        logging.debug("Persistence before exec is {}", RequestsReceiver.persistence)  # TODO: Thread safety?
+        logging.debug("Exec: {}", command)
         try:
             exec(command, RequestsReceiver.persistence_globals, RequestsReceiver.persistence)
         except BaseException as e:
@@ -195,7 +196,7 @@ class RequestsReceiver():
     callback_index = AtomicCounter()
 
     def delete_from_persistence(self, var_name):
-        logging.info("Delete {} from persistence".format(var_name))
+        logging.info("Delete {} from persistence", var_name)
         if var_name in RequestsReceiver.persistence:
             del RequestsReceiver.persistence[var_name]
         elif var_name in RequestsReceiver.persistence_globals:
@@ -223,7 +224,7 @@ class RequestsReceiver():
                     logging.info("Found in the persistence!")
                     return {"value": key, "type": "persistence", "key": None}
             key = "callback_var" + str(RequestsReceiver.callback_index.increment())
-            logging.info("Put in the persistence as " + key)
+            logging.info("Put in the persistence as {}", key)
             RequestsReceiver.persistence[key] = arg
             return {"value": key, "type": "persistence", "key": None}
 
@@ -267,6 +268,10 @@ class RequestsReceiver():
 
         return lambda current_object, *args, **kwargs: self.callback_handler(current_object, request, args, kwargs)
 
+    # def receive(self):
+    #     obj = self
+    #     cProfile.runctx('obj._receive()', globals(), locals(), filename='func', sort='cumulative')
+
     def receive(self):
         try:
             while True:
@@ -291,12 +296,12 @@ class RequestsReceiver():
         elif isinstance(return_value, str):
             response.return_value_string = return_value
         else:
-            logging.info("Cannot encode value " + return_value)
+            logging.info("Cannot encode value {}", return_value)
 
     def process_request(self, message_text, tag):
         request = exchange_pb2.Request()
         request.ParseFromString(message_text)
-        logging.info("Received message: {}".format(request))
+        logging.info("Received message: {}", request)
         response = exchange_pb2.ChannelResponse()
         if tag == Tag.DELETE_FROM_PERSISTENCE.value:
             message = json.loads(message_text)  # TODO
