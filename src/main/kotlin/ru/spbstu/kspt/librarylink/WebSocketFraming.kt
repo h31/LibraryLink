@@ -14,12 +14,12 @@ class Receiver {
         return ChannelResponse(123)
     }
 
-    fun processRequest(request: ByteArray): ByteArray {
-        val decodedRequest = mapper.readValue(request, MethodCallRequest::class.java)
+    fun processRequest(message: ByteArray): ByteArray {
+        val request = Exchange.Request.parseFrom(message)
         logger.info("Received callback request $request")
-        val returnValue = processRequest(decodedRequest)
-        val response = ChannelResponse(returnValue)
-        val message = mapper.writeValueAsBytes(response)
+//        val returnValue = processRequest(decodedRequest)
+        val response = Exchange.ChannelResponse.newBuilder().build()
+        val message = response.toByteArray()
         return message
     }
 }
