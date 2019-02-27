@@ -2,6 +2,7 @@ wrapperClass(libraryName, wrappedClasses) ::= <<
 <imports()>
 
 <wrappedClasses:entity(); separator="\n\n">
+<processing(wrappedClasses)>
 >>
 
 imports() ::= <<
@@ -10,29 +11,50 @@ imports() ::= <<
 #include "exchange.pb.h"
 
 #include \<z3.h>
-#include "z3_generated.h"
+#include "handlers.h"
 >>
 
 function(methodObject) ::= <<
-void librarylink_<methodObject.name>(const exchange::Argument& argument, const std::string& assignedID, std::unordered_map\<std::string, void *>& persistence) {
-    <methodObject.args:arg()>
-    <self()>
-    auto return_value = <methodObject.name>(<argList(methodObject.args)>);
+void librarylink_<methodObject.name>(const exchange::MethodCallRequest& request, std::unordered_map\<std::string, void *>& persistence) {
+    <methodObject.args:arg(); separator="\n">
+    <if(methodObject.returnValue)><methodObject.returnValue> return_value = <endif><methodObject.name>(<argList(methodObject.args)>);
+    <if(methodObject.returnValue)>
+    <methodObject.returnValue>* ptr = new(<methodObject.returnValue>);
+    *ptr = std::move(return_value);
+    persistence[request.assignedid()] = ptr;
+    <endif>
 }
 >>
 
 arg(argObject) ::= <<
-<argObject.type>* <argObject.name> = (<argObject.type>*) persistence[argument.string_value()];
-
->>
-
-self() ::= <<
-self* self = (self*) persistence[assignedID];
-
+<if(argObject.self)>
+<argObject.type>* <argObject.name> = (<argObject.type>*) persistence[request.objectid()];
+<else>
+<argObject.type>* <argObject.name> = (<argObject.type>*) persistence[request.arg(<argObject.index>).string_value()];
+<endif>
 >>
 
 argList(args) ::= "<args:{x | *<x.name>}; separator=\", \">"
 
 entity(wrappedClass) ::= <<
 <wrappedClass.methods:function(); separator="\n\n">
+<wrappedClass.constructor:function(); separator="\n\n">
+>>
+
+processing(wrappedClasses) ::= <<
+exchange::ChannelResponse process_request(const exchange::MethodCallRequest& request,
+                                          std::unordered_map\<std::string, void *>& persistence) {
+    <wrappedClasses:processingClass(); separator="\n">
+}
+>>
+
+processingClass(wrappedClass) ::= <<
+<wrappedClass.methods:processEntry(); separator="\n">
+<wrappedClass.constructor:processEntry(); separator="\n">
+>>
+
+processEntry(methodObject) ::= <<
+if (request.methodname() == "<methodObject.name>") {
+    librarylink_<methodObject.name>(request, persistence);
+}
 >>

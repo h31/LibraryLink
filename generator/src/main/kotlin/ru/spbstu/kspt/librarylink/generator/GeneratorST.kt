@@ -1,15 +1,35 @@
 package ru.spbstu.kspt.librarylink.generator
 
+import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.parameters.arguments.argument
+import com.github.ajalt.clikt.parameters.arguments.multiple
+import com.github.ajalt.clikt.parameters.arguments.validate
+import com.github.ajalt.clikt.parameters.options.option
+import com.github.ajalt.clikt.parameters.options.required
+import com.github.ajalt.clikt.parameters.types.choice
+import com.github.ajalt.clikt.parameters.types.file
 import org.stringtemplate.v4.ST
 import org.stringtemplate.v4.STGroupFile
 import ru.spbstu.kspt.librarylink.MethodCallRequest
 import ru.spbstu.kspt.librarylink.Request
+import ru.spbstu.kspt.librarymigration.parser.FunctionArgument
 import ru.spbstu.kspt.librarymigration.parser.LibraryDecl
 import ru.spbstu.kspt.librarymigration.parser.ModelParser
 import java.io.File
 import java.io.InputStream
 
 val primitiveTypes = listOf("String", "int", "Int")
+val supportsOOP = false
+
+private fun generateArgs(args: List<FunctionArgument>, types: Map<String, String>): List<Arg> {
+    val validArgs = if (supportsOOP) args.filterNot { it.type == "self" } else args
+    val generated = validArgs.map {
+        Arg(type = checkNotNull(types[it.type]),
+                name = it.name, reference = calcIsReference(types[it.type]!!), self = it.type == "self")
+    } // TODO
+    generated.filter { it.self }.withIndex().forEach { it.value.index = it.index }
+    return generated
+}
 
 fun generateST(library: LibraryDecl, st: ST) {
     val methods = mutableMapOf<String, Method>()
@@ -21,10 +41,7 @@ fun generateST(library: LibraryDecl, st: ST) {
         val static = function.staticName != null || !hasSelf
         val objectId = if (static) function.staticName?.staticName ?: "" else "assignedID"
         val property = function.properties.any { it.key == "type" && it.value == "get" }
-        val args = function.args.filterNot { it.type == "self" }.map {
-            Arg(type = checkNotNull(types[it.type]),
-                    name = it.name, isReference = calcIsReference(types[it.type]!!))
-        } // TODO
+        val args = generateArgs(function.args, types + ("self" to function.entity))
         val request = MethodCallRequest(
                 methodName = function.name,
                 objectID = objectId,
@@ -107,15 +124,35 @@ data class Method(val name: String, val args: List<Arg>) {
     var referenceReturn: Boolean = true
 }
 
-data class Arg(val type: String, val name: String, val isReference: Boolean)
+data class Arg(val type: String, val name: String, val reference: Boolean, val self: Boolean) {
+    var index = 0
+}
 
 fun InputStream.parseModel() = ModelParser().parse(this)
 
-fun main(args: Array<String>) = generateWrapper(args.first(), args.drop(1).dropLast(1), args.last())
+class GeneratorCommand : CliktCommand() {
+    val language: String by option("-l", "--language", help="Receiver language").choice(*supportedLanguages()).required()
+    val output: File? by option("-o", "--output", help = "Output file").file()
+    val models: List<File> by argument(help="Models").file(exists = true).multiple(required = true).validate {
+        require(it.isNotEmpty()) { "At least one model should be specified" }
+    }
 
-private fun generateWrapper(template: String, modelFiles: List<String>, outputFile: String?) {
-    require(modelFiles.isNotEmpty())
-    val group = STGroupFile("generator/$template.stg")
+    override fun run() = generateWrapper(
+            template = "generator/$language.stg",
+            modelFiles = models,
+            outputFile = output
+    )
+
+    private fun resourceReader(name: String) = this.javaClass.classLoader.getResourceAsStream(name).bufferedReader()
+
+    private fun supportedLanguages() =
+            resourceReader("generator/SupportedLanguages.txt").readLines().toTypedArray()
+}
+
+fun main(args: Array<String>) = GeneratorCommand().main(args)
+
+private fun generateWrapper(template: String, modelFiles: List<File>, outputFile: File?) {
+    val group = STGroupFile(template)
     val st = group.getInstanceOf("wrapperClass")
 //    st.add("type", "int")
 //    val wrappedClass = WrappedClass(
@@ -132,12 +169,12 @@ private fun generateWrapper(template: String, modelFiles: List<String>, outputFi
 //    )
 //    st.add("wrappedClasses", wrappedClass)
 //    st.add("value", 0)
-    val models = modelFiles.map { File(it).inputStream().parseModel() }
+    val models = modelFiles.map { it.inputStream().parseModel() }
     val mergedAST = mergeASTs(models.first().name, models)
     generateST(mergedAST, st)
     val result = st.render()
     if (outputFile != null) {
-        File(outputFile).writeText(result)
+        outputFile.writeText(result)
     } else {
         println(result)
     }
