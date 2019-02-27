@@ -24,6 +24,7 @@ buildscript {
 }
 
 repositories {
+    mavenLocal()
     jcenter()
     maven {
         url 'https://www.h31.ishere.ru/ModelParser'
