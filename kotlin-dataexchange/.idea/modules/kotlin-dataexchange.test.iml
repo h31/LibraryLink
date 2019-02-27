@@ -6,7 +6,7 @@
         <compilerSettings />
         <compilerArguments>
           <option name="destination" value="$MODULE_DIR$/../../build/classes/kotlin/test" />
-          <option name="classpath" value="$MODULE_DIR$/../../build/classes/java/main:/home/artyom/Projects/LibraryLink/kotlin-dataexchange/build/classes/kotlin/main:/home/artyom/Projects/LibraryLink/kotlin-dataexchange/build/resources/main:/home/artyom/.gradle/caches/modules-2/files-2.1/antlr/antlr/2.7.7/83cd2cd674a217ade95a4bb83a8a14f351f48bd0/antlr-2.7.7.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/io.javalin/javalin/2.5.0/20e7bc434b534937e1f0d75b011da08a7a26e0ee/javalin-2.5.0.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib-jdk8/1.3.21/d0634d54452abc421db494ad32dd215e6591c49f/kotlin-stdlib-jdk8-1.3.21.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/com.fasterxml.jackson.module/jackson-module-kotlin/2.9.5/3e73e80ff0285a776954252f61c22e4059ee5267/jackson-module-kotlin-2.9.5.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-reflect/1.3.21/d0d5ff2ac2ebd8a42697af41e20fc225a23c5d3b/kotlin-reflect-1.3.21.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/ch.qos.logback/logback-classic/1.2.3/7c4f3c474fb2c041d8028740440937705ebb473a/logback-classic-1.2.3.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/io.github.microutils/kotlin-logging/1.4.6/b5644ceb728b518ec11d6a5b5af90c48966816a4/kotlin-logging-1.4.6.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/com.xenomachina/kotlin-argparser/2.0.3/b80e8392522982d44866f2e1d5a2662a23924822/kotlin-argparser-2.0.3.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/ru.spbstu.kspt.librarymigration/modelparser/0.4-SNAPSHOT/95e1ce1b521b2dbaaae3c00ae0abf3b57fd2be85/modelparser-0.4-SNAPSHOT.jar:/home/artyom/.m2/repository/org/antlr/antlr4/4.7.1/antlr4-4.7.1.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/com.fasterxml.jackson.core/jackson-databind/2.9.5/3490508379d065fe3fcb80042b62f630f7588606/jackson-databind-2.9.5.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/com.github.javaparser/javaparser-core/3.6.9/59221be4284277cf71da5c9f4ef3bdd2e90fc7cd/javaparser-core-3.6.9.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/com.github.jnr/jnr-unixsocket/0.20/b683f10dded734c662c418160e314e6db936fdee/jnr-unixsocket-0.20.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.antlr/ST4/4.1/467d508be07a542ad0a68ffcaed2d561c5fb2e0c/ST4-4.1.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/com.google.protobuf/protobuf-java/3.6.1/d06d46ecfd92ec6d0f3b423b4cd81cb38d8b924/protobuf-java-3.6.1.jar:/home/artyom/.m2/repository/junit/junit/4.12/junit-4.12.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib-jdk7/1.3.21/d207ce2c9bcf17dc8e51bab4dbfdac4d013e7138/kotlin-stdlib-jdk7-1.3.21.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/com.xenomachina/xenocom/0.0.5/94b866b1a5d56fae0b5205287a221460307ff29c/xenocom-0.0.5.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib/1.3.21/4bcc2012b84840e19e1e28074284cac908be0295/kotlin-stdlib-1.3.21.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/ch.qos.logback/logback-core/1.2.3/864344400c3d4d92dfeb0a305dc87d953677c03c/logback-core-1.2.3.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.slf4j/slf4j-api/1.7.25/da76ca59f6a57ee3102f8f9bd9cee742973efa8a/slf4j-api-1.7.25.jar:/home/artyom/.m2/repository/org/antlr/antlr4-runtime/4.7.1/antlr4-runtime-4.7.1.jar:/home/artyom/.m2/repository/org/antlr/antlr-runtime/3.5.2/antlr-runtime-3.5.2.jar:/home/artyom/.m2/repository/org/abego/treelayout/org.abego.treelayout.core/1.0.3/org.abego.treelayout.core-1.0.3.jar:/home/artyom/.m2/repository/org/glassfish/javax.json/1.0.4/javax.json-1.0.4.jar:/home/artyom/.m2/repository/com/ibm/icu/icu4j/58.2/icu4j-58.2.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/com.fasterxml.jackson.core/jackson-annotations/2.9.0/7c10d545325e3a6e72e06381afe469fd40eb701/jackson-annotations-2.9.0.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/com.fasterxml.jackson.core/jackson-core/2.9.5/a22ac51016944b06fd9ffbc9541c6e7ce5eea117/jackson-core-2.9.5.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty/jetty-webapp/9.4.13.v20181111/e3148d9c22956c8a633c69bcc544aaa9ada95719/jetty-webapp-9.4.13.v20181111.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty.websocket/websocket-server/9.4.13.v20181111/521f06fa90fd9d767291977b66f443e4f23bc502/websocket-server-9.4.13.v20181111.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty/jetty-servlet/9.4.13.v20181111/9c82f24257f3b0981f7479505513f660230e4ffd/jetty-servlet-9.4.13.v20181111.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty/jetty-security/9.4.13.v20181111/3c52dbdff07f84d994da78437e95a4a7ff123bc9/jetty-security-9.4.13.v20181111.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty/jetty-server/9.4.13.v20181111/491633513eb43af1a5b4bae89adddb18fb70a5cc/jetty-server-9.4.13.v20181111.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/com.github.jnr/jnr-enxio/0.18/bcb5efa57c639db7ea325a19c1549edb7a94d6d0/jnr-enxio-0.18.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/com.github.jnr/jnr-posix/3.0.46/99b1430a737f41834910e945c19906280a6277d4/jnr-posix-3.0.46.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/com.github.jnr/jnr-ffi/2.1.9/c465565992e8264012023c8b240e8175e235aa4e/jnr-ffi-2.1.9.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/com.github.jnr/jnr-constants/0.9.11/b8609839a9e71c4df0d409a8175bcc7bbebe2224/jnr-constants-0.9.11.jar:/home/artyom/.m2/repository/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib-common/1.3.21/f30e4a9897913e53d778f564110bafa1fef46643/kotlin-stdlib-common-1.3.21.jar:/home/artyom/.m2/repository/org/jetbrains/annotations/13.0/annotations-13.0.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty.websocket/websocket-servlet/9.4.13.v20181111/a9f84905c011c499d813ee5b4f919ab32abd8eab/websocket-servlet-9.4.13.v20181111.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/javax.servlet/javax.servlet-api/3.1.0/3cd63d075497751784b2fa84be59432f4905bf7c/javax.servlet-api-3.1.0.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty.websocket/websocket-client/9.4.13.v20181111/2ae48eab8c98c7221b6c0bdd87ebabc66f6fd905/websocket-client-9.4.13.v20181111.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty/jetty-client/9.4.13.v20181111/d6e6b16b437a27a36a73d94262b73d4549d60795/jetty-client-9.4.13.v20181111.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty/jetty-http/9.4.13.v20181111/f6173660cb175c06130a94ad92e9cf423cc7705e/jetty-http-9.4.13.v20181111.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty.websocket/websocket-common/9.4.13.v20181111/e6402099da8fc0148a9d5f4cbb65280f81afc70f/websocket-common-9.4.13.v20181111.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty/jetty-io/9.4.13.v20181111/d02f54f44b61ee3e6f2cc6fb22cf3e50587b9f2/jetty-io-9.4.13.v20181111.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty/jetty-xml/9.4.13.v20181111/95a05d000c7906a0bd1aeeff77e9b66e13ecd173/jetty-xml-9.4.13.v20181111.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/com.github.jnr/jffi/1.2.17/6ffa5106be5a121bea9d0779cd757e804633e543/jffi-1.2.17.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/com.github.jnr/jffi/1.2.17/19335d57d54d54680bdf5aa2fe92cd41f5cd29ee/jffi-1.2.17-native.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.ow2.asm/asm-commons/5.0.3/a7111830132c7f87d08fe48cb0ca07630f8cb91c/asm-commons-5.0.3.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.ow2.asm/asm-analysis/5.0.3/c7126aded0e8e13fed5f913559a0dd7b770a10f3/asm-analysis-5.0.3.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.ow2.asm/asm-util/5.0.3/1512e5571325854b05fb1efce1db75fcced54389/asm-util-5.0.3.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.ow2.asm/asm-tree/5.0.3/287749b48ba7162fb67c93a026d690b29f410bed/asm-tree-5.0.3.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.ow2.asm/asm/5.0.3/dcc2193db20e19e1feca8b1240dbbc4e190824fa/asm-5.0.3.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/com.github.jnr/jnr-a64asm/1.0.0/a1cb8dbe71b5a6a0288043c3ba3ca64545be165/jnr-a64asm-1.0.0.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/com.github.jnr/jnr-x86asm/1.0.2/6936bbd6c5b235665d87bd450f5e13b52d4b48/jnr-x86asm-1.0.2.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty/jetty-util/9.4.13.v20181111/ea206cc74baae35b97cb85e29167f66977c70a5/jetty-util-9.4.13.v20181111.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty.websocket/websocket-api/9.4.13.v20181111/7f677fbc706b6d4873d50014a23f6ff5a6c81437/websocket-api-9.4.13.v20181111.jar" />
+          <option name="classpath" value="$MODULE_DIR$/../../build/classes/java/main:/home/artyom/Projects/LibraryLink/kotlin-dataexchange/build/classes/kotlin/main:/home/artyom/Projects/LibraryLink/kotlin-dataexchange/build/resources/main:/home/artyom/.gradle/caches/modules-2/files-2.1/io.javalin/javalin/2.5.0/20e7bc434b534937e1f0d75b011da08a7a26e0ee/javalin-2.5.0.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib-jdk8/1.3.21/d0634d54452abc421db494ad32dd215e6591c49f/kotlin-stdlib-jdk8-1.3.21.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/com.fasterxml.jackson.module/jackson-module-kotlin/2.9.5/3e73e80ff0285a776954252f61c22e4059ee5267/jackson-module-kotlin-2.9.5.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-reflect/1.3.21/d0d5ff2ac2ebd8a42697af41e20fc225a23c5d3b/kotlin-reflect-1.3.21.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/ch.qos.logback/logback-classic/1.2.3/7c4f3c474fb2c041d8028740440937705ebb473a/logback-classic-1.2.3.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/io.github.microutils/kotlin-logging/1.4.6/b5644ceb728b518ec11d6a5b5af90c48966816a4/kotlin-logging-1.4.6.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/com.xenomachina/kotlin-argparser/2.0.3/b80e8392522982d44866f2e1d5a2662a23924822/kotlin-argparser-2.0.3.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/com.fasterxml.jackson.core/jackson-databind/2.9.5/3490508379d065fe3fcb80042b62f630f7588606/jackson-databind-2.9.5.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/ru.spbstu.kspt.librarymigration/modelparser/0.4-SNAPSHOT/95e1ce1b521b2dbaaae3c00ae0abf3b57fd2be85/modelparser-0.4-SNAPSHOT.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/com.github.jnr/jnr-unixsocket/0.20/b683f10dded734c662c418160e314e6db936fdee/jnr-unixsocket-0.20.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/com.google.protobuf/protobuf-java/3.6.1/d06d46ecfd92ec6d0f3b423b4cd81cb38d8b924/protobuf-java-3.6.1.jar:/home/artyom/.m2/repository/junit/junit/4.12/junit-4.12.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib-jdk7/1.3.21/d207ce2c9bcf17dc8e51bab4dbfdac4d013e7138/kotlin-stdlib-jdk7-1.3.21.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/com.xenomachina/xenocom/0.0.5/94b866b1a5d56fae0b5205287a221460307ff29c/xenocom-0.0.5.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib/1.3.21/4bcc2012b84840e19e1e28074284cac908be0295/kotlin-stdlib-1.3.21.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/ch.qos.logback/logback-core/1.2.3/864344400c3d4d92dfeb0a305dc87d953677c03c/logback-core-1.2.3.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.slf4j/slf4j-api/1.7.25/da76ca59f6a57ee3102f8f9bd9cee742973efa8a/slf4j-api-1.7.25.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/com.fasterxml.jackson.core/jackson-annotations/2.9.0/7c10d545325e3a6e72e06381afe469fd40eb701/jackson-annotations-2.9.0.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/com.fasterxml.jackson.core/jackson-core/2.9.5/a22ac51016944b06fd9ffbc9541c6e7ce5eea117/jackson-core-2.9.5.jar:/home/artyom/.m2/repository/org/antlr/antlr4/4.7.1/antlr4-4.7.1.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty/jetty-webapp/9.4.13.v20181111/e3148d9c22956c8a633c69bcc544aaa9ada95719/jetty-webapp-9.4.13.v20181111.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty.websocket/websocket-server/9.4.13.v20181111/521f06fa90fd9d767291977b66f443e4f23bc502/websocket-server-9.4.13.v20181111.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty/jetty-servlet/9.4.13.v20181111/9c82f24257f3b0981f7479505513f660230e4ffd/jetty-servlet-9.4.13.v20181111.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty/jetty-security/9.4.13.v20181111/3c52dbdff07f84d994da78437e95a4a7ff123bc9/jetty-security-9.4.13.v20181111.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty/jetty-server/9.4.13.v20181111/491633513eb43af1a5b4bae89adddb18fb70a5cc/jetty-server-9.4.13.v20181111.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/com.github.jnr/jnr-enxio/0.18/bcb5efa57c639db7ea325a19c1549edb7a94d6d0/jnr-enxio-0.18.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/com.github.jnr/jnr-posix/3.0.46/99b1430a737f41834910e945c19906280a6277d4/jnr-posix-3.0.46.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/com.github.jnr/jnr-ffi/2.1.9/c465565992e8264012023c8b240e8175e235aa4e/jnr-ffi-2.1.9.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/com.github.jnr/jnr-constants/0.9.11/b8609839a9e71c4df0d409a8175bcc7bbebe2224/jnr-constants-0.9.11.jar:/home/artyom/.m2/repository/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib-common/1.3.21/f30e4a9897913e53d778f564110bafa1fef46643/kotlin-stdlib-common-1.3.21.jar:/home/artyom/.m2/repository/org/jetbrains/annotations/13.0/annotations-13.0.jar:/home/artyom/.m2/repository/org/antlr/antlr4-runtime/4.7.1/antlr4-runtime-4.7.1.jar:/home/artyom/.m2/repository/org/antlr/ST4/4.0.8/ST4-4.0.8.jar:/home/artyom/.m2/repository/org/antlr/antlr-runtime/3.5.2/antlr-runtime-3.5.2.jar:/home/artyom/.m2/repository/org/abego/treelayout/org.abego.treelayout.core/1.0.3/org.abego.treelayout.core-1.0.3.jar:/home/artyom/.m2/repository/org/glassfish/javax.json/1.0.4/javax.json-1.0.4.jar:/home/artyom/.m2/repository/com/ibm/icu/icu4j/58.2/icu4j-58.2.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty.websocket/websocket-servlet/9.4.13.v20181111/a9f84905c011c499d813ee5b4f919ab32abd8eab/websocket-servlet-9.4.13.v20181111.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/javax.servlet/javax.servlet-api/3.1.0/3cd63d075497751784b2fa84be59432f4905bf7c/javax.servlet-api-3.1.0.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty.websocket/websocket-client/9.4.13.v20181111/2ae48eab8c98c7221b6c0bdd87ebabc66f6fd905/websocket-client-9.4.13.v20181111.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty/jetty-client/9.4.13.v20181111/d6e6b16b437a27a36a73d94262b73d4549d60795/jetty-client-9.4.13.v20181111.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty/jetty-http/9.4.13.v20181111/f6173660cb175c06130a94ad92e9cf423cc7705e/jetty-http-9.4.13.v20181111.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty.websocket/websocket-common/9.4.13.v20181111/e6402099da8fc0148a9d5f4cbb65280f81afc70f/websocket-common-9.4.13.v20181111.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty/jetty-io/9.4.13.v20181111/d02f54f44b61ee3e6f2cc6fb22cf3e50587b9f2/jetty-io-9.4.13.v20181111.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty/jetty-xml/9.4.13.v20181111/95a05d000c7906a0bd1aeeff77e9b66e13ecd173/jetty-xml-9.4.13.v20181111.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/com.github.jnr/jffi/1.2.17/6ffa5106be5a121bea9d0779cd757e804633e543/jffi-1.2.17.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/com.github.jnr/jffi/1.2.17/19335d57d54d54680bdf5aa2fe92cd41f5cd29ee/jffi-1.2.17-native.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.ow2.asm/asm-commons/5.0.3/a7111830132c7f87d08fe48cb0ca07630f8cb91c/asm-commons-5.0.3.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.ow2.asm/asm-analysis/5.0.3/c7126aded0e8e13fed5f913559a0dd7b770a10f3/asm-analysis-5.0.3.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.ow2.asm/asm-util/5.0.3/1512e5571325854b05fb1efce1db75fcced54389/asm-util-5.0.3.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.ow2.asm/asm-tree/5.0.3/287749b48ba7162fb67c93a026d690b29f410bed/asm-tree-5.0.3.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.ow2.asm/asm/5.0.3/dcc2193db20e19e1feca8b1240dbbc4e190824fa/asm-5.0.3.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/com.github.jnr/jnr-a64asm/1.0.0/a1cb8dbe71b5a6a0288043c3ba3ca64545be165/jnr-a64asm-1.0.0.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/com.github.jnr/jnr-x86asm/1.0.2/6936bbd6c5b235665d87bd450f5e13b52d4b48/jnr-x86asm-1.0.2.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty/jetty-util/9.4.13.v20181111/ea206cc74baae35b97cb85e29167f66977c70a5/jetty-util-9.4.13.v20181111.jar:/home/artyom/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty.websocket/websocket-api/9.4.13.v20181111/7f677fbc706b6d4873d50014a23f6ff5a6c81437/websocket-api-9.4.13.v20181111.jar" />
           <option name="noStdlib" value="true" />
           <option name="noReflect" value="true" />
           <option name="moduleName" value="kotlin-dataexchange" />
@@ -42,7 +42,6 @@
     <content url="file://$MODULE_DIR$/../../build/extracted-protos/test">
       <sourceFolder url="file://$MODULE_DIR$/../../build/extracted-protos/test" isTestSource="true" />
     </content>
-    <content url="file://$MODULE_DIR$/../../build/generated-src/antlr/test" />
     <content url="file://$MODULE_DIR$/../../build/generated/source/proto/test/java">
       <sourceFolder url="file://$MODULE_DIR$/../../build/generated/source/proto/test/java" isTestSource="true" />
     </content>
@@ -50,7 +49,6 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="kotlin-dataexchange.main" />
-    <orderEntry type="library" name="Gradle: antlr:antlr:2.7.7" level="project" />
     <orderEntry type="library" name="Gradle: io.javalin:javalin:2.5.0" level="project" />
     <orderEntry type="library" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.3.21" level="project" />
     <orderEntry type="library" name="Gradle: com.fasterxml.jackson.module:jackson-module-kotlin:2.9.5" level="project" />
@@ -58,381 +56,56 @@
     <orderEntry type="library" name="Gradle: ch.qos.logback:logback-classic:1.2.3" level="project" />
     <orderEntry type="library" name="Gradle: io.github.microutils:kotlin-logging:1.4.6" level="project" />
     <orderEntry type="library" name="Gradle: com.xenomachina:kotlin-argparser:2.0.3" level="project" />
-    <orderEntry type="library" name="Gradle: ru.spbstu.kspt.librarymigration:modelparser:0.4-SNAPSHOT" level="project" />
-    <orderEntry type="library" name="Gradle: org.antlr:antlr4:4.7.1" level="project" />
     <orderEntry type="library" name="Gradle: com.fasterxml.jackson.core:jackson-databind:2.9.5" level="project" />
-    <orderEntry type="library" name="Gradle: com.github.javaparser:javaparser-core:3.6.9" level="project" />
+    <orderEntry type="library" name="Gradle: ru.spbstu.kspt.librarymigration:modelparser:0.4-SNAPSHOT" level="project" />
     <orderEntry type="library" name="Gradle: com.github.jnr:jnr-unixsocket:0.20" level="project" />
-    <orderEntry type="module-library">
-      <library name="Gradle: org.antlr:ST4:4.1">
-        <CLASSES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.antlr/ST4/4.1/467d508be07a542ad0a68ffcaed2d561c5fb2e0c/ST4-4.1.jar!/" />
-        </CLASSES>
-        <JAVADOC>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.antlr/ST4/4.1/5ba1d81df4002089b58d3ee60abb521c30751932/ST4-4.1-javadoc.jar!/" />
-        </JAVADOC>
-        <SOURCES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.antlr/ST4/4.1/a0024699bf2a3daa79d75d67295f45761076058a/ST4-4.1-sources.jar!/" />
-        </SOURCES>
-      </library>
-    </orderEntry>
     <orderEntry type="library" name="Gradle: com.google.protobuf:protobuf-java:3.6.1" level="project" />
     <orderEntry type="library" name="Gradle: junit:junit:4.12" level="project" />
-    <orderEntry type="module-library">
-      <library name="Gradle: org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.3.21">
-        <CLASSES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib-jdk7/1.3.21/d207ce2c9bcf17dc8e51bab4dbfdac4d013e7138/kotlin-stdlib-jdk7-1.3.21.jar!/" />
-        </CLASSES>
-        <JAVADOC>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib-jdk7/1.3.21/c1cf6e5cf2dcc77a1bf2b9fef3ad52172adc3b8e/kotlin-stdlib-jdk7-1.3.21-javadoc.jar!/" />
-        </JAVADOC>
-        <SOURCES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib-jdk7/1.3.21/93dd94ae3e45cbde664abacd9d4c9b1b99f34201/kotlin-stdlib-jdk7-1.3.21-sources.jar!/" />
-        </SOURCES>
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library name="Gradle: com.xenomachina:xenocom:0.0.5">
-        <CLASSES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.xenomachina/xenocom/0.0.5/94b866b1a5d56fae0b5205287a221460307ff29c/xenocom-0.0.5.jar!/" />
-        </CLASSES>
-        <JAVADOC>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.xenomachina/xenocom/0.0.5/a8e9bfb1023313e3f638f08aebadb8d14a16bbac/xenocom-0.0.5-javadoc.jar!/" />
-        </JAVADOC>
-        <SOURCES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.xenomachina/xenocom/0.0.5/7adad1660a19fc8d9a9e2afee639da14f4289d0e/xenocom-0.0.5-sources.jar!/" />
-        </SOURCES>
-      </library>
-    </orderEntry>
+    <orderEntry type="library" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.3.21" level="project" />
+    <orderEntry type="library" name="Gradle: com.xenomachina:xenocom:0.0.5" level="project" />
     <orderEntry type="library" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib:1.3.21" level="project" />
-    <orderEntry type="module-library">
-      <library name="Gradle: ch.qos.logback:logback-core:1.2.3">
-        <CLASSES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/ch.qos.logback/logback-core/1.2.3/864344400c3d4d92dfeb0a305dc87d953677c03c/logback-core-1.2.3.jar!/" />
-        </CLASSES>
-        <JAVADOC>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/ch.qos.logback/logback-core/1.2.3/c978d4afd24d32991c8aa31a9c8a1119f19a1cb4/logback-core-1.2.3-javadoc.jar!/" />
-        </JAVADOC>
-        <SOURCES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/ch.qos.logback/logback-core/1.2.3/3ebabe69eba0196af9ad3a814f723fb720b9101e/logback-core-1.2.3-sources.jar!/" />
-        </SOURCES>
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library name="Gradle: org.slf4j:slf4j-api:1.7.25">
-        <CLASSES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.slf4j/slf4j-api/1.7.25/da76ca59f6a57ee3102f8f9bd9cee742973efa8a/slf4j-api-1.7.25.jar!/" />
-        </CLASSES>
-        <JAVADOC>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.slf4j/slf4j-api/1.7.25/f003e89ddebdbaca5cf3fc7cc0c67c88c2ca1a3c/slf4j-api-1.7.25-javadoc.jar!/" />
-        </JAVADOC>
-        <SOURCES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.slf4j/slf4j-api/1.7.25/962153db4a9ea71b79d047dfd1b2a0d80d8f4739/slf4j-api-1.7.25-sources.jar!/" />
-        </SOURCES>
-      </library>
-    </orderEntry>
+    <orderEntry type="library" name="Gradle: ch.qos.logback:logback-core:1.2.3" level="project" />
+    <orderEntry type="library" name="Gradle: org.slf4j:slf4j-api:1.7.25" level="project" />
+    <orderEntry type="library" name="Gradle: com.fasterxml.jackson.core:jackson-annotations:2.9.0" level="project" />
+    <orderEntry type="library" name="Gradle: com.fasterxml.jackson.core:jackson-core:2.9.5" level="project" />
+    <orderEntry type="library" name="Gradle: org.antlr:antlr4:4.7.1" level="project" />
+    <orderEntry type="library" name="Gradle: org.eclipse.jetty:jetty-webapp:9.4.13.v20181111" level="project" />
+    <orderEntry type="library" name="Gradle: org.eclipse.jetty.websocket:websocket-server:9.4.13.v20181111" level="project" />
+    <orderEntry type="library" name="Gradle: org.eclipse.jetty:jetty-servlet:9.4.13.v20181111" level="project" />
+    <orderEntry type="library" name="Gradle: org.eclipse.jetty:jetty-security:9.4.13.v20181111" level="project" />
+    <orderEntry type="library" name="Gradle: org.eclipse.jetty:jetty-server:9.4.13.v20181111" level="project" />
+    <orderEntry type="library" name="Gradle: com.github.jnr:jnr-enxio:0.18" level="project" />
+    <orderEntry type="library" name="Gradle: com.github.jnr:jnr-posix:3.0.46" level="project" />
+    <orderEntry type="library" name="Gradle: com.github.jnr:jnr-ffi:2.1.9" level="project" />
+    <orderEntry type="library" name="Gradle: com.github.jnr:jnr-constants:0.9.11" level="project" />
+    <orderEntry type="library" name="Gradle: org.hamcrest:hamcrest-core:1.3" level="project" />
+    <orderEntry type="library" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib-common:1.3.21" level="project" />
+    <orderEntry type="library" name="Gradle: org.jetbrains:annotations:13.0" level="project" />
     <orderEntry type="library" name="Gradle: org.antlr:antlr4-runtime:4.7.1" level="project" />
+    <orderEntry type="library" name="Gradle: org.antlr:ST4:4.0.8" level="project" />
     <orderEntry type="library" name="Gradle: org.antlr:antlr-runtime:3.5.2" level="project" />
     <orderEntry type="library" name="Gradle: org.abego.treelayout:org.abego.treelayout.core:1.0.3" level="project" />
     <orderEntry type="library" name="Gradle: org.glassfish:javax.json:1.0.4" level="project" />
     <orderEntry type="library" name="Gradle: com.ibm.icu:icu4j:58.2" level="project" />
-    <orderEntry type="module-library">
-      <library name="Gradle: com.fasterxml.jackson.core:jackson-annotations:2.9.0">
-        <CLASSES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.fasterxml.jackson.core/jackson-annotations/2.9.0/7c10d545325e3a6e72e06381afe469fd40eb701/jackson-annotations-2.9.0.jar!/" />
-        </CLASSES>
-        <JAVADOC>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.fasterxml.jackson.core/jackson-annotations/2.9.0/9978adad2c78154ca4aca7cd2a71941e1278f724/jackson-annotations-2.9.0-javadoc.jar!/" />
-        </JAVADOC>
-        <SOURCES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.fasterxml.jackson.core/jackson-annotations/2.9.0/a0ad4e203304ccab7e01266fa814115850edb8a9/jackson-annotations-2.9.0-sources.jar!/" />
-        </SOURCES>
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library name="Gradle: com.fasterxml.jackson.core:jackson-core:2.9.5">
-        <CLASSES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.fasterxml.jackson.core/jackson-core/2.9.5/a22ac51016944b06fd9ffbc9541c6e7ce5eea117/jackson-core-2.9.5.jar!/" />
-        </CLASSES>
-        <JAVADOC>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.fasterxml.jackson.core/jackson-core/2.9.5/716e556f9a81f50aab1ca745a16a95a3a62966b8/jackson-core-2.9.5-javadoc.jar!/" />
-        </JAVADOC>
-        <SOURCES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.fasterxml.jackson.core/jackson-core/2.9.5/739ee692a42ee8c0cf9d3c504f0df568797b0a85/jackson-core-2.9.5-sources.jar!/" />
-        </SOURCES>
-      </library>
-    </orderEntry>
-    <orderEntry type="library" name="Gradle: org.eclipse.jetty:jetty-webapp:9.4.13.v20181111" level="project" />
-    <orderEntry type="library" name="Gradle: org.eclipse.jetty.websocket:websocket-server:9.4.13.v20181111" level="project" />
-    <orderEntry type="library" name="Gradle: org.eclipse.jetty:jetty-servlet:9.4.13.v20181111" level="project" />
-    <orderEntry type="module-library">
-      <library name="Gradle: org.eclipse.jetty:jetty-security:9.4.13.v20181111">
-        <CLASSES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty/jetty-security/9.4.13.v20181111/3c52dbdff07f84d994da78437e95a4a7ff123bc9/jetty-security-9.4.13.v20181111.jar!/" />
-        </CLASSES>
-        <JAVADOC>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty/jetty-security/9.4.13.v20181111/85b0772585da84d8306a9bda4422cdd3be8bb95c/jetty-security-9.4.13.v20181111-javadoc.jar!/" />
-        </JAVADOC>
-        <SOURCES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty/jetty-security/9.4.13.v20181111/48dd30caaa61212d50a5877062b3542156170cfc/jetty-security-9.4.13.v20181111-sources.jar!/" />
-        </SOURCES>
-      </library>
-    </orderEntry>
-    <orderEntry type="library" name="Gradle: org.eclipse.jetty:jetty-server:9.4.13.v20181111" level="project" />
-    <orderEntry type="module-library">
-      <library name="Gradle: com.github.jnr:jnr-enxio:0.18">
-        <CLASSES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.github.jnr/jnr-enxio/0.18/bcb5efa57c639db7ea325a19c1549edb7a94d6d0/jnr-enxio-0.18.jar!/" />
-        </CLASSES>
-        <JAVADOC>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.github.jnr/jnr-enxio/0.18/476394499af7a4ac2cdebf3c2a47e073d0638157/jnr-enxio-0.18-javadoc.jar!/" />
-        </JAVADOC>
-        <SOURCES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.github.jnr/jnr-enxio/0.18/61df5061ea27653f01154931cece324d493937f/jnr-enxio-0.18-sources.jar!/" />
-        </SOURCES>
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library name="Gradle: com.github.jnr:jnr-posix:3.0.46">
-        <CLASSES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.github.jnr/jnr-posix/3.0.46/99b1430a737f41834910e945c19906280a6277d4/jnr-posix-3.0.46.jar!/" />
-        </CLASSES>
-        <JAVADOC>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.github.jnr/jnr-posix/3.0.46/b763717732a7cb5f5281484fae03513457f1438b/jnr-posix-3.0.46-javadoc.jar!/" />
-        </JAVADOC>
-        <SOURCES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.github.jnr/jnr-posix/3.0.46/30c35941cc732b242c53f0abbf6435bd5705bebe/jnr-posix-3.0.46-sources.jar!/" />
-        </SOURCES>
-      </library>
-    </orderEntry>
-    <orderEntry type="library" name="Gradle: com.github.jnr:jnr-ffi:2.1.9" level="project" />
-    <orderEntry type="module-library">
-      <library name="Gradle: com.github.jnr:jnr-constants:0.9.11">
-        <CLASSES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.github.jnr/jnr-constants/0.9.11/b8609839a9e71c4df0d409a8175bcc7bbebe2224/jnr-constants-0.9.11.jar!/" />
-        </CLASSES>
-        <JAVADOC>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.github.jnr/jnr-constants/0.9.11/60cb793d651a755a8dd2a5802b7bbf1993ccf916/jnr-constants-0.9.11-javadoc.jar!/" />
-        </JAVADOC>
-        <SOURCES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.github.jnr/jnr-constants/0.9.11/9c2aca3eaee1d2d2bb23390893be2b0f71669110/jnr-constants-0.9.11-sources.jar!/" />
-        </SOURCES>
-      </library>
-    </orderEntry>
-    <orderEntry type="library" name="Gradle: org.hamcrest:hamcrest-core:1.3" level="project" />
-    <orderEntry type="module-library">
-      <library name="Gradle: org.jetbrains.kotlin:kotlin-stdlib-common:1.3.21">
-        <CLASSES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib-common/1.3.21/f30e4a9897913e53d778f564110bafa1fef46643/kotlin-stdlib-common-1.3.21.jar!/" />
-        </CLASSES>
-        <JAVADOC>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib-common/1.3.21/c1cf6e5cf2dcc77a1bf2b9fef3ad52172adc3b8e/kotlin-stdlib-common-1.3.21-javadoc.jar!/" />
-        </JAVADOC>
-        <SOURCES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib-common/1.3.21/224a3bcfa1c088dd5d7c4a3958a68427b44c65dc/kotlin-stdlib-common-1.3.21-sources.jar!/" />
-        </SOURCES>
-      </library>
-    </orderEntry>
-    <orderEntry type="library" name="Gradle: org.jetbrains:annotations:13.0" level="project" />
-    <orderEntry type="module-library">
-      <library name="Gradle: org.eclipse.jetty.websocket:websocket-servlet:9.4.13.v20181111">
-        <CLASSES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty.websocket/websocket-servlet/9.4.13.v20181111/a9f84905c011c499d813ee5b4f919ab32abd8eab/websocket-servlet-9.4.13.v20181111.jar!/" />
-        </CLASSES>
-        <JAVADOC>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty.websocket/websocket-servlet/9.4.13.v20181111/3739396b31d900884d42424907b1aba0a64e195a/websocket-servlet-9.4.13.v20181111-javadoc.jar!/" />
-        </JAVADOC>
-        <SOURCES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty.websocket/websocket-servlet/9.4.13.v20181111/8bb5b509aa37f6d175702e720030294591128a2/websocket-servlet-9.4.13.v20181111-sources.jar!/" />
-        </SOURCES>
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library name="Gradle: javax.servlet:javax.servlet-api:3.1.0">
-        <CLASSES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/javax.servlet/javax.servlet-api/3.1.0/3cd63d075497751784b2fa84be59432f4905bf7c/javax.servlet-api-3.1.0.jar!/" />
-        </CLASSES>
-        <JAVADOC>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/javax.servlet/javax.servlet-api/3.1.0/7898c2d7d0779c852dea51cb75a446eeb932eb1b/javax.servlet-api-3.1.0-javadoc.jar!/" />
-        </JAVADOC>
-        <SOURCES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/javax.servlet/javax.servlet-api/3.1.0/ab3976d4574c48d22dc1abf6a9e8bd0fdf928223/javax.servlet-api-3.1.0-sources.jar!/" />
-        </SOURCES>
-      </library>
-    </orderEntry>
+    <orderEntry type="library" name="Gradle: org.eclipse.jetty.websocket:websocket-servlet:9.4.13.v20181111" level="project" />
+    <orderEntry type="library" name="Gradle: javax.servlet:javax.servlet-api:3.1.0" level="project" />
     <orderEntry type="library" name="Gradle: org.eclipse.jetty.websocket:websocket-client:9.4.13.v20181111" level="project" />
-    <orderEntry type="module-library">
-      <library name="Gradle: org.eclipse.jetty:jetty-client:9.4.13.v20181111">
-        <CLASSES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty/jetty-client/9.4.13.v20181111/d6e6b16b437a27a36a73d94262b73d4549d60795/jetty-client-9.4.13.v20181111.jar!/" />
-        </CLASSES>
-        <JAVADOC>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty/jetty-client/9.4.13.v20181111/7f6af1e3d474c7cead16fada09e06bcbcdeba40e/jetty-client-9.4.13.v20181111-javadoc.jar!/" />
-        </JAVADOC>
-        <SOURCES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty/jetty-client/9.4.13.v20181111/8e05442b8c0c206b067726813b3613d918732051/jetty-client-9.4.13.v20181111-sources.jar!/" />
-        </SOURCES>
-      </library>
-    </orderEntry>
+    <orderEntry type="library" name="Gradle: org.eclipse.jetty:jetty-client:9.4.13.v20181111" level="project" />
     <orderEntry type="library" name="Gradle: org.eclipse.jetty:jetty-http:9.4.13.v20181111" level="project" />
     <orderEntry type="library" name="Gradle: org.eclipse.jetty.websocket:websocket-common:9.4.13.v20181111" level="project" />
-    <orderEntry type="module-library">
-      <library name="Gradle: org.eclipse.jetty:jetty-io:9.4.13.v20181111">
-        <CLASSES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty/jetty-io/9.4.13.v20181111/d02f54f44b61ee3e6f2cc6fb22cf3e50587b9f2/jetty-io-9.4.13.v20181111.jar!/" />
-        </CLASSES>
-        <JAVADOC>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty/jetty-io/9.4.13.v20181111/2e29149538c015c32e68802680d4cd6b5a88b9b4/jetty-io-9.4.13.v20181111-javadoc.jar!/" />
-        </JAVADOC>
-        <SOURCES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty/jetty-io/9.4.13.v20181111/522053845508a01fce83310849dca080690e79dc/jetty-io-9.4.13.v20181111-sources.jar!/" />
-        </SOURCES>
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library name="Gradle: org.eclipse.jetty:jetty-xml:9.4.13.v20181111">
-        <CLASSES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty/jetty-xml/9.4.13.v20181111/95a05d000c7906a0bd1aeeff77e9b66e13ecd173/jetty-xml-9.4.13.v20181111.jar!/" />
-        </CLASSES>
-        <JAVADOC>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty/jetty-xml/9.4.13.v20181111/723cf68a8e0dd19a942c80f9ebf5438d5e99dfa9/jetty-xml-9.4.13.v20181111-javadoc.jar!/" />
-        </JAVADOC>
-        <SOURCES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty/jetty-xml/9.4.13.v20181111/9b4baf2bad3661d4a1997d7fe1257582dd77f4b4/jetty-xml-9.4.13.v20181111-sources.jar!/" />
-        </SOURCES>
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library name="Gradle: com.github.jnr:jffi:1.2.17">
-        <CLASSES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.github.jnr/jffi/1.2.17/6ffa5106be5a121bea9d0779cd757e804633e543/jffi-1.2.17.jar!/" />
-        </CLASSES>
-        <JAVADOC>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.github.jnr/jffi/1.2.17/62a30a2b8fd22c8d1f95ecddbee2181286251838/jffi-1.2.17-javadoc.jar!/" />
-        </JAVADOC>
-        <SOURCES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.github.jnr/jffi/1.2.17/60dba8519fde2e36763885e3d7c278befbb00b46/jffi-1.2.17-sources.jar!/" />
-        </SOURCES>
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library name="Gradle: com.github.jnr:jffi:native:1.2.17">
-        <CLASSES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.github.jnr/jffi/1.2.17/19335d57d54d54680bdf5aa2fe92cd41f5cd29ee/jffi-1.2.17-native.jar!/" />
-        </CLASSES>
-        <JAVADOC>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.github.jnr/jffi/1.2.17/62a30a2b8fd22c8d1f95ecddbee2181286251838/jffi-1.2.17-javadoc.jar!/" />
-        </JAVADOC>
-        <SOURCES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.github.jnr/jffi/1.2.17/60dba8519fde2e36763885e3d7c278befbb00b46/jffi-1.2.17-sources.jar!/" />
-        </SOURCES>
-      </library>
-    </orderEntry>
+    <orderEntry type="library" name="Gradle: org.eclipse.jetty:jetty-io:9.4.13.v20181111" level="project" />
+    <orderEntry type="library" name="Gradle: org.eclipse.jetty:jetty-xml:9.4.13.v20181111" level="project" />
+    <orderEntry type="library" name="Gradle: com.github.jnr:jffi:1.2.17" level="project" />
+    <orderEntry type="library" name="Gradle: com.github.jnr:jffi:native:1.2.17" level="project" />
     <orderEntry type="library" name="Gradle: org.ow2.asm:asm-commons:5.0.3" level="project" />
-    <orderEntry type="module-library">
-      <library name="Gradle: org.ow2.asm:asm-analysis:5.0.3">
-        <CLASSES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.ow2.asm/asm-analysis/5.0.3/c7126aded0e8e13fed5f913559a0dd7b770a10f3/asm-analysis-5.0.3.jar!/" />
-        </CLASSES>
-        <JAVADOC>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.ow2.asm/asm-analysis/5.0.3/c87547fa477f7dc22c5e3c5ddfc6dfac726e5b15/asm-analysis-5.0.3-javadoc.jar!/" />
-        </JAVADOC>
-        <SOURCES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.ow2.asm/asm-analysis/5.0.3/f0f24f6666c1a15c7e202e91610476bd4ce59368/asm-analysis-5.0.3-sources.jar!/" />
-        </SOURCES>
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library name="Gradle: org.ow2.asm:asm-util:5.0.3">
-        <CLASSES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.ow2.asm/asm-util/5.0.3/1512e5571325854b05fb1efce1db75fcced54389/asm-util-5.0.3.jar!/" />
-        </CLASSES>
-        <JAVADOC>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.ow2.asm/asm-util/5.0.3/c87547fa477f7dc22c5e3c5ddfc6dfac726e5b15/asm-util-5.0.3-javadoc.jar!/" />
-        </JAVADOC>
-        <SOURCES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.ow2.asm/asm-util/5.0.3/f0f24f6666c1a15c7e202e91610476bd4ce59368/asm-util-5.0.3-sources.jar!/" />
-        </SOURCES>
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library name="Gradle: org.ow2.asm:asm-tree:5.0.3">
-        <CLASSES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.ow2.asm/asm-tree/5.0.3/287749b48ba7162fb67c93a026d690b29f410bed/asm-tree-5.0.3.jar!/" />
-        </CLASSES>
-        <JAVADOC>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.ow2.asm/asm-tree/5.0.3/c87547fa477f7dc22c5e3c5ddfc6dfac726e5b15/asm-tree-5.0.3-javadoc.jar!/" />
-        </JAVADOC>
-        <SOURCES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.ow2.asm/asm-tree/5.0.3/f0f24f6666c1a15c7e202e91610476bd4ce59368/asm-tree-5.0.3-sources.jar!/" />
-        </SOURCES>
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library name="Gradle: org.ow2.asm:asm:5.0.3">
-        <CLASSES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.ow2.asm/asm/5.0.3/dcc2193db20e19e1feca8b1240dbbc4e190824fa/asm-5.0.3.jar!/" />
-        </CLASSES>
-        <JAVADOC>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.ow2.asm/asm/5.0.3/c87547fa477f7dc22c5e3c5ddfc6dfac726e5b15/asm-5.0.3-javadoc.jar!/" />
-        </JAVADOC>
-        <SOURCES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.ow2.asm/asm/5.0.3/f0f24f6666c1a15c7e202e91610476bd4ce59368/asm-5.0.3-sources.jar!/" />
-        </SOURCES>
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library name="Gradle: com.github.jnr:jnr-a64asm:1.0.0">
-        <CLASSES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.github.jnr/jnr-a64asm/1.0.0/a1cb8dbe71b5a6a0288043c3ba3ca64545be165/jnr-a64asm-1.0.0.jar!/" />
-        </CLASSES>
-        <JAVADOC>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.github.jnr/jnr-a64asm/1.0.0/98015deb7f344fa46cf7307ab22bfb3379e9479c/jnr-a64asm-1.0.0-javadoc.jar!/" />
-        </JAVADOC>
-        <SOURCES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.github.jnr/jnr-a64asm/1.0.0/8ed58640fc22f944f7ca5ebdbd855264c6ce6a4a/jnr-a64asm-1.0.0-sources.jar!/" />
-        </SOURCES>
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library name="Gradle: com.github.jnr:jnr-x86asm:1.0.2">
-        <CLASSES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.github.jnr/jnr-x86asm/1.0.2/6936bbd6c5b235665d87bd450f5e13b52d4b48/jnr-x86asm-1.0.2.jar!/" />
-        </CLASSES>
-        <JAVADOC>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.github.jnr/jnr-x86asm/1.0.2/65aa28fb4f4bf735e3cb657a33f82f3b4388b99a/jnr-x86asm-1.0.2-javadoc.jar!/" />
-        </JAVADOC>
-        <SOURCES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.github.jnr/jnr-x86asm/1.0.2/6bb6efcd010567ad80c8bb2bdd5065b30f0f1468/jnr-x86asm-1.0.2-sources.jar!/" />
-        </SOURCES>
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library name="Gradle: org.eclipse.jetty:jetty-util:9.4.13.v20181111">
-        <CLASSES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty/jetty-util/9.4.13.v20181111/ea206cc74baae35b97cb85e29167f66977c70a5/jetty-util-9.4.13.v20181111.jar!/" />
-        </CLASSES>
-        <JAVADOC>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty/jetty-util/9.4.13.v20181111/7e2e8cc9b6b1dcdadffc8ba154fe9fb6028cb1b1/jetty-util-9.4.13.v20181111-javadoc.jar!/" />
-        </JAVADOC>
-        <SOURCES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty/jetty-util/9.4.13.v20181111/ff16fa539b9b70373d48b5d4887a7c98a5ba038f/jetty-util-9.4.13.v20181111-sources.jar!/" />
-        </SOURCES>
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library name="Gradle: org.eclipse.jetty.websocket:websocket-api:9.4.13.v20181111">
-        <CLASSES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty.websocket/websocket-api/9.4.13.v20181111/7f677fbc706b6d4873d50014a23f6ff5a6c81437/websocket-api-9.4.13.v20181111.jar!/" />
-        </CLASSES>
-        <JAVADOC>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty.websocket/websocket-api/9.4.13.v20181111/7de47f19449deadb66fe9bc93552e2e2557826bb/websocket-api-9.4.13.v20181111-javadoc.jar!/" />
-        </JAVADOC>
-        <SOURCES>
-          <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty.websocket/websocket-api/9.4.13.v20181111/98c53825aef07e6a552d1cdd6729c11d54a6038f/websocket-api-9.4.13.v20181111-sources.jar!/" />
-        </SOURCES>
-      </library>
-    </orderEntry>
+    <orderEntry type="library" name="Gradle: org.ow2.asm:asm-analysis:5.0.3" level="project" />
+    <orderEntry type="library" name="Gradle: org.ow2.asm:asm-util:5.0.3" level="project" />
+    <orderEntry type="library" name="Gradle: org.ow2.asm:asm-tree:5.0.3" level="project" />
+    <orderEntry type="library" name="Gradle: org.ow2.asm:asm:5.0.3" level="project" />
+    <orderEntry type="library" name="Gradle: com.github.jnr:jnr-a64asm:1.0.0" level="project" />
+    <orderEntry type="library" name="Gradle: com.github.jnr:jnr-x86asm:1.0.2" level="project" />
+    <orderEntry type="library" name="Gradle: org.eclipse.jetty:jetty-util:9.4.13.v20181111" level="project" />
+    <orderEntry type="library" name="Gradle: org.eclipse.jetty.websocket:websocket-api:9.4.13.v20181111" level="project" />
   </component>
   <component name="TestModuleProperties" production-module="kotlin-dataexchange.main" />
 </module>
