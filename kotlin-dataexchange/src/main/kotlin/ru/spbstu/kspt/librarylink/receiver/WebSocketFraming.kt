@@ -1,9 +1,12 @@
-package ru.spbstu.kspt.librarylink
+package ru.spbstu.kspt.librarylink.receiver
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import io.javalin.Javalin
 import org.slf4j.LoggerFactory
+import ru.spbstu.kspt.librarylink.ChannelResponse
+import ru.spbstu.kspt.librarylink.Exchange
+import ru.spbstu.kspt.librarylink.MethodCallRequest
 
 class Receiver {
     private val mapper = ObjectMapper().registerModule(KotlinModule())
