@@ -119,7 +119,8 @@ enum class Tag(val code: Int) {
     OPEN_CHANNEL(4),
     DELETE_FROM_PERSISTENCE(5),
     START_BUFFERING(6),
-    STOP_BUFFERING(7);
+    STOP_BUFFERING(7),
+    STOP_RECEIVER(8);
 
     companion object {
         private val reverseValues: Map<Int, Tag> = values().associate { it.code to it }
