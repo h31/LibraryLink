@@ -4,9 +4,10 @@ import org.stringtemplate.v4.ST
 import org.stringtemplate.v4.STGroupFile
 import ru.spbstu.kspt.librarymigration.parser.LibraryDecl
 import ru.spbstu.kspt.librarymigration.parser.ModelParser
+import java.io.File
 import java.io.InputStream
 
-val primitiveTypes = listOf("String", "int")
+val primitiveTypes = listOf("String", "int", "Int")
 
 fun generateST(library: LibraryDecl, st: ST) {
     val methods = mutableMapOf<String, Method>()
@@ -14,10 +15,11 @@ fun generateST(library: LibraryDecl, st: ST) {
     val types = library.types.map { it.semanticType to it.codeType }.toMap()
 
     for (function in library.functions) {
-        val objectId = function.staticName?.staticName ?: ""
+        val hasSelf = function.args.any { it.type == "self" }
+        val static = function.staticName != null || !hasSelf
+        val objectId = if (static) function.staticName?.staticName ?: "" else "assignedID"
         val property = function.properties.any { it.key == "type" && it.value == "get" }
-        val static = function.staticName != null
-        val args = function.args.map {
+        val args = function.args.filterNot { it.type == "self" }.map {
             Arg(type = checkNotNull(types[it.type]),
                     name = it.name, isReference = calcIsReference(types[it.type]!!))
         } // TODO
@@ -108,11 +110,10 @@ data class Arg(val type: String, val name: String, val isReference: Boolean)
 
 fun InputStream.parseModel() = ModelParser().parse(this)
 
-fun main(args: Array<String>) {
-    generateWrapper(args.first())
-}
+fun main(args: Array<String>) = generateWrapper(args.first(), args.drop(1).dropLast(1), args.last())
 
-private fun generateWrapper(template: String) {
+private fun generateWrapper(template: String, modelFiles: List<String>, outputFile: String?) {
+    require(modelFiles.isNotEmpty())
     val group = STGroupFile("generator/$template.stg")
     val st = group.getInstanceOf("wrapperClass")
 //    st.add("type", "int")
@@ -131,15 +132,20 @@ private fun generateWrapper(template: String) {
 //    st.add("wrappedClasses", wrappedClass)
 //    st.add("value", 0)
     val classLoader = Test().javaClass.classLoader
-    val libraryModelAST = classLoader.getResourceAsStream("Requests.lsl").parseModel()
-    val pythonModelAST = classLoader.getResourceAsStream("Python.lsl").parseModel()
-    val mergedAST = mergeASTs(libraryModelAST.name, libraryModelAST, pythonModelAST)
+    val models = modelFiles.map { classLoader.getResourceAsStream(it).parseModel() }
+    val mergedAST = mergeASTs(models.first().name, models)
     generateST(mergedAST, st)
     val result = st.render()
-    println(result)
+    if (outputFile != null) {
+        File(outputFile).writeText(result)
+    } else {
+        println(result)
+    }
 }
 
-fun mergeASTs(name: String, vararg mergedASTs: LibraryDecl) = LibraryDecl(
+fun mergeASTs(name: String, vararg mergedASTs: LibraryDecl) = mergeASTs(name, mergedASTs.toList())
+
+fun mergeASTs(name: String, mergedASTs: List<LibraryDecl>) = LibraryDecl(
         name = name,
         imports = mergedASTs.flatMap { it.imports },
         automata = mergedASTs.flatMap { it.automata },

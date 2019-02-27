@@ -2,9 +2,7 @@ wrapperClass(libraryName, wrappedClasses) ::= <<
 <imports()>
 
 public class <libraryName>Kotlin {
-    <wrapperFields()>
-
-    <wrapperConstructors()>
+    <wrapperFields([libraryName, "Kotlin"])>
 
     <entitiesMaker()>
 
@@ -13,27 +11,17 @@ public class <libraryName>Kotlin {
 >>
 
 imports() ::= <<
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import ru.spbstu.kspt.librarylink.*;
 
 import java.util.*;
 >>
 
-wrapperFields() ::= <<
-private Logger logger = LoggerFactory.getLogger(<libraryName>Kotlin.class);
-
-private ProcessDataExchange exchange;
+wrapperFields(className) ::= <<
+private val exchange = LibraryLink.exchange;
 >>
 
-wrapperConstructors() ::= <<
-public <libraryName>Kotlin() {
-    this.exchange = LibraryLink.exchange;
-}
-
-public <libraryName>Kotlin(ProcessDataExchange exchange) {
-    this.exchange = exchange;
-}
+loggerField(className) ::= <<
+private val logger = LoggerFactory.getLogger(<className>::class.java);
 >>
 
 entities(wrappedClasses) ::= <<
@@ -43,16 +31,18 @@ entities(wrappedClasses) ::= <<
 entitiesMaker() ::= <<>>
 
 doCall(methodObject) ::= <<
-ProcessExchangeResponse peResponse = exchange.makeRequest(request);
+val peResponse = exchange.makeRequest(request);
+<if(methodObject.returnValue)>
 <if(methodObject.referenceReturn)>
 <returnExprReference(methodObject)>
 <else>
 <returnExprPrimitive(methodObject)>
 <endif>
+<endif>
 >>
 
 returnExprReference(methodObject) ::= <<
-return new <methodObject.returnValue>(peResponse.getAssignedID());
+return <methodObject.returnValue>(peResponse.assignedID);
 >>
 
 returnExprPrimitive(methodObject) ::= <<
@@ -61,55 +51,50 @@ return (<methodObject.returnValue>) peResponse.getReturnValue();
 
 requestObjectCreation(methodProperties, requestProperties) ::= <<
 <bigList(methodProperties.args)>
-Request request = new Request("<requestProperties.methodName>", "<requestProperties.objectID>", args, "<requestProperties.import>",
-        <requestProperties.static>, <requestProperties.doGetReturnValue>, <requestProperties.property>);
+val request = MethodCallRequest(methodName = "<requestProperties.methodName>",
+                                objectID = <if(requestProperties.static)>"<requestProperties.objectID>"<else><requestProperties.objectID><endif>,
+                                args = args,
+                                isStatic = <requestProperties.static>,
+                                doGetReturnValue = <requestProperties.doGetReturnValue>,
+                                isProperty = <requestProperties.property>);
 >>
 
 bigList(args) ::= <<
-List\<Argument> args = Arrays.asList(<args:argObject(); separator=", ">);
+val args = listOf\<Argument>(<args:argObject(); separator=", ">);
 >>
 
 argObject(arg) ::= <<
-<if (arg.reference)>
-new ReferenceArgument(<arg.name>.getAssignedID(), "<arg.name>")
-<else>
-new StringArgument(<arg.name>, "<arg.name>")
-<endif>
+Argument(<arg.name>, "<arg.name>")
 >>
 
 args(argObject) ::= <<
-<argObject.type> <argObject.name>
+<argObject.name>: <argObject.type>
 >>
 
+methodReturnValue(returnValue) ::= "<if(returnValue)>: <returnValue><endif>"
+
 method(methodObject) ::= <<
-public <methodObject.returnValue> <methodObject.name>(<methodObject.args:args(); separator=", ">) {
+public fun <methodObject.name>(<methodObject.args:args(); separator=", ">)<methodReturnValue(methodObject.returnValue)> {
     <requestObjectCreation(methodObject, methodObject.request)>
     <doCall(methodObject)>
 }
 >>
 
 constructor(methodObject, className) ::= <<
-public <className>(<methodObject.args:args(); separator=", ">) {
+constructor(<methodObject.args:args(); separator=", ">) {
     <requestObjectCreation(methodObject, methodObject.request)>
-    ProcessExchangeResponse peResponse = exchange.makeRequest(request);
-    setAssignedID(peResponse.getAssignedID());
+    val peResponse = exchange.makeRequest(request);
+    assignedID = peResponse.assignedID;
 }
 >>
 
 preinitConstructor(className) ::= <<
-public <className>(String storedName, ProcessDataExchange exchange) {
-    super(storedName);
-    this.exchange = exchange;
-}
-public <className>(String storedName) {
-    super(storedName);
-    this.exchange = LibraryLink.exchange;
-}
+constructor(storedName: String) : super(storedName);
 >>
 
 entity(wrappedClass) ::= <<
-class <wrappedClass.name> extends Handle {
-    <wrapperFields()>
+class <wrappedClass.name> : Handle {
+    <wrapperFields(wrappedClass.name)>
     <wrappedClass.constructor:constructor(wrappedClass.name); separator="\n\n">
     <preinitConstructor(wrappedClass.name)>
     <wrappedClass.methods:method(); separator="\n\n">
