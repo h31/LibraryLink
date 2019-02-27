@@ -7,7 +7,7 @@ class SocketServerTest {
         LibraryLink.runner = DummyRunner(true, "/tmp/linktest")
         val wrapper = SocketServerWrapper()
         val addr = Tuple(listOf("127.0.0.1", 3920))
-        val server = SocketServerWrapper.TCPServer(addr, ClassDecl(MyHandler::class.java), bind_and_activate = false)
+        val server = SocketServerWrapper.TCPServer(addr, SocketServerWrapper.BaseRequestHandler.subclassHandle(MyHandler::class.java), bind_and_activate = false)
         server.allow_reuse_address(true)
         server.server_bind()
         server.server_activate()

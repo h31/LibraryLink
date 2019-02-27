@@ -6,8 +6,6 @@ class SocketServerWrapper(private val exchange: ProcessDataExchange = LibraryLin
     }
 
     open class BaseRequestHandler(existingID: String? = null, private val exchange: ProcessDataExchange = LibraryLink.exchange) : Handle() {
-        var obtainedID = false
-
         init {
             if (existingID == null) {
                 // TODO
@@ -35,9 +33,14 @@ class SocketServerWrapper(private val exchange: ProcessDataExchange = LibraryLin
         open fun handle() {
             println("Default handler")
         }
+
+        companion object {
+            fun subclassHandle(clazz: Class<out BaseRequestHandler>): Handle =
+                    ClassDecl(clazz, importName = "socketserver", methodArguments = mapOf("handle" to listOf()))
+        }
     }
 
-    class TCPServer(server_addr: Tuple, handler: ClassDecl<out BaseRequestHandler>, bind_and_activate: Boolean = true, private val exchange: ProcessDataExchange = LibraryLink.exchange) : Handle() {
+    class TCPServer(server_addr: Tuple, handler: Handle, bind_and_activate: Boolean = true, private val exchange: ProcessDataExchange = LibraryLink.exchange) : Handle() {
         init {
             val resp = exchange.makeRequest(ConstructorRequest(
                     className = "socketserver.TCPServer",
@@ -83,10 +86,6 @@ class SocketServerWrapper(private val exchange: ProcessDataExchange = LibraryLin
             bytes.registerReference(resp.assignedID)
             return bytes
         }
-
-//        fun sendall(data: Bytes) {
-//
-//        }
     }
 
     class Bytes(private val exchange: ProcessDataExchange = LibraryLink.exchange) : Handle() {

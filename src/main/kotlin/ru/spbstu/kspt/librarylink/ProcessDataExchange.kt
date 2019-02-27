@@ -485,16 +485,16 @@ open class Handle() {
     }
 }
 
-open class ClassDecl<T>(clazz: Class<T>, exchange: ProcessDataExchange = LibraryLink.exchange) : Handle() {
+open class ClassDecl<T : Handle>(clazz: Class<T>, importName: String, methodArguments: Map<String, List<Argument>>, exchange: ProcessDataExchange = LibraryLink.exchange) : Handle() {
     init {
-        val classID = exchange.makeRequest(DynamicInheritRequest(importName = "socketserver",
+        val classID = exchange.makeRequest(DynamicInheritRequest(importName = importName,
                 automatonName = clazz.simpleName, inherits = clazz.superclass.simpleName,
-                methodArguments = mapOf("handle" to listOf())))
+                methodArguments = methodArguments))
         registerReference(classID.assignedID)
 
         exchange.registerConstructorCallback(clazz.simpleName) { req ->
-            val instance = clazz.constructors.first { !it.isSynthetic }.newInstance()
-            (instance as Handle).registerReference(req.assignedID)
+            val instance = clazz.constructors.first { !it.isSynthetic }.newInstance() as Handle
+            instance.registerReference(req.assignedID)
             instance
         } // TODO: Args
     }
