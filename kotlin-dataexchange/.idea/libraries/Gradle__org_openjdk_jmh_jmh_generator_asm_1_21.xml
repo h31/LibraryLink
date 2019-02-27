@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Gradle: org.openjdk.jmh:jmh-generator-asm:1.21">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.openjdk.jmh/jmh-generator-asm/1.21/670ffd88255faf81ad294f0d8a9eba0292f5a554/jmh-generator-asm-1.21.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.openjdk.jmh/jmh-generator-asm/1.21/57935669f8bd875ae28fdcf8e1c6406ccd821d3d/jmh-generator-asm-1.21-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.openjdk.jmh/jmh-generator-asm/1.21/365c5d0f3bac0d61c45a522db9fe973a85eb08e7/jmh-generator-asm-1.21-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

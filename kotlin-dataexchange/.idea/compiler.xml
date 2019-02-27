@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <bytecodeTargetLevel>
+      <module name="kotlin-dataexchange.jmh" target="1.8" />
+      <module name="kotlin-dataexchange.main" target="1.8" />
+      <module name="kotlin-dataexchange.test" target="1.8" />
+    </bytecodeTargetLevel>
+  </component>
+</project>
