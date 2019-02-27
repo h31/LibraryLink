@@ -1,7 +1,9 @@
-package generator
+package ru.spbstu.kspt.librarylink.generator
 
 import org.stringtemplate.v4.ST
 import org.stringtemplate.v4.STGroupFile
+import ru.spbstu.kspt.librarylink.MethodCallRequest
+import ru.spbstu.kspt.librarylink.Request
 import ru.spbstu.kspt.librarymigration.parser.LibraryDecl
 import ru.spbstu.kspt.librarymigration.parser.ModelParser
 import java.io.File
@@ -23,12 +25,11 @@ fun generateST(library: LibraryDecl, st: ST) {
             Arg(type = checkNotNull(types[it.type]),
                     name = it.name, isReference = calcIsReference(types[it.type]!!))
         } // TODO
-        val request = Request(
+        val request = MethodCallRequest(
                 methodName = function.name,
                 objectID = objectId,
                 args = listOf(),
                 doGetReturnValue = function.returnValue != null,
-                import = library.imports.firstOrNull() ?: "", // TODO
                 isProperty = property,
                 isStatic = static)
         val method = Method(function.name, args)
@@ -101,7 +102,7 @@ fun calcIsReference(type: String) = type !in primitiveTypes
 data class WrappedClass(val name: String, val methods: List<Method>, val constructor: Method?)
 
 data class Method(val name: String, val args: List<Arg>) {
-    var request: Request = Request("methodName", "ObjectID", listOf(), "import", true, false, true)
+    var request: Request = MethodCallRequest("methodName", "ObjectID", listOf(),  true, false, true)
     var returnValue: String? = null
     var referenceReturn: Boolean = true
 }
@@ -131,8 +132,7 @@ private fun generateWrapper(template: String, modelFiles: List<String>, outputFi
 //    )
 //    st.add("wrappedClasses", wrappedClass)
 //    st.add("value", 0)
-    val classLoader = Test().javaClass.classLoader
-    val models = modelFiles.map { classLoader.getResourceAsStream(it).parseModel() }
+    val models = modelFiles.map { File(it).inputStream().parseModel() }
     val mergedAST = mergeASTs(models.first().name, models)
     generateST(mergedAST, st)
     val result = st.render()

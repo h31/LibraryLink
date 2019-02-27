@@ -2,6 +2,7 @@ plugins {
     id 'idea'
     id "org.jetbrains.kotlin.jvm" version "1.3.21"
     id "com.google.protobuf" version "0.8.8"
+    id 'maven-publish'
 }
 
 repositories {
@@ -44,5 +45,17 @@ test {
 protobuf {
     protoc {
         artifact = 'com.google.protobuf:protoc:3.6.1'
+    }
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = 'ru.spbstu.kspt.librarymigration'
+            artifactId = 'kotlin-dataexchange'
+            version = '0.1-SNAPSHOT'
+
+            from components.java
+        }
     }
 }

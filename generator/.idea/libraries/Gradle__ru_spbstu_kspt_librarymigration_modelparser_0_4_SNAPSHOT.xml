@@ -1,14 +1,14 @@
 <component name="libraryTable">
   <library name="Gradle: ru.spbstu.kspt.librarymigration:modelparser:0.4-SNAPSHOT">
     <CLASSES>
-      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/ru.spbstu.kspt.librarymigration/modelparser/0.4-SNAPSHOT/95e1ce1b521b2dbaaae3c00ae0abf3b57fd2be85/modelparser-0.4-SNAPSHOT.jar!/" />
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/ru.spbstu.kspt.librarymigration/modelparser/0.4-SNAPSHOT/7c3093b39ac89f79cc5691aadb74970a58be062c/modelparser-0.4-SNAPSHOT.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES>
-      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/ru.spbstu.kspt.librarymigration/modelparser/0.4-SNAPSHOT/9cdf6fcb124b0d926a7228024483e6f68d4c907c/modelparser-0.4-SNAPSHOT-sources.jar!/" />
-      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/ru.spbstu.kspt.librarymigration/modelparser/0.4-SNAPSHOT/12ce04bd8b9f5f1c2c865bf555e83605225c823f/modelparser-0.4-SNAPSHOT-sources.jar!/" />
-      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/ru.spbstu.kspt.librarymigration/modelparser/0.4-SNAPSHOT/aaeb15386635c180e8c6e6b8bd0945871d3e4aa4/modelparser-0.4-SNAPSHOT-sources.jar!/" />
       <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/ru.spbstu.kspt.librarymigration/modelparser/0.4-SNAPSHOT/499935458f74cf2a47f71ee29c55390dbd764f9b/modelparser-0.4-SNAPSHOT-sources.jar!/" />
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/ru.spbstu.kspt.librarymigration/modelparser/0.4-SNAPSHOT/12ce04bd8b9f5f1c2c865bf555e83605225c823f/modelparser-0.4-SNAPSHOT-sources.jar!/" />
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/ru.spbstu.kspt.librarymigration/modelparser/0.4-SNAPSHOT/9cdf6fcb124b0d926a7228024483e6f68d4c907c/modelparser-0.4-SNAPSHOT-sources.jar!/" />
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/ru.spbstu.kspt.librarymigration/modelparser/0.4-SNAPSHOT/aaeb15386635c180e8c6e6b8bd0945871d3e4aa4/modelparser-0.4-SNAPSHOT-sources.jar!/" />
     </SOURCES>
   </library>
 </component>

@@ -1,6 +1,5 @@
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
-import generator.Test
 import ru.spbstu.kspt.librarylink.MethodCallRequest
 import ru.spbstu.kspt.librarymigration.CallEdge
 import ru.spbstu.kspt.librarymigration.Edge
@@ -12,7 +11,7 @@ fun main(args: Array<String>) {
     val logReader = File("link.log").bufferedReader()
     val cacheInstructionsWriter = File("LinkCache.cfg").bufferedWriter()
     val mapper = ObjectMapper().registerModule(KotlinModule())
-    val modelStream = Test().javaClass.classLoader.getResourceAsStream("Requests.lsl")
+    val modelStream = File(args.first()).inputStream()
     val ast = ModelParser().parse(modelStream)
     val library = ModelParser().postprocess(ast)
 
