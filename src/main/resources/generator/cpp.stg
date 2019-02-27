@@ -1,0 +1,38 @@
+wrapperClass(libraryName, wrappedClasses) ::= <<
+<imports()>
+
+<wrappedClasses:entity(); separator="\n\n">
+>>
+
+imports() ::= <<
+#include \<utility>
+#include \<unordered_map>
+#include "exchange.pb.h"
+
+#include \<z3.h>
+#include "z3_generated.h"
+>>
+
+function(methodObject) ::= <<
+void librarylink_<methodObject.name>(const exchange::Argument& argument, const std::string& assignedID, std::unordered_map\<std::string, void *>& persistence) {
+    <methodObject.args:arg()>
+    <self()>
+    auto return_value = <methodObject.name>(<argList(methodObject.args)>);
+}
+>>
+
+arg(argObject) ::= <<
+<argObject.type>* <argObject.name> = (<argObject.type>*) persistence[argument.string_value()];
+
+>>
+
+self() ::= <<
+self* self = (self*) persistence[assignedID];
+
+>>
+
+argList(args) ::= "<args:{x | *<x.name>}; separator=\", \">"
+
+entity(wrappedClass) ::= <<
+<wrappedClass.methods:function(); separator="\n\n">
+>>
