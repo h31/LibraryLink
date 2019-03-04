@@ -4,6 +4,7 @@ import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.multiple
 import com.github.ajalt.clikt.parameters.arguments.validate
+import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
 import com.github.ajalt.clikt.parameters.types.choice
@@ -19,7 +20,7 @@ import java.io.File
 import java.io.InputStream
 
 val primitiveTypes = listOf("String", "int", "Int")
-val supportsOOP = false
+var supportsOOP = false
 
 private fun generateArgs(args: List<FunctionArgument>, types: Map<String, String>): List<Arg> {
     val validArgs = if (supportsOOP) args.filterNot { it.type == "self" } else args
@@ -27,7 +28,7 @@ private fun generateArgs(args: List<FunctionArgument>, types: Map<String, String
         Arg(type = checkNotNull(types[it.type]),
                 name = it.name, reference = calcIsReference(types[it.type]!!), self = it.type == "self")
     } // TODO
-    generated.filter { it.self }.withIndex().forEach { it.value.index = it.index }
+    generated.filterNot { it.self }.withIndex().forEach { it.value.index = it.index }
     return generated
 }
 
@@ -132,6 +133,7 @@ fun InputStream.parseModel() = ModelParser().parse(this)
 
 class GeneratorCommand : CliktCommand() {
     val language: String by option("-l", "--language", help="Receiver language").choice(*supportedLanguages()).required()
+    val explicitSelf: Boolean by option("-s").flag()
     val output: File? by option("-o", "--output", help = "Output file").file()
     val models: List<File> by argument(help="Models").file(exists = true).multiple(required = true).validate {
         require(it.isNotEmpty()) { "At least one model should be specified" }
@@ -140,7 +142,8 @@ class GeneratorCommand : CliktCommand() {
     override fun run() = generateWrapper(
             template = "generator/$language.stg",
             modelFiles = models,
-            outputFile = output
+            outputFile = output,
+            explicitSelf = explicitSelf
     )
 
     private fun resourceReader(name: String) = this.javaClass.classLoader.getResourceAsStream(name).bufferedReader()
@@ -151,7 +154,8 @@ class GeneratorCommand : CliktCommand() {
 
 fun main(args: Array<String>) = GeneratorCommand().main(args)
 
-private fun generateWrapper(template: String, modelFiles: List<File>, outputFile: File?) {
+private fun generateWrapper(template: String, modelFiles: List<File>, outputFile: File?, explicitSelf: Boolean) {
+    supportsOOP = !explicitSelf
     val group = STGroupFile(template)
     val st = group.getInstanceOf("wrapperClass")
 //    st.add("type", "int")

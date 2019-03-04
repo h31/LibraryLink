@@ -19,7 +19,7 @@ void librarylink_<methodObject.name>(const exchange::MethodCallRequest& request,
     <methodObject.args:arg(); separator="\n">
     <if(methodObject.returnValue)><methodObject.returnValue> return_value = <endif><methodObject.name>(<argList(methodObject.args)>);
     <if(methodObject.returnValue)>
-    <methodObject.returnValue>* ptr = new(<methodObject.returnValue>);
+    <methodObject.returnValue>* ptr = new <methodObject.returnValue>;
     *ptr = std::move(return_value);
     persistence[request.assignedid()] = ptr;
     <endif>
@@ -29,12 +29,20 @@ void librarylink_<methodObject.name>(const exchange::MethodCallRequest& request,
 arg(argObject) ::= <<
 <if(argObject.self)>
 <argObject.type>* <argObject.name> = (<argObject.type>*) persistence[request.objectid()];
-<else>
+<elseif(argObject.reference)>
 <argObject.type>* <argObject.name> = (<argObject.type>*) persistence[request.arg(<argObject.index>).string_value()];
+<else>
+<argObject.type> <argObject.name> = request.arg(<argObject.index>).int_value();
 <endif>
 >>
 
-argList(args) ::= "<args:{x | *<x.name>}; separator=\", \">"
+argList(args) ::= <<
+<args:{x | <argUsage(x)>}; separator=", ">
+>>
+
+argUsage(arg) ::= <<
+<if(arg.reference)>*<arg.name><else><arg.name><endif>
+>>
 
 entity(wrappedClass) ::= <<
 <wrappedClass.methods:function(); separator="\n\n">
@@ -45,6 +53,7 @@ processing(wrappedClasses) ::= <<
 exchange::ChannelResponse process_request(const exchange::MethodCallRequest& request,
                                           std::unordered_map\<std::string, void *>& persistence) {
     <wrappedClasses:processingClass(); separator="\n">
+    return exchange::ChannelResponse();
 }
 >>
 

@@ -1,7 +1,13 @@
 import org.junit.Test
+import ru.spbstu.kspt.librarylink.DummyRunner
+import ru.spbstu.kspt.librarylink.LibraryLink
+import ru.spbstu.kspt.librarylink.ProtoBufDataExchange
 
 class Z3Example {
-    val z3 = Z3Kotlin()
+    init {
+        LibraryLink.runner = DummyRunner(false, "/tmp/linktest")
+        LibraryLink.exchange = ProtoBufDataExchange()
+    }
 
     @Test
     fun demorgan() {
@@ -15,5 +21,19 @@ class Z3Example {
         val symbol_y       = ctx.Z3_mk_int_symbol(1);
         val x              = ctx.Z3_mk_const(symbol_x, bool_sort);
         val y              = ctx.Z3_mk_const(symbol_y, bool_sort);
+
+        /* De Morgan - with a negation around */
+        /* !(!(x && y) <-> (!x || !y)) */
+        val not_x          = ctx.Z3_mk_not(x);
+        val not_y          = ctx.Z3_mk_not(y);
+        args[0]            = x;
+        args[1]            = y;
+        val x_and_y        = ctx.Z3_mk_and(2, args);
+        ls                 = Z3_mk_not(ctx, x_and_y);
+        args[0]            = not_x;
+        args[1]            = not_y;
+        rs                 = Z3_mk_or(ctx, 2, args);
+        conjecture         = Z3_mk_iff(ctx, ls, rs);
+        negated_conjecture = Z3_mk_not(ctx, conjecture);
     }
 }

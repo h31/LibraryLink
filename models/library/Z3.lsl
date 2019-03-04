@@ -10,6 +10,7 @@ library Z3 {
    Z3_sort (Z3_sort);
    Z3_symbol (Z3_symbol);
    Z3_ast (Z3_ast);
+   Z3_ast_pair (Z3_ast[]);
  }
 
  converters {
@@ -31,7 +32,7 @@ library Z3 {
   automaton Z3_context {
     state Constructed;
     shift Constructed -> self (Z3_mk_bool_sort);
-    shift Constructed -> self (Z3_mk_int_symbol, Z3_mk_const, Z3_mk_not, Z3_mk_and, Z3_mk_or, Z3_mk_iff);
+    shift Constructed -> self (Z3_mk_int_symbol, Z3_mk_const, Z3_mk_and, Z3_mk_or, Z3_mk_not, Z3_mk_iff);
   }
 
   fun Z3_context.Z3_mk_bool_sort(cfg: self): Z3_sort;
@@ -48,10 +49,14 @@ library Z3 {
   automaton Z3_ast {
     state Created, Constructed;
   }
+    
+  automaton Z3_ast_pair {
+    state Constructed;
+  }
 
   fun Z3_context.Z3_mk_const(cfg: self, s: Z3_symbol, ty: Z3_sort): Z3_ast;
-  fun Z3_context.Z3_mk_not(cfg: self): Z3_ast;
-  fun Z3_context.Z3_mk_and(cfg: self): Z3_ast;
-  fun Z3_context.Z3_mk_or(cfg: self): Z3_ast;
-  fun Z3_context.Z3_mk_iff(cfg: self): Z3_ast;
+  fun Z3_context.Z3_mk_and(cfg: self, num_args: Int, args: Z3_ast_pair): Z3_ast;
+  fun Z3_context.Z3_mk_or(cfg: self, num_args: Int, args: Z3_ast_pair): Z3_ast;
+  fun Z3_context.Z3_mk_not(cfg: self, a: Z3_ast): Z3_ast;
+  fun Z3_context.Z3_mk_iff(cfg: self, t1: Z3_ast, t2: Z3_ast): Z3_ast;
 }

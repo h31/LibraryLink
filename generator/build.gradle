@@ -53,6 +53,6 @@ generateGrammarSource {
     arguments += ["-visitor", "-long-messages"]
 }
 
-mainClassName = "ru.spbstu.kspt.librarymigration.MainKt"
+mainClassName = "ru.spbstu.kspt.librarylink.generator.GeneratorSTKt"
 
 //test.maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1

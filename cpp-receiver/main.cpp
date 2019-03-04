@@ -18,7 +18,7 @@
 
 std::string write_buffer;
 
-typedef std::tuple<uint32_t, uint32_t, std::unique_ptr<uint8_t>> channel_request;
+typedef std::tuple<uint32_t, uint32_t, std::vector<uint8_t>> channel_request;
 
 void log(const char *message) {
     printf("%s \n", message);
@@ -33,22 +33,36 @@ void check(bool condition) {
 
 std::unordered_map<std::string, void *> persistence;
 
-template <typename T> std::unique_ptr<T> read_block(int fd, size_t length = 1) {
-    std::unique_ptr<T> buffer = std::make_unique<T>(length);
+template <typename T> std::unique_ptr<T> read_value(int fd) {
+    std::unique_ptr<T> buffer = std::make_unique<T>();
 
-    long res = read(fd, buffer.get(), sizeof(T)*length);
+    long res = read(fd, buffer.get(), sizeof(T));
     printf("fread res is %ld \n", res);
+    if (res == 0) {
+        throw std::string("Connection closed");
+    }
+    return buffer;
+}
+
+std::vector<uint8_t> read_block(int fd, size_t length = 1) {
+    std::vector<uint8_t> buffer(length);
+
+    long res = read(fd, buffer.data(), length);
+    printf("fread res is %ld \n", res);
+    if (res == 0) {
+        throw std::string("Connection closed");
+    }
     return buffer;
 }
 
 channel_request read_frame(int fd) {
-    auto length = read_block<uint32_t>(fd);
+    auto length = read_value<uint32_t>(fd);
     printf("Len is %u \n", *length);
 
-    auto tag = read_block<uint32_t>(fd);
+    auto tag = read_value<uint32_t>(fd);
     printf("Tag is %u \n", *tag);
 
-    auto data = read_block<uint8_t>(fd, *length);
+    auto data = read_block(fd, *length);
     return std::make_tuple(*length, *tag, std::move(data));
 }
 
@@ -121,18 +135,19 @@ int main(int argc, char* argv[]) {
     GOOGLE_PROTOBUF_VERIFY_VERSION;
 
     if (argc < 2) {
-        log("FIFO base path required, cannot proceed");
+        log("Unix socket path required, cannot proceed");
         exit(1);
     }
-    std::string base_path = argv[1];
-    std::thread callback_thread(open_callback_channel, base_path);
-    unix_socket_server(base_path);
+    std::string unix_socket_path = argv[1];
+//    std::thread callback_thread(open_callback_channel, unix_socket_path);
+    unix_socket_server(unix_socket_path);
     return 0;
 }
 
 void unix_socket_server(std::string socket_path) {
     struct sockaddr_un addr = {};
     int fd,client;
+    remove(socket_path.c_str());
 
     if ( (fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
         perror("socket error");
@@ -161,6 +176,7 @@ void unix_socket_server(std::string socket_path) {
         }
 
         std::thread process_thread(process_channel, client);
+        process_thread.detach();
 
 //        while ( (rc=read(cl,buf,sizeof(buf))) > 0) {
 //            printf("read %u bytes: %.*s\n", rc, rc, buf);
@@ -185,16 +201,22 @@ void process_channel(int fd) {
 
     while (true) {
         uint32_t length, tag;
-        std::unique_ptr<uint8_t> request_bytes;
+        std::vector<uint8_t> request_bytes;
 
-        std::tie(length, tag, request_bytes) = read_frame(fd);
+        try {
+            std::tie(length, tag, request_bytes) = read_frame(fd);
+        } catch (std::string& s) {
+            fmt::printf("%s\n", s);
+            break;
+        }
+
 
         if (tag == 8) { // TODO: Enum
             break;
         }
 
         exchange::Request rq;
-        rq.ParseFromArray(request_bytes.get(), length);
+        rq.ParseFromArray(request_bytes.data(), length);
         exchange::ChannelResponse response;
 
         switch (rq.request_case()) {
@@ -202,6 +224,8 @@ void process_channel(int fd) {
                 auto request = rq.method_call();
 
                 printf("Method is %s \n", request.methodname().c_str());
+//                printf("Rq is %s \n", rq.DebugString().c_str());
+//                printf("Request is %s \n", request.DebugString().c_str());
 
                 response = process_request(request, persistence);
         }
