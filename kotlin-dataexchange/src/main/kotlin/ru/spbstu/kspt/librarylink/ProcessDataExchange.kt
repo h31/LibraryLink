@@ -16,6 +16,7 @@ import java.nio.channels.Channels
 import java.nio.charset.Charset
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.collections.AbstractList
 import kotlin.concurrent.thread
 import kotlin.reflect.KProperty
 
@@ -518,9 +519,10 @@ open class ClassDecl<T : Handle>(clazz: Class<T>, importName: String, methodArgu
 //    }
 //}
 
-inline fun <reified T>makeArray(size: Int): ArrayHandle<T> = ArrayHandle(size, T::class.java.simpleName)
+inline fun <reified T> makeArray(size: Int): ArrayHandle<T> = ArrayHandle(size, T::class.java.simpleName)
+inline fun <reified T> makeArray(src: Collection<T>): ArrayHandle<T> = ArrayHandle(src, T::class.java.simpleName)
 
-class ArrayHandle<T>(val size: Int, val className: String): Handle {
+class ArrayHandle<T>(override val size: Int, val className: String) : Handle, AbstractList<T>() {
     override val assignedID: String = HandleAutoGenerate().assignedID
 
     private val exchange = LibraryLink.exchange
@@ -529,7 +531,13 @@ class ArrayHandle<T>(val size: Int, val className: String): Handle {
         exchange.makeRequest(MethodCallRequest(methodName = "mem_alloc<$className>", args = listOf(Argument(size))), handle = this) // TODO: Type parameter
     }
 
-    operator fun get(index: Int): T {
+    constructor(src: Collection<T>, className: String) : this(src.size, className) {
+        src.withIndex().forEach { elem ->
+            set(elem.index, elem.value)
+        }
+    }
+
+    override operator fun get(index: Int): T {
         val resp = exchange.makeRequest(MethodCallRequest(methodName = "get<$className>", args = listOf(Argument(index)), objectID = assignedID, doGetReturnValue = true), handle = null) // TODO
         return resp.returnValue as T
     }
