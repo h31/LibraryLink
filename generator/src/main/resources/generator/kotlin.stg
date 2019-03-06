@@ -1,4 +1,4 @@
-wrapperClass(libraryName, wrappedClasses) ::= <<
+wrapperClass(libraryName, wrappedClasses, builtinClasses) ::= <<
 <imports()>
 
 public class <libraryName>Kotlin {
@@ -31,13 +31,19 @@ entities(wrappedClasses) ::= <<
 entitiesMaker() ::= <<>>
 
 doCall(methodObject) ::= <<
-val peResponse = exchange.makeRequest(request);
 <if(methodObject.returnValue)>
 <if(methodObject.referenceReturn)>
-<returnExprReference(methodObject)>
+val returnValue = <methodObject.returnValue>()
+returnValue.createByRequest(exchange, request)
+return returnValue
 <else>
-<returnExprPrimitive(methodObject)>
+val returnValue: <methodObject.returnValue>
+val resp = exchange.makeRequest(request)
+returnValue = resp.returnValue as <methodObject.returnValue>
+return returnValue
 <endif>
+<else>
+exchange.makeRequest(request)
 <endif>
 >>
 
@@ -81,22 +87,23 @@ public fun <methodObject.name>(<methodObject.args:args(); separator=", ">)<metho
 >>
 
 constructor(methodObject, className) ::= <<
-constructor(<methodObject.args:args(); separator=", ">) {
+constructor(<methodObject.args:args(); separator=", ">) : super() {
     <requestObjectCreation(methodObject, methodObject.request)>
-    val peResponse = exchange.makeRequest(request);
-    assignedID = peResponse.assignedID;
+    this.createByRequest(exchange, request);
 }
 >>
 
-preinitConstructor(className) ::= <<
-constructor(storedName: String) : super(storedName);
+preinitConstructor(wrappedClass) ::= <<
+<if(wrappedClass.noExplicitConstructors)>
+constructor() : super();
+<endif>
 >>
 
 entity(wrappedClass) ::= <<
-class <wrappedClass.name> : Handle {
+class <wrappedClass.name> : HandleAutoGenerate {
     <wrapperFields(wrappedClass.name)>
     <wrappedClass.constructor:constructor(wrappedClass.name); separator="\n\n">
-    <preinitConstructor(wrappedClass.name)>
+    <preinitConstructor(wrappedClass)>
     <wrappedClass.methods:method(); separator="\n\n">
 }
 >>

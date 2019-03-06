@@ -1,8 +1,8 @@
-wrapperClass(libraryName, wrappedClasses) ::= <<
+wrapperClass(libraryName, wrappedClasses, builtinClasses) ::= <<
 <imports()>
 
 <wrappedClasses:entity(); separator="\n\n">
-<processing(wrappedClasses)>
+<processing([wrappedClasses, builtinClasses])>
 >>
 
 imports() ::= <<
@@ -12,10 +12,13 @@ imports() ::= <<
 
 #include \<z3.h>
 #include "handlers.h"
+#include "helpers.h"
 >>
 
 function(methodObject) ::= <<
-void librarylink_<methodObject.name>(const exchange::MethodCallRequest& request, std::unordered_map\<std::string, void *>& persistence) {
+void librarylink_<methodObject.name>(const exchange::MethodCallRequest& request,
+                                     std::unordered_map\<std::string, void *>& persistence,
+                                     exchange::ChannelResponse& resp) {
     <methodObject.args:arg(); separator="\n">
     <if(methodObject.returnValue)><methodObject.returnValue> return_value = <endif><methodObject.name>(<argList(methodObject.args)>);
     <if(methodObject.returnValue)>
@@ -52,18 +55,22 @@ entity(wrappedClass) ::= <<
 processing(wrappedClasses) ::= <<
 exchange::ChannelResponse process_request(const exchange::MethodCallRequest& request,
                                           std::unordered_map\<std::string, void *>& persistence) {
+    auto resp = exchange::ChannelResponse();
     <wrappedClasses:processingClass(); separator="\n">
-    return exchange::ChannelResponse();
+    printf("No handler found\n");
+    throw "error";
 }
 >>
 
 processingClass(wrappedClass) ::= <<
 <wrappedClass.methods:processEntry(); separator="\n">
 <wrappedClass.constructor:processEntry(); separator="\n">
+<wrappedClass.builtinMethods:processEntry(); separator="\n">
 >>
 
 processEntry(methodObject) ::= <<
 if (request.methodname() == "<methodObject.name>") {
-    librarylink_<methodObject.name>(request, persistence);
+    librarylink_<methodObject.name>(request, persistence, resp);
+    return resp;
 }
 >>

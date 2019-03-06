@@ -13,9 +13,7 @@ import org.stringtemplate.v4.ST
 import org.stringtemplate.v4.STGroupFile
 import ru.spbstu.kspt.librarylink.MethodCallRequest
 import ru.spbstu.kspt.librarylink.Request
-import ru.spbstu.kspt.librarymigration.parser.FunctionArgument
-import ru.spbstu.kspt.librarymigration.parser.LibraryDecl
-import ru.spbstu.kspt.librarymigration.parser.ModelParser
+import ru.spbstu.kspt.librarymigration.parser.*
 import java.io.File
 import java.io.InputStream
 
@@ -32,7 +30,50 @@ private fun generateArgs(args: List<FunctionArgument>, types: Map<String, String
     return generated
 }
 
-fun generateST(library: LibraryDecl, st: ST) {
+const val cStyleArrayType = "%s*"
+const val kotlinStyleArrayType = "ArrayHandle<%s>"
+
+fun replaceArrayType(types: Map<String, String>): Map<String, String> {
+    return types.mapValues { if ("[]" in it.value) {
+        "ArrayHandle<${it.value.replace("[]", "")}>"
+    } else {
+        it.value
+    } }
+}
+
+fun patchLibraryDeclForArrays(library: LibraryDecl): LibraryDecl {
+    val arrayTypes = getArrayTypes(library)
+    val typeDecls = arrayTypes.map { type ->
+        val itemType = type.removeSuffix("[]")
+        val formatString = if (supportsOOP) kotlinStyleArrayType else cStyleArrayType
+        Type(semanticType = type, codeType = formatString.format(itemType))
+    }
+    return library.copy(types = library.types + typeDecls)
+}
+
+fun detectArraysInTypes(library: LibraryDecl): List<WrappedClass> {
+    val arrayTypes = getArrayTypes(library)
+    val arrayClasses = mutableListOf<WrappedClass>()
+    for (type in arrayTypes) {
+        val itemType = type.removeSuffix("[]")
+        val set = Method("set<$itemType>", args = listOf())
+        val get = Method("get<$itemType>", args = listOf())
+        val memAlloc = Method("mem_alloc<$itemType>", args = listOf())
+        arrayClasses += WrappedClass(name = type, methods = listOf(),
+                builtinMethods = listOf(set, get, memAlloc), constructor = null)
+//        val arrayAutomaton = Automaton(name = type,
+//                states = listOf(StateDecl("Created"), StateDecl("Constructed")),
+//                shifts = listOf(), extendable = false)
+    }
+    return arrayClasses
+}
+
+private fun getArrayTypes(library: LibraryDecl): Collection<String> =
+        library.functions.flatMap { it.args }.map { it.type }.filter { it.contains("[]") }.toSet()
+
+fun generateST(srcLibrary: LibraryDecl, st: ST) {
+    val library = patchLibraryDeclForArrays(srcLibrary)
+
     val methods = mutableMapOf<String, Method>()
 
     val types = library.types.map { it.semanticType to it.codeType }.toMap()
@@ -45,6 +86,7 @@ fun generateST(library: LibraryDecl, st: ST) {
         val args = generateArgs(function.args, types + ("self" to function.entity))
         val request = MethodCallRequest(
                 methodName = function.name,
+                type = "",
                 objectID = objectId,
                 args = listOf(),
                 doGetReturnValue = function.returnValue != null,
@@ -63,10 +105,13 @@ fun generateST(library: LibraryDecl, st: ST) {
         val clazz = WrappedClass(
                 automaton.name,
                 classMethods,
+                listOf(),
                 constructor
         )
+        clazz.noExplicitConstructors = (constructor == null)
         st.add("wrappedClasses", clazz)
     }
+    detectArraysInTypes(library).forEach { st.add("builtinClasses", it) }
     st.add("libraryName", library.name)
 //    val wrappedClass = WrappedClass(
 //            "Requests",
@@ -117,10 +162,15 @@ fun generateST(library: LibraryDecl, st: ST) {
 
 fun calcIsReference(type: String) = type !in primitiveTypes
 
-data class WrappedClass(val name: String, val methods: List<Method>, val constructor: Method?)
+data class WrappedClass(val name: String,
+                        val methods: List<Method>,
+                        val builtinMethods: List<Method>,
+                        val constructor: Method?) {
+    var noExplicitConstructors: Boolean = true
+}
 
 data class Method(val name: String, val args: List<Arg>) {
-    var request: Request = MethodCallRequest("methodName", "ObjectID", listOf(),  true, false, true)
+    var request: Request = MethodCallRequest("methodName", "ObjectID", "", listOf(),  true, false, true)
     var returnValue: String? = null
     var referenceReturn: Boolean = true
 }
