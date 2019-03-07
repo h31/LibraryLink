@@ -8,6 +8,7 @@ import jnr.unixsocket.UnixSocketAddress
 import jnr.unixsocket.UnixSocketChannel
 import org.slf4j.LoggerFactory
 import java.io.*
+import java.lang.StringBuilder
 import java.lang.ref.PhantomReference
 import java.lang.ref.ReferenceQueue
 import java.nio.ByteBuffer
@@ -520,7 +521,21 @@ open class ClassDecl<T : Handle>(clazz: Class<T>, importName: String, methodArgu
 //}
 
 inline fun <reified T> makeArray(size: Int): ArrayHandle<T> = ArrayHandle(size, T::class.java.simpleName)
-inline fun <reified T> makeArray(src: Collection<T>): ArrayHandle<T> = ArrayHandle(src, T::class.java.simpleName)
+inline fun <reified T> Collection<T>.toArrayHandle(): ArrayHandle<T> = ArrayHandle(this, T::class.java.simpleName)
+inline fun <reified T> Collection<T>.toArrayHandle(type: String): ArrayHandle<T> = ArrayHandle(this, type)
+inline fun <reified T> Array<T>.toArrayHandle(): ArrayHandle<T> = ArrayHandle(listOf(*this), T::class.java.simpleName)
+
+fun ArrayHandle<Char>.asString(): String { // TODO: Very hacky
+    val sb = StringBuilder()
+    for (i in 0..100) {
+        val char = (get(i) as Int).toChar()
+        if (char.toInt() == 0) {
+            break
+        }
+        sb.append(char)
+    }
+    return sb.toString()
+}
 
 class ArrayHandle<T>(override val size: Int, val className: String) : Handle, AbstractList<T>() {
     override val assignedID: String = HandleAutoGenerate().assignedID
@@ -547,6 +562,7 @@ class ArrayHandle<T>(override val size: Int, val className: String) : Handle, Ab
         val valueArgument = when (element) {
             is Handle -> Argument(element)
             is Number -> Argument(element)
+            is Char -> Argument(element.toInt()) // TODO
             else -> TODO()
         }
         exchange.makeRequest(MethodCallRequest(methodName = "set<$className>", args = listOf(Argument(index), valueArgument), objectID = assignedID, doGetReturnValue = false), handle = null)

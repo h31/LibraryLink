@@ -1,4 +1,4 @@
-wrapperClass(libraryName, wrappedClasses, builtinClasses) ::= <<
+wrapperClass(libraryName, wrappedClasses, builtinClasses, callbacks) ::= <<
 <imports()>
 
 <wrappedClasses:entity(); separator="\n\n">
@@ -22,9 +22,13 @@ void librarylink_<methodObject.name>(const exchange::MethodCallRequest& request,
     <methodObject.args:arg(); separator="\n">
     <if(methodObject.returnValue)><methodObject.returnValue> return_value = <endif><methodObject.name>(<argList(methodObject.args)>);
     <if(methodObject.returnValue)>
+    <if(methodObject.referenceReturn)>
     <methodObject.returnValue>* ptr = new <methodObject.returnValue>;
     *ptr = std::move(return_value);
     persistence[request.assignedid()] = ptr;
+    <else>
+    resp.set_return_value_int(return_value);
+    <endif>
     <endif>
 }
 >>

@@ -41,21 +41,21 @@ fun replaceArrayType(types: Map<String, String>): Map<String, String> {
     } }
 }
 
-fun patchLibraryDeclForArrays(library: LibraryDecl): LibraryDecl {
+fun patchLibraryDeclForArrays(library: LibraryDecl, types: Map<String, String>): LibraryDecl {
     val arrayTypes = getArrayTypes(library)
     val typeDecls = arrayTypes.map { type ->
-        val itemType = type.removeSuffix("[]")
+        val itemType = checkNotNull(types[type.removeSuffix("[]")])
         val formatString = if (supportsOOP) kotlinStyleArrayType else cStyleArrayType
         Type(semanticType = type, codeType = formatString.format(itemType))
     }
     return library.copy(types = library.types + typeDecls)
 }
 
-fun detectArraysInTypes(library: LibraryDecl): List<WrappedClass> {
+fun detectArraysInTypes(library: LibraryDecl, types: Map<String, String>): List<WrappedClass> {
     val arrayTypes = getArrayTypes(library)
     val arrayClasses = mutableListOf<WrappedClass>()
     for (type in arrayTypes) {
-        val itemType = type.removeSuffix("[]")
+        val itemType = checkNotNull(types[type.removeSuffix("[]")])
         val set = Method("set<$itemType>", args = listOf())
         val get = Method("get<$itemType>", args = listOf())
         val memAlloc = Method("mem_alloc<$itemType>", args = listOf())
@@ -72,11 +72,13 @@ private fun getArrayTypes(library: LibraryDecl): Collection<String> =
         library.functions.flatMap { it.args }.map { it.type }.filter { it.contains("[]") }.toSet()
 
 fun generateST(srcLibrary: LibraryDecl, st: ST) {
-    val library = patchLibraryDeclForArrays(srcLibrary)
+    var types = srcLibrary.types.map { it.semanticType to it.codeType }.toMap()
+
+    val library = patchLibraryDeclForArrays(srcLibrary, types)
+
+    types = library.types.map { it.semanticType to it.codeType }.toMap()
 
     val methods = mutableMapOf<String, Method>()
-
-    val types = library.types.map { it.semanticType to it.codeType }.toMap()
 
     for (function in library.functions) {
         val hasSelf = function.args.any { it.type == "self" }
@@ -94,24 +96,35 @@ fun generateST(srcLibrary: LibraryDecl, st: ST) {
                 isStatic = static)
         val method = Method(function.name, args)
         method.request = request
-        method.returnValue = types[function.returnValue]
+        method.returnValue = types[function.returnValue] // TODO: Check
         method.referenceReturn = method.returnValue !in primitiveTypes
         methods += method.name to method
     }
 
     for (automaton in library.automata) {
-        val classMethods = automaton.shifts.filterNot { it.from == "Created" }.flatMap { it.functions }.map { checkNotNull(methods[it]) }
-        val constructor = automaton.shifts.filter { it.from == "Created" }.flatMap { it.functions }.map { checkNotNull(methods[it]) }.singleOrNull()
-        val clazz = WrappedClass(
-                automaton.name,
-                classMethods,
-                listOf(),
-                constructor
-        )
-        clazz.noExplicitConstructors = (constructor == null)
-        st.add("wrappedClasses", clazz)
+        if (automaton.extendable) {
+            val classMethods = automaton.shifts.flatMap { it.functions }.map { checkNotNull(methods[it]) }
+            if (classMethods.size == 1) { // Callback
+                val method = classMethods.single()
+                method.clazz = WrappedClass(automaton.name, listOf(), listOf(), null)
+                st.add("callbacks", method)
+            } else {
+                TODO()
+            }
+        } else {
+            val classMethods = automaton.shifts.filterNot { it.from == "Created" }.flatMap { it.functions }.map { checkNotNull(methods[it]) }
+            val constructor = automaton.shifts.filter { it.from == "Created" }.flatMap { it.functions }.map { checkNotNull(methods[it]) }.singleOrNull()
+            val clazz = WrappedClass(
+                    automaton.name,
+                    classMethods,
+                    listOf(),
+                    constructor
+            )
+            clazz.noExplicitConstructors = (constructor == null)
+            st.add("wrappedClasses", clazz)
+        }
     }
-    detectArraysInTypes(library).forEach { st.add("builtinClasses", it) }
+    detectArraysInTypes(library, types).forEach { st.add("builtinClasses", it) }
     st.add("libraryName", library.name)
 //    val wrappedClass = WrappedClass(
 //            "Requests",
@@ -173,6 +186,7 @@ data class Method(val name: String, val args: List<Arg>) {
     var request: Request = MethodCallRequest("methodName", "ObjectID", "", listOf(),  true, false, true)
     var returnValue: String? = null
     var referenceReturn: Boolean = true
+    var clazz: WrappedClass? = null
 }
 
 data class Arg(val type: String, val name: String, val reference: Boolean, val self: Boolean) {
