@@ -11,7 +11,7 @@ library Z3 {
    Z3_symbol (Z3_symbol);
    Z3_ast (Z3_ast);
    Z3_solver (Z3_solver);
-   Z3_lbool (Z3_lbool);
+   Z3_lbool_ (Z3_lbool);
  }
 
  converters {
@@ -55,6 +55,10 @@ library Z3 {
  
  automaton Z3_solver {
    state Created, Constructed;
+ }
+ 
+ automaton Z3_lbool_ {
+   state Created, Z3_L_FALSE, Z3_L_UNDEF, Z3_L_TRUE;
  }
 
  fun Z3_context.Z3_mk_const(cfg: self, s: Z3_symbol, ty: Z3_sort): Z3_ast;

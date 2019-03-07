@@ -13,16 +13,17 @@ message Request {
         bool eval = 4;
         bool dynamic_inherit = 5;
     }
+    string assignedID = 7;
 }
 
 message MethodCallRequest {
     string methodName = 1;
+    string type = 8;
     string objectID = 2;
     repeated Argument arg = 3;
     bool static = 4;
     bool doGetReturnValue = 5;
     bool property = 6;
-    string assignedID = 7;
 }
 
 message Argument {
@@ -55,4 +56,5 @@ message ChannelResponse {
         string exception_message = 3;
         bool no_return_value = 4;
     }
+    string assignedID = 7;
 }

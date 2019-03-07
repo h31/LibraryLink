@@ -470,26 +470,24 @@ class ChannelResponse(
         @JsonProperty("exception_message") val exceptionMessage: String? = null
 )
 
-data class ProcessExchangeResponse(val returnValue: Any?) // TODO
+data class ProcessExchangeResponse(val returnValue: Any?,
+                                   val assignedID: String) {
+    fun bindTo(handle: Handle) {
+        handle.assignedID = this.assignedID
+        handle.registerReference()
+    }
+}
 
 interface Handle {
-    val assignedID: String
-    fun createByRequest(exchange: ProcessDataExchange, request: IdentifiableRequest): ProcessExchangeResponse {
-        return exchange.makeRequest(request.withID(assignedID), handle = this)
+    var assignedID: String
+    fun registerReference() {
+        val ref = HandlePhantomReference(this, HandleReferenceQueue.refqueue, assignedID)
+        HandleReferenceQueue.references += ref
     }
 }
 
 open class HandleAutoGenerate : Handle {
-    override val assignedID: String = AssignedIDCounter.getNextID()
-
-    init {
-        registerReference()
-    }
-
-    private fun registerReference() {
-//        val ref = HandlePhantomReference(this, HandleReferenceQueue.refqueue, assignedID)
-//        HandleReferenceQueue.references += ref
-    }
+    override lateinit var assignedID: String
 }
 
 open class DelayedAssignmentHandle : Handle {
@@ -500,7 +498,7 @@ open class ClassDecl<T : Handle>(clazz: Class<T>, importName: String, methodArgu
     override lateinit var assignedID: String
 
     init {
-        val classID = this.createByRequest(exchange, DynamicInheritRequest(importName = importName,
+        exchange.makeRequest(DynamicInheritRequest(importName = importName,
                 automatonName = clazz.simpleName, inherits = clazz.superclass.simpleName,
                 methodArguments = methodArguments))
 
@@ -523,12 +521,12 @@ inline fun <reified T> makeArray(size: Int): ArrayHandle<T> = ArrayHandle(size, 
 inline fun <reified T> makeArray(src: Collection<T>): ArrayHandle<T> = ArrayHandle(src, T::class.java.simpleName)
 
 class ArrayHandle<T>(override val size: Int, val className: String) : Handle, AbstractList<T>() {
-    override val assignedID: String = HandleAutoGenerate().assignedID
+    override lateinit var assignedID: String
 
     private val exchange = LibraryLink.exchange
 
     init {
-        exchange.makeRequest(MethodCallRequest(methodName = "mem_alloc<$className>", args = listOf(Argument(size))), handle = this) // TODO: Type parameter
+        exchange.makeRequest(MethodCallRequest(methodName = "mem_alloc<$className>", args = listOf(Argument(size)))).bindTo(this) // TODO: Type parameter
     }
 
     constructor(src: Collection<T>, className: String) : this(src.size, className) {
@@ -538,7 +536,7 @@ class ArrayHandle<T>(override val size: Int, val className: String) : Handle, Ab
     }
 
     override operator fun get(index: Int): T {
-        val resp = exchange.makeRequest(MethodCallRequest(methodName = "get<$className>", args = listOf(Argument(index)), objectID = assignedID, doGetReturnValue = true), handle = null) // TODO
+        val resp = exchange.makeRequest(MethodCallRequest(methodName = "get<$className>", args = listOf(Argument(index)), objectID = assignedID, doGetReturnValue = true)) // TODO
         return resp.returnValue as T
     }
 
@@ -549,7 +547,7 @@ class ArrayHandle<T>(override val size: Int, val className: String) : Handle, Ab
             is Number -> Argument(element)
             else -> TODO()
         }
-        exchange.makeRequest(MethodCallRequest(methodName = "set<$className>", args = listOf(Argument(index), valueArgument), objectID = assignedID, doGetReturnValue = false), handle = null)
+        exchange.makeRequest(MethodCallRequest(methodName = "set<$className>", args = listOf(Argument(index), valueArgument), objectID = assignedID, doGetReturnValue = false))
         return previousValue
     }
 }
@@ -568,7 +566,8 @@ interface CallbackRegistrable {
 }
 
 interface ProcessDataExchange : CallbackRegistrable {
-    fun makeRequest(request: Request, handle: Handle? = null): ProcessExchangeResponse
+    fun makeRequest(request: Request): ProcessExchangeResponse
+    fun makeRequests(requests: List<Request>): List<ProcessExchangeResponse>
 }
 
 interface CallbackReceiver {
@@ -621,33 +620,16 @@ class LibraryLinkException(message: String) : Exception(message)
 open class ProtoBufDataExchange(val runner: ReceiverRunner = LibraryLink.runner,
                                 val requestGenerator: RequestGenerator = runner.requestGenerator) : ProcessDataExchange,
         RequestGenerator by requestGenerator, CallbackRegistrable by runner.callbackDataExchange {
-    override fun makeRequest(request: Request, handle: Handle?): ProcessExchangeResponse {
-        require(!((handle != null) && (request !is IdentifiableRequest)))
-        if (handle != null && request is IdentifiableRequest) {
-            request.withID(handle.assignedID)
-        }
-        val cached = currentSequence.poll()
-        val responseBinary: ByteArray = if (cached != null && cached.first == request) {
-            cached.second
-        } else {
-            if (currentSequence.isNotEmpty()) currentSequence.clear()
-            val list = cacheManager.getPrefetchRequests(request)
-            if (list.isEmpty()) {
-                val requestBinary = request.toProtobuf()
-                requestGenerator.sendRequest(requestBinary)
-            } else {
-                val requestBinaries = list.map { it.toProtobuf() }
-                val newElements = requestGenerator.sendRequests(requestBinaries)
-                list.zip(newElements).toCollection(currentSequence)
-                currentSequence.poll().second
-            }
-        }
+    override fun makeRequest(request: Request): ProcessExchangeResponse {
+        val requestBinary = request.toProtobuf()
+        val responseBinary: ByteArray = requestGenerator.sendRequest(requestBinary)
         val channelResponse = Exchange.ChannelResponse.parseFrom(responseBinary)
         return channelResponse.toProcessExchangeResponse()
     }
 
-    private val cacheManager: CacheManager = NoopCacheManager()
-    private val currentSequence = ArrayDeque<Pair<Request, ByteArray>>()
+    override fun makeRequests(requests: List<Request>): List<ProcessExchangeResponse> {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
 
     private fun Exchange.ChannelResponse.toProcessExchangeResponse(): ProcessExchangeResponse {
         return when (this.returnValueCase) {
@@ -770,6 +752,36 @@ open class SimpleTextProcessDataExchange(val runner: ReceiverRunner = LibraryLin
         makeChannelRequest(message)
         logger.info("Wrote $description")
     }
+}
+
+class CachingProcessDataExchange(val backend: ProcessDataExchange, val cacheManager: CacheManager) : ProcessDataExchange {
+    override fun registerCallback(funcName: String, receiver: CallbackReceiver) = backend.registerCallback(funcName, receiver)
+
+    override fun registerCallback(funcName: String, receiver: (request: MethodCallRequest, obj: Any) -> Any?) = backend.registerCallback(funcName, receiver)
+
+    override fun registerConstructorCallback(className: String, receiver: (request: MethodCallRequest) -> Any?) = backend.registerConstructorCallback(className, receiver)
+
+    override fun makeRequest(request: Request, handle: Handle?): ProcessExchangeResponse {
+        val cached = currentSequence.poll()
+        val response: ProcessExchangeResponse = if (cached != null && cached.first == request) {
+            cached.second
+        } else {
+            if (currentSequence.isNotEmpty()) currentSequence.clear()
+            val list = cacheManager.getPrefetchRequests(request)
+            if (list.isEmpty()) {
+                backend.makeRequest(request)
+            } else {
+                val newElements = backend.makeRequests(list)
+                list.zip(newElements).toCollection(currentSequence)
+                currentSequence.poll().second
+            }
+        }
+        return response
+    }
+
+    private val currentSequence = ArrayDeque<Pair<Request, ProcessExchangeResponse>>()
+
+    override fun makeRequests(requests: List<Pair<Request, Handle?>>): List<ProcessExchangeResponse> = backend.makeRequests(requests) // TODO
 }
 
 interface CacheManager {
