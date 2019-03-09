@@ -124,7 +124,7 @@ class Z3Example {
     fun mk_context_custom(cfg: Z3_config, err: Z3_error_handler): Z3_context {
         val ctx: Z3_context
 
-        cfg.Z3_set_param_value("model".toList().toArrayHandle("char"), "true".toList().toArrayHandle("char"))
+        cfg.Z3_set_param_value("model".toList().toArrayHandle(), "true".toList().toArrayHandle())
         ctx = cfg.Z3_mk_context()
 //        ctx.Z3_set_error_handler(err)
 
@@ -232,8 +232,8 @@ class Z3Example {
 
         ctx        = mk_context();
         s          = mk_solver(ctx);
-        x          = mk_int_var(ctx, "x".toList().toArrayHandle("char"));
-        y          = mk_int_var(ctx, "y".toList().toArrayHandle("char"));
+        x          = mk_int_var(ctx, "x".toList().toArrayHandle());
+        y          = mk_int_var(ctx, "y".toList().toArrayHandle());
         one        = mk_int(ctx, 1);
         two        = mk_int(ctx, 2);
 

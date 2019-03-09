@@ -73,7 +73,9 @@ void write_frame(int fd, uint32_t tag, const std::string& message) {
     write(fd, message.data(), size);
 }
 
-volatile int write_callback_counter = 0;
+std::atomic_uint_fast64_t assigned_id_counter;
+
+//volatile int write_callback_counter = 0;
 
 FILE* callback_from_receiver_channel;
 FILE* callback_to_receiver_channel;
@@ -224,10 +226,15 @@ void process_channel(int fd) {
                 auto request = rq.method_call();
 
                 printf("Method is %s \n", request.methodname().c_str());
-//                printf("Rq is %s \n", rq.DebugString().c_str());
+                printf("Rq is %s \n", rq.DebugString().c_str());
 //                printf("Request is %s \n", request.DebugString().c_str());
 
-                response = process_request(request, persistence);
+                auto id = assigned_id_counter++;
+                response.set_assignedid(std::to_string(id));
+
+                response = process_request(request, persistence, response);
+
+                printf("Response is %s \n", response.DebugString().c_str());
         }
 
 

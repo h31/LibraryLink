@@ -36,7 +36,7 @@ doCall(methodObject) ::= <<
 <if(methodObject.returnValue)>
 <if(methodObject.referenceReturn)>
 val returnValue = <methodObject.returnValue>()
-returnValue.createByRequest(exchange, request)
+exchange.makeRequest(request).bindTo(returnValue)
 return returnValue
 <else>
 val returnValue: <methodObject.returnValue>
@@ -91,7 +91,7 @@ public fun <methodObject.name>(<methodObject.args:args(); separator=", ">)<metho
 constructor(methodObject, className) ::= <<
 constructor(<methodObject.args:args(); separator=", ">) : super() {
     <requestObjectCreation(methodObject, methodObject.request)>
-    this.createByRequest(exchange, request);
+    exchange.makeRequest(request).bindTo(this);
 }
 >>
 

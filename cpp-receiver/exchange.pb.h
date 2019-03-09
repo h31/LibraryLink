@@ -197,6 +197,20 @@ class Request : public ::google::protobuf::Message /* @@protoc_insertion_point(c
 
   // accessors -------------------------------------------------------
 
+  // string assignedID = 7;
+  void clear_assignedid();
+  static const int kAssignedIDFieldNumber = 7;
+  const ::std::string& assignedid() const;
+  void set_assignedid(const ::std::string& value);
+  #if LANG_CXX11
+  void set_assignedid(::std::string&& value);
+  #endif
+  void set_assignedid(const char* value);
+  void set_assignedid(const char* value, size_t size);
+  ::std::string* mutable_assignedid();
+  ::std::string* release_assignedid();
+  void set_allocated_assignedid(::std::string* assignedid);
+
   // .exchange.MethodCallRequest method_call = 1;
   bool has_method_call() const;
   void clear_method_call();
@@ -265,6 +279,7 @@ class Request : public ::google::protobuf::Message /* @@protoc_insertion_point(c
   inline void clear_has_request();
 
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
+  ::google::protobuf::internal::ArenaStringPtr assignedid_;
   union RequestUnion {
     RequestUnion() {}
     ::exchange::MethodCallRequest* method_call_;
@@ -407,19 +422,19 @@ class MethodCallRequest : public ::google::protobuf::Message /* @@protoc_inserti
   ::std::string* release_objectid();
   void set_allocated_objectid(::std::string* objectid);
 
-  // string assignedID = 7;
-  void clear_assignedid();
-  static const int kAssignedIDFieldNumber = 7;
-  const ::std::string& assignedid() const;
-  void set_assignedid(const ::std::string& value);
+  // string type = 8;
+  void clear_type();
+  static const int kTypeFieldNumber = 8;
+  const ::std::string& type() const;
+  void set_type(const ::std::string& value);
   #if LANG_CXX11
-  void set_assignedid(::std::string&& value);
+  void set_type(::std::string&& value);
   #endif
-  void set_assignedid(const char* value);
-  void set_assignedid(const char* value, size_t size);
-  ::std::string* mutable_assignedid();
-  ::std::string* release_assignedid();
-  void set_allocated_assignedid(::std::string* assignedid);
+  void set_type(const char* value);
+  void set_type(const char* value, size_t size);
+  ::std::string* mutable_type();
+  ::std::string* release_type();
+  void set_allocated_type(::std::string* type);
 
   // bool static = 4;
   void clear_static_();
@@ -446,7 +461,7 @@ class MethodCallRequest : public ::google::protobuf::Message /* @@protoc_inserti
   ::google::protobuf::RepeatedPtrField< ::exchange::Argument > arg_;
   ::google::protobuf::internal::ArenaStringPtr methodname_;
   ::google::protobuf::internal::ArenaStringPtr objectid_;
-  ::google::protobuf::internal::ArenaStringPtr assignedid_;
+  ::google::protobuf::internal::ArenaStringPtr type_;
   bool static__;
   bool dogetreturnvalue_;
   bool property_;
@@ -975,6 +990,20 @@ class ChannelResponse : public ::google::protobuf::Message /* @@protoc_insertion
 
   // accessors -------------------------------------------------------
 
+  // string assignedID = 7;
+  void clear_assignedid();
+  static const int kAssignedIDFieldNumber = 7;
+  const ::std::string& assignedid() const;
+  void set_assignedid(const ::std::string& value);
+  #if LANG_CXX11
+  void set_assignedid(::std::string&& value);
+  #endif
+  void set_assignedid(const char* value);
+  void set_assignedid(const char* value, size_t size);
+  ::std::string* mutable_assignedid();
+  ::std::string* release_assignedid();
+  void set_allocated_assignedid(::std::string* assignedid);
+
   // string return_value_string = 1;
   private:
   bool has_return_value_string() const;
@@ -1040,6 +1069,7 @@ class ChannelResponse : public ::google::protobuf::Message /* @@protoc_insertion
   inline void clear_has_return_value();
 
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
+  ::google::protobuf::internal::ArenaStringPtr assignedid_;
   union ReturnValueUnion {
     ReturnValueUnion() {}
     ::google::protobuf::internal::ArenaStringPtr return_value_string_;
@@ -1253,6 +1283,59 @@ inline void Request::set_dynamic_inherit(bool value) {
   // @@protoc_insertion_point(field_set:exchange.Request.dynamic_inherit)
 }
 
+// string assignedID = 7;
+inline void Request::clear_assignedid() {
+  assignedid_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline const ::std::string& Request::assignedid() const {
+  // @@protoc_insertion_point(field_get:exchange.Request.assignedID)
+  return assignedid_.GetNoArena();
+}
+inline void Request::set_assignedid(const ::std::string& value) {
+  
+  assignedid_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  // @@protoc_insertion_point(field_set:exchange.Request.assignedID)
+}
+#if LANG_CXX11
+inline void Request::set_assignedid(::std::string&& value) {
+  
+  assignedid_.SetNoArena(
+    &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
+  // @@protoc_insertion_point(field_set_rvalue:exchange.Request.assignedID)
+}
+#endif
+inline void Request::set_assignedid(const char* value) {
+  GOOGLE_DCHECK(value != NULL);
+  
+  assignedid_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:exchange.Request.assignedID)
+}
+inline void Request::set_assignedid(const char* value, size_t size) {
+  
+  assignedid_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:exchange.Request.assignedID)
+}
+inline ::std::string* Request::mutable_assignedid() {
+  
+  // @@protoc_insertion_point(field_mutable:exchange.Request.assignedID)
+  return assignedid_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline ::std::string* Request::release_assignedid() {
+  // @@protoc_insertion_point(field_release:exchange.Request.assignedID)
+  
+  return assignedid_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void Request::set_allocated_assignedid(::std::string* assignedid) {
+  if (assignedid != NULL) {
+    
+  } else {
+    
+  }
+  assignedid_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), assignedid);
+  // @@protoc_insertion_point(field_set_allocated:exchange.Request.assignedID)
+}
+
 inline bool Request::has_request() const {
   return request_case() != REQUEST_NOT_SET;
 }
@@ -1372,6 +1455,59 @@ inline void MethodCallRequest::set_allocated_objectid(::std::string* objectid) {
   // @@protoc_insertion_point(field_set_allocated:exchange.MethodCallRequest.objectID)
 }
 
+// string type = 8;
+inline void MethodCallRequest::clear_type() {
+  type_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline const ::std::string& MethodCallRequest::type() const {
+  // @@protoc_insertion_point(field_get:exchange.MethodCallRequest.type)
+  return type_.GetNoArena();
+}
+inline void MethodCallRequest::set_type(const ::std::string& value) {
+  
+  type_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  // @@protoc_insertion_point(field_set:exchange.MethodCallRequest.type)
+}
+#if LANG_CXX11
+inline void MethodCallRequest::set_type(::std::string&& value) {
+  
+  type_.SetNoArena(
+    &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
+  // @@protoc_insertion_point(field_set_rvalue:exchange.MethodCallRequest.type)
+}
+#endif
+inline void MethodCallRequest::set_type(const char* value) {
+  GOOGLE_DCHECK(value != NULL);
+  
+  type_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:exchange.MethodCallRequest.type)
+}
+inline void MethodCallRequest::set_type(const char* value, size_t size) {
+  
+  type_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:exchange.MethodCallRequest.type)
+}
+inline ::std::string* MethodCallRequest::mutable_type() {
+  
+  // @@protoc_insertion_point(field_mutable:exchange.MethodCallRequest.type)
+  return type_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline ::std::string* MethodCallRequest::release_type() {
+  // @@protoc_insertion_point(field_release:exchange.MethodCallRequest.type)
+  
+  return type_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void MethodCallRequest::set_allocated_type(::std::string* type) {
+  if (type != NULL) {
+    
+  } else {
+    
+  }
+  type_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), type);
+  // @@protoc_insertion_point(field_set_allocated:exchange.MethodCallRequest.type)
+}
+
 // repeated .exchange.Argument arg = 3;
 inline int MethodCallRequest::arg_size() const {
   return arg_.size();
@@ -1442,59 +1578,6 @@ inline void MethodCallRequest::set_property(bool value) {
   
   property_ = value;
   // @@protoc_insertion_point(field_set:exchange.MethodCallRequest.property)
-}
-
-// string assignedID = 7;
-inline void MethodCallRequest::clear_assignedid() {
-  assignedid_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-}
-inline const ::std::string& MethodCallRequest::assignedid() const {
-  // @@protoc_insertion_point(field_get:exchange.MethodCallRequest.assignedID)
-  return assignedid_.GetNoArena();
-}
-inline void MethodCallRequest::set_assignedid(const ::std::string& value) {
-  
-  assignedid_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:exchange.MethodCallRequest.assignedID)
-}
-#if LANG_CXX11
-inline void MethodCallRequest::set_assignedid(::std::string&& value) {
-  
-  assignedid_.SetNoArena(
-    &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
-  // @@protoc_insertion_point(field_set_rvalue:exchange.MethodCallRequest.assignedID)
-}
-#endif
-inline void MethodCallRequest::set_assignedid(const char* value) {
-  GOOGLE_DCHECK(value != NULL);
-  
-  assignedid_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:exchange.MethodCallRequest.assignedID)
-}
-inline void MethodCallRequest::set_assignedid(const char* value, size_t size) {
-  
-  assignedid_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-      ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:exchange.MethodCallRequest.assignedID)
-}
-inline ::std::string* MethodCallRequest::mutable_assignedid() {
-  
-  // @@protoc_insertion_point(field_mutable:exchange.MethodCallRequest.assignedID)
-  return assignedid_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-}
-inline ::std::string* MethodCallRequest::release_assignedid() {
-  // @@protoc_insertion_point(field_release:exchange.MethodCallRequest.assignedID)
-  
-  return assignedid_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-}
-inline void MethodCallRequest::set_allocated_assignedid(::std::string* assignedid) {
-  if (assignedid != NULL) {
-    
-  } else {
-    
-  }
-  assignedid_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), assignedid);
-  // @@protoc_insertion_point(field_set_allocated:exchange.MethodCallRequest.assignedID)
 }
 
 // -------------------------------------------------------------------
@@ -2089,6 +2172,59 @@ inline void ChannelResponse::set_no_return_value(bool value) {
   }
   return_value_.no_return_value_ = value;
   // @@protoc_insertion_point(field_set:exchange.ChannelResponse.no_return_value)
+}
+
+// string assignedID = 7;
+inline void ChannelResponse::clear_assignedid() {
+  assignedid_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline const ::std::string& ChannelResponse::assignedid() const {
+  // @@protoc_insertion_point(field_get:exchange.ChannelResponse.assignedID)
+  return assignedid_.GetNoArena();
+}
+inline void ChannelResponse::set_assignedid(const ::std::string& value) {
+  
+  assignedid_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  // @@protoc_insertion_point(field_set:exchange.ChannelResponse.assignedID)
+}
+#if LANG_CXX11
+inline void ChannelResponse::set_assignedid(::std::string&& value) {
+  
+  assignedid_.SetNoArena(
+    &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
+  // @@protoc_insertion_point(field_set_rvalue:exchange.ChannelResponse.assignedID)
+}
+#endif
+inline void ChannelResponse::set_assignedid(const char* value) {
+  GOOGLE_DCHECK(value != NULL);
+  
+  assignedid_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:exchange.ChannelResponse.assignedID)
+}
+inline void ChannelResponse::set_assignedid(const char* value, size_t size) {
+  
+  assignedid_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:exchange.ChannelResponse.assignedID)
+}
+inline ::std::string* ChannelResponse::mutable_assignedid() {
+  
+  // @@protoc_insertion_point(field_mutable:exchange.ChannelResponse.assignedID)
+  return assignedid_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline ::std::string* ChannelResponse::release_assignedid() {
+  // @@protoc_insertion_point(field_release:exchange.ChannelResponse.assignedID)
+  
+  return assignedid_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void ChannelResponse::set_allocated_assignedid(::std::string* assignedid) {
+  if (assignedid != NULL) {
+    
+  } else {
+    
+  }
+  assignedid_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), assignedid);
+  // @@protoc_insertion_point(field_set_allocated:exchange.ChannelResponse.assignedID)
 }
 
 inline bool ChannelResponse::has_return_value() const {

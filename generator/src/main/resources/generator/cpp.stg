@@ -25,7 +25,7 @@ void librarylink_<methodObject.name>(const exchange::MethodCallRequest& request,
     <if(methodObject.referenceReturn)>
     <methodObject.returnValue>* ptr = new <methodObject.returnValue>;
     *ptr = std::move(return_value);
-    persistence[request.assignedid()] = ptr;
+    persistence[resp.assignedid()] = ptr;
     <else>
     resp.set_return_value_int(return_value);
     <endif>
@@ -58,8 +58,8 @@ entity(wrappedClass) ::= <<
 
 processing(wrappedClasses) ::= <<
 exchange::ChannelResponse process_request(const exchange::MethodCallRequest& request,
-                                          std::unordered_map\<std::string, void *>& persistence) {
-    auto resp = exchange::ChannelResponse();
+                                          std::unordered_map\<std::string, void *>& persistence,
+                                          exchange::ChannelResponse& resp) {
     <wrappedClasses:processingClass(); separator="\n">
     printf("No handler found\n");
     throw "error";

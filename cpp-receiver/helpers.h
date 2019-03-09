@@ -30,7 +30,7 @@ librarylink_mem_alloc(const exchange::MethodCallRequest& request,
 
     T** ptr = new T*;
     *ptr = std::move(array);
-    persistence[request.assignedid()] = ptr;
+    persistence[resp.assignedid()] = ptr;
 }
 
 template<typename T>
@@ -64,7 +64,7 @@ void librarylink_get(const exchange::MethodCallRequest& request,
     T return_value = (*array)[pos];
     T* ptr = new T;
     *ptr = std::move(return_value);
-    persistence[request.assignedid()] = ptr;
+    persistence[resp.assignedid()] = ptr;
 }
 
 template<>

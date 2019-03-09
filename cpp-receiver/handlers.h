@@ -8,6 +8,8 @@
 #include <unordered_map>
 #include "exchange.pb.h"
 
-exchange::ChannelResponse process_request(const exchange::MethodCallRequest& request, std::unordered_map<std::string, void *>& persistence);
+exchange::ChannelResponse process_request(const exchange::MethodCallRequest& request,
+                                          std::unordered_map<std::string, void *>& persistence,
+                                          exchange::ChannelResponse& resp);
 
 #endif //CURLRECEIVER_HANDLERS_H

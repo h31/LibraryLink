@@ -308,10 +308,12 @@ open class ThreadLocalRequestGenerator(private val channelManager: ForeignChanne
     }
 }
 
-interface Request
+interface Request {
+    var assignedID: String
+}
 
 open class IdentifiableRequest : Request {
-    var assignedID: String = ""
+    override var assignedID: String = ""
     fun withID(assignedID: String): IdentifiableRequest {
         this.assignedID = assignedID
         return this
@@ -518,10 +520,10 @@ open class ClassDecl<T : Handle>(clazz: Class<T>, importName: String, methodArgu
 //    }
 //}
 
-inline fun <reified T> makeArray(size: Int): ArrayHandle<T> = ArrayHandle(size, T::class.java.simpleName)
-inline fun <reified T> Collection<T>.toArrayHandle(): ArrayHandle<T> = ArrayHandle(this, T::class.java.simpleName)
-inline fun <reified T> Collection<T>.toArrayHandle(type: String): ArrayHandle<T> = ArrayHandle(this, type)
-inline fun <reified T> Array<T>.toArrayHandle(): ArrayHandle<T> = ArrayHandle(listOf(*this), T::class.java.simpleName)
+inline fun <reified T> makeArray(size: Int): ArrayHandle<T> = ArrayHandle(size, T::class.java)
+inline fun <reified T> Collection<T>.toArrayHandle(): ArrayHandle<T> = ArrayHandle(this, T::class.java)
+inline fun <reified T> Collection<T>.toArrayHandle(type: Class<T>): ArrayHandle<T> = ArrayHandle(this, type)
+inline fun <reified T> Array<T>.toArrayHandle(): ArrayHandle<T> = ArrayHandle(listOf(*this), T::class.java)
 
 fun ArrayHandle<Char>.asString(): String { // TODO: Very hacky
     val sb = StringBuilder()
@@ -535,16 +537,17 @@ fun ArrayHandle<Char>.asString(): String { // TODO: Very hacky
     return sb.toString()
 }
 
-class ArrayHandle<T>(override val size: Int, val className: String) : Handle, AbstractList<T>() {
+class ArrayHandle<T>(override val size: Int, clazz: Class<T>) : Handle, AbstractList<T>() {
     override lateinit var assignedID: String
 
     private val exchange = LibraryLink.exchange
+    private val className = if (clazz == Character::class.java) "char" else clazz.simpleName // TODO: Very hacky
 
     init {
         exchange.makeRequest(MethodCallRequest(methodName = "mem_alloc<$className>", args = listOf(Argument(size)))).bindTo(this) // TODO: Type parameter
     }
 
-    constructor(src: Collection<T>, className: String) : this(src.size, className) {
+    constructor(src: Collection<T>, clazz: Class<T>) : this(src.size, clazz) {
         src.withIndex().forEach { elem ->
             set(elem.index, elem.value)
         }
@@ -650,13 +653,13 @@ open class ProtoBufDataExchange(val runner: ReceiverRunner = LibraryLink.runner,
     private fun Exchange.ChannelResponse.toProcessExchangeResponse(): ProcessExchangeResponse {
         return when (this.returnValueCase) {
             Exchange.ChannelResponse.ReturnValueCase.RETURN_VALUE_STRING ->
-                ProcessExchangeResponse(returnValue = this.returnValueString)
+                ProcessExchangeResponse(returnValue = this.returnValueString, assignedID = this.assignedID)
             Exchange.ChannelResponse.ReturnValueCase.RETURN_VALUE_INT ->
-                ProcessExchangeResponse(returnValue = this.returnValueInt)
+                ProcessExchangeResponse(returnValue = this.returnValueInt, assignedID = this.assignedID)
             Exchange.ChannelResponse.ReturnValueCase.NO_RETURN_VALUE,
             Exchange.ChannelResponse.ReturnValueCase.RETURNVALUE_NOT_SET,
             null ->
-                ProcessExchangeResponse(returnValue = null)
+                ProcessExchangeResponse(returnValue = null, assignedID = this.assignedID)
             Exchange.ChannelResponse.ReturnValueCase.EXCEPTION_MESSAGE ->
                 throw LibraryLinkException(this.exceptionMessage)
         }
@@ -664,6 +667,7 @@ open class ProtoBufDataExchange(val runner: ReceiverRunner = LibraryLink.runner,
 
     private fun Request.toProtobuf(): ByteArray {
         val builder = Exchange.Request.newBuilder()
+        builder.assignedID = this.assignedID
         when (this) {
             is MethodCallRequest -> builder.methodCall = this.toProtobuf()
             is ImportRequest -> builder.importation = this.toProtobuf()
@@ -682,7 +686,6 @@ open class ProtoBufDataExchange(val runner: ReceiverRunner = LibraryLink.runner,
         builder.static = this.isStatic
         builder.doGetReturnValue = this.doGetReturnValue
         builder.property = this.isProperty
-        builder.assignedID = this.assignedID
         return builder.build()
     }
 
@@ -716,6 +719,10 @@ open class ProtoBufDataExchange(val runner: ReceiverRunner = LibraryLink.runner,
 open class SimpleTextProcessDataExchange(val runner: ReceiverRunner = LibraryLink.runner,
                                          val requestGenerator: RequestGenerator = runner.requestGenerator) : ProcessDataExchange,
         RequestGenerator by requestGenerator, CallbackRegistrable by runner.callbackDataExchange {
+    override fun makeRequests(requests: List<Request>): List<ProcessExchangeResponse> {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
     val mapper = ObjectMapper().registerModule(KotlinModule())
 
     val logger = LoggerFactory.getLogger(ProcessDataExchange::class.java)
@@ -746,14 +753,14 @@ open class SimpleTextProcessDataExchange(val runner: ReceiverRunner = LibraryLin
         return response
     }
 
-    override fun makeRequest(request: Request, handle: Handle?): ProcessExchangeResponse {
+    override fun makeRequest(request: Request): ProcessExchangeResponse {
         val message = mapper.writeValueAsString(request)
         logger.info("Wrote $request")
         val channelResponse = makeChannelRequest(message)
         if (channelResponse.exceptionMessage != null) {
             throw LibraryLinkException(channelResponse.exceptionMessage)
         }
-        val response = ProcessExchangeResponse(returnValue = channelResponse.returnValue)
+        val response = ProcessExchangeResponse(returnValue = channelResponse.returnValue, assignedID = "") // TODO
         logger.info("Received $response")
         return response
     }
@@ -777,7 +784,7 @@ class CachingProcessDataExchange(val backend: ProcessDataExchange, val cacheMana
 
     override fun registerConstructorCallback(className: String, receiver: (request: MethodCallRequest) -> Any?) = backend.registerConstructorCallback(className, receiver)
 
-    override fun makeRequest(request: Request, handle: Handle?): ProcessExchangeResponse {
+    override fun makeRequest(request: Request): ProcessExchangeResponse {
         val cached = currentSequence.poll()
         val response: ProcessExchangeResponse = if (cached != null && cached.first == request) {
             cached.second
@@ -797,7 +804,7 @@ class CachingProcessDataExchange(val backend: ProcessDataExchange, val cacheMana
 
     private val currentSequence = ArrayDeque<Pair<Request, ProcessExchangeResponse>>()
 
-    override fun makeRequests(requests: List<Pair<Request, Handle?>>): List<ProcessExchangeResponse> = backend.makeRequests(requests) // TODO
+    override fun makeRequests(requests: List<Request>): List<ProcessExchangeResponse> = backend.makeRequests(requests) // TODO
 }
 
 interface CacheManager {

@@ -181,6 +181,7 @@ const ::google::protobuf::uint32 TableStruct::offsets[] GOOGLE_PROTOBUF_ATTRIBUT
   offsetof(::exchange::RequestDefaultTypeInternal, constructor_),
   offsetof(::exchange::RequestDefaultTypeInternal, eval_),
   offsetof(::exchange::RequestDefaultTypeInternal, dynamic_inherit_),
+  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::exchange::Request, assignedid_),
   GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::exchange::Request, request_),
   ~0u,  // no _has_bits_
   GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::exchange::MethodCallRequest, _internal_metadata_),
@@ -189,11 +190,11 @@ const ::google::protobuf::uint32 TableStruct::offsets[] GOOGLE_PROTOBUF_ATTRIBUT
   ~0u,  // no _weak_field_map_
   GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::exchange::MethodCallRequest, methodname_),
   GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::exchange::MethodCallRequest, objectid_),
+  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::exchange::MethodCallRequest, type_),
   GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::exchange::MethodCallRequest, arg_),
   GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::exchange::MethodCallRequest, static__),
   GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::exchange::MethodCallRequest, dogetreturnvalue_),
   GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::exchange::MethodCallRequest, property_),
-  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::exchange::MethodCallRequest, assignedid_),
   ~0u,  // no _has_bits_
   GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::exchange::Argument, _internal_metadata_),
   ~0u,  // no _extensions_
@@ -226,15 +227,16 @@ const ::google::protobuf::uint32 TableStruct::offsets[] GOOGLE_PROTOBUF_ATTRIBUT
   offsetof(::exchange::ChannelResponseDefaultTypeInternal, return_value_int_),
   offsetof(::exchange::ChannelResponseDefaultTypeInternal, exception_message_),
   offsetof(::exchange::ChannelResponseDefaultTypeInternal, no_return_value_),
+  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::exchange::ChannelResponse, assignedid_),
   GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::exchange::ChannelResponse, return_value_),
 };
 static const ::google::protobuf::internal::MigrationSchema schemas[] GOOGLE_PROTOBUF_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
   { 0, -1, sizeof(::exchange::Request)},
-  { 11, -1, sizeof(::exchange::MethodCallRequest)},
-  { 23, -1, sizeof(::exchange::Argument)},
-  { 33, -1, sizeof(::exchange::ImportRequest)},
-  { 39, -1, sizeof(::exchange::ConstructorRequest)},
-  { 46, -1, sizeof(::exchange::ChannelResponse)},
+  { 12, -1, sizeof(::exchange::MethodCallRequest)},
+  { 24, -1, sizeof(::exchange::Argument)},
+  { 34, -1, sizeof(::exchange::ImportRequest)},
+  { 40, -1, sizeof(::exchange::ConstructorRequest)},
+  { 47, -1, sizeof(::exchange::ChannelResponse)},
 };
 
 static ::google::protobuf::Message const * const file_default_instances[] = {
@@ -267,32 +269,33 @@ void protobuf_RegisterTypes(const ::std::string&) {
 void AddDescriptorsImpl() {
   InitDefaults();
   static const char descriptor[] GOOGLE_PROTOBUF_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-      "\n\016exchange.proto\022\010exchange\"\330\001\n\007Request\0222"
+      "\n\016exchange.proto\022\010exchange\"\354\001\n\007Request\0222"
       "\n\013method_call\030\001 \001(\0132\033.exchange.MethodCal"
       "lRequestH\000\022.\n\013importation\030\002 \001(\0132\027.exchan"
       "ge.ImportRequestH\000\0223\n\013constructor\030\003 \001(\0132"
       "\034.exchange.ConstructorRequestH\000\022\016\n\004eval\030"
-      "\004 \001(\010H\000\022\031\n\017dynamic_inherit\030\005 \001(\010H\000B\t\n\007re"
-      "quest\"\252\001\n\021MethodCallRequest\022\022\n\nmethodNam"
-      "e\030\001 \001(\t\022\020\n\010objectID\030\002 \001(\t\022\037\n\003arg\030\003 \003(\0132\022"
-      ".exchange.Argument\022\016\n\006static\030\004 \001(\010\022\030\n\020do"
-      "GetReturnValue\030\005 \001(\010\022\020\n\010property\030\006 \001(\010\022\022"
-      "\n\nassignedID\030\007 \001(\t\"\252\001\n\010Argument\022-\n\004type\030"
-      "\001 \001(\0162\037.exchange.Argument.ArgumentType\022\026"
-      "\n\014string_value\030\002 \001(\tH\000\022\023\n\tint_value\030\003 \001("
-      "\005H\000\022\013\n\003key\030\004 \001(\t\",\n\014ArgumentType\022\017\n\013PERS"
-      "ISTENCE\020\000\022\013\n\007INPLACE\020\001B\007\n\005value\"%\n\rImpor"
-      "tRequest\022\024\n\014importedName\030\001 \001(\t\"I\n\022Constr"
-      "uctorRequest\022\022\n\nclass_name\030\001 \001(\t\022\037\n\003arg\030"
-      "\002 \003(\0132\022.exchange.Argument\"\224\001\n\017ChannelRes"
-      "ponse\022\035\n\023return_value_string\030\001 \001(\tH\000\022\032\n\020"
-      "return_value_int\030\002 \001(\005H\000\022\033\n\021exception_me"
-      "ssage\030\003 \001(\tH\000\022\031\n\017no_return_value\030\004 \001(\010H\000"
-      "B\016\n\014return_valueB&\n\032ru.spbstu.kspt.libra"
-      "rylinkB\010Exchangeb\006proto3"
+      "\004 \001(\010H\000\022\031\n\017dynamic_inherit\030\005 \001(\010H\000\022\022\n\nas"
+      "signedID\030\007 \001(\tB\t\n\007request\"\244\001\n\021MethodCall"
+      "Request\022\022\n\nmethodName\030\001 \001(\t\022\020\n\010objectID\030"
+      "\002 \001(\t\022\014\n\004type\030\010 \001(\t\022\037\n\003arg\030\003 \003(\0132\022.excha"
+      "nge.Argument\022\016\n\006static\030\004 \001(\010\022\030\n\020doGetRet"
+      "urnValue\030\005 \001(\010\022\020\n\010property\030\006 \001(\010\"\252\001\n\010Arg"
+      "ument\022-\n\004type\030\001 \001(\0162\037.exchange.Argument."
+      "ArgumentType\022\026\n\014string_value\030\002 \001(\tH\000\022\023\n\t"
+      "int_value\030\003 \001(\005H\000\022\013\n\003key\030\004 \001(\t\",\n\014Argume"
+      "ntType\022\017\n\013PERSISTENCE\020\000\022\013\n\007INPLACE\020\001B\007\n\005"
+      "value\"%\n\rImportRequest\022\024\n\014importedName\030\001"
+      " \001(\t\"I\n\022ConstructorRequest\022\022\n\nclass_name"
+      "\030\001 \001(\t\022\037\n\003arg\030\002 \003(\0132\022.exchange.Argument\""
+      "\250\001\n\017ChannelResponse\022\035\n\023return_value_stri"
+      "ng\030\001 \001(\tH\000\022\032\n\020return_value_int\030\002 \001(\005H\000\022\033"
+      "\n\021exception_message\030\003 \001(\tH\000\022\031\n\017no_return"
+      "_value\030\004 \001(\010H\000\022\022\n\nassignedID\030\007 \001(\tB\016\n\014re"
+      "turn_valueB&\n\032ru.spbstu.kspt.librarylink"
+      "B\010Exchangeb\006proto3"
   };
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
-      descriptor, 904);
+      descriptor, 938);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "exchange.proto", &protobuf_RegisterTypes);
 }
@@ -391,6 +394,7 @@ const int Request::kImportationFieldNumber;
 const int Request::kConstructorFieldNumber;
 const int Request::kEvalFieldNumber;
 const int Request::kDynamicInheritFieldNumber;
+const int Request::kAssignedIDFieldNumber;
 #endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
 
 Request::Request()
@@ -404,6 +408,10 @@ Request::Request(const Request& from)
   : ::google::protobuf::Message(),
       _internal_metadata_(NULL) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
+  assignedid_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  if (from.assignedid().size() > 0) {
+    assignedid_.AssignWithDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), from.assignedid_);
+  }
   clear_has_request();
   switch (from.request_case()) {
     case kMethodCall: {
@@ -434,6 +442,7 @@ Request::Request(const Request& from)
 }
 
 void Request::SharedCtor() {
+  assignedid_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   clear_has_request();
 }
 
@@ -443,6 +452,7 @@ Request::~Request() {
 }
 
 void Request::SharedDtor() {
+  assignedid_.DestroyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   if (has_request()) {
     clear_request();
   }
@@ -499,6 +509,7 @@ void Request::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
+  assignedid_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   clear_request();
   _internal_metadata_.Clear();
 }
@@ -579,6 +590,22 @@ bool Request::MergePartialFromCodedStream(
         break;
       }
 
+      // string assignedID = 7;
+      case 7: {
+        if (static_cast< ::google::protobuf::uint8>(tag) ==
+            static_cast< ::google::protobuf::uint8>(58u /* 58 & 0xFF */)) {
+          DO_(::google::protobuf::internal::WireFormatLite::ReadString(
+                input, this->mutable_assignedid()));
+          DO_(::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+            this->assignedid().data(), static_cast<int>(this->assignedid().length()),
+            ::google::protobuf::internal::WireFormatLite::PARSE,
+            "exchange.Request.assignedID"));
+        } else {
+          goto handle_unusual;
+        }
+        break;
+      }
+
       default: {
       handle_unusual:
         if (tag == 0) {
@@ -633,6 +660,16 @@ void Request::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormatLite::WriteBool(5, this->dynamic_inherit(), output);
   }
 
+  // string assignedID = 7;
+  if (this->assignedid().size() > 0) {
+    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+      this->assignedid().data(), static_cast<int>(this->assignedid().length()),
+      ::google::protobuf::internal::WireFormatLite::SERIALIZE,
+      "exchange.Request.assignedID");
+    ::google::protobuf::internal::WireFormatLite::WriteStringMaybeAliased(
+      7, this->assignedid(), output);
+  }
+
   if ((_internal_metadata_.have_unknown_fields() &&  ::google::protobuf::internal::GetProto3PreserveUnknownsDefault())) {
     ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
         (::google::protobuf::internal::GetProto3PreserveUnknownsDefault()   ? _internal_metadata_.unknown_fields()   : _internal_metadata_.default_instance()), output);
@@ -678,6 +715,17 @@ void Request::SerializeWithCachedSizes(
     target = ::google::protobuf::internal::WireFormatLite::WriteBoolToArray(5, this->dynamic_inherit(), target);
   }
 
+  // string assignedID = 7;
+  if (this->assignedid().size() > 0) {
+    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+      this->assignedid().data(), static_cast<int>(this->assignedid().length()),
+      ::google::protobuf::internal::WireFormatLite::SERIALIZE,
+      "exchange.Request.assignedID");
+    target =
+      ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
+        7, this->assignedid(), target);
+  }
+
   if ((_internal_metadata_.have_unknown_fields() &&  ::google::protobuf::internal::GetProto3PreserveUnknownsDefault())) {
     target = ::google::protobuf::internal::WireFormat::SerializeUnknownFieldsToArray(
         (::google::protobuf::internal::GetProto3PreserveUnknownsDefault()   ? _internal_metadata_.unknown_fields()   : _internal_metadata_.default_instance()), target);
@@ -695,6 +743,13 @@ size_t Request::ByteSizeLong() const {
       ::google::protobuf::internal::WireFormat::ComputeUnknownFieldsSize(
         (::google::protobuf::internal::GetProto3PreserveUnknownsDefault()   ? _internal_metadata_.unknown_fields()   : _internal_metadata_.default_instance()));
   }
+  // string assignedID = 7;
+  if (this->assignedid().size() > 0) {
+    total_size += 1 +
+      ::google::protobuf::internal::WireFormatLite::StringSize(
+        this->assignedid());
+  }
+
   switch (request_case()) {
     // .exchange.MethodCallRequest method_call = 1;
     case kMethodCall: {
@@ -758,6 +813,10 @@ void Request::MergeFrom(const Request& from) {
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
+  if (from.assignedid().size() > 0) {
+
+    assignedid_.AssignWithDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), from.assignedid_);
+  }
   switch (from.request_case()) {
     case kMethodCall: {
       mutable_method_call()->::exchange::MethodCallRequest::MergeFrom(from.method_call());
@@ -809,6 +868,8 @@ void Request::Swap(Request* other) {
 }
 void Request::InternalSwap(Request* other) {
   using std::swap;
+  assignedid_.Swap(&other->assignedid_, &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+    GetArenaNoVirtual());
   swap(request_, other->request_);
   swap(_oneof_case_[0], other->_oneof_case_[0]);
   _internal_metadata_.Swap(&other->_internal_metadata_);
@@ -827,11 +888,11 @@ void MethodCallRequest::InitAsDefaultInstance() {
 #if !defined(_MSC_VER) || _MSC_VER >= 1900
 const int MethodCallRequest::kMethodNameFieldNumber;
 const int MethodCallRequest::kObjectIDFieldNumber;
+const int MethodCallRequest::kTypeFieldNumber;
 const int MethodCallRequest::kArgFieldNumber;
 const int MethodCallRequest::kStaticFieldNumber;
 const int MethodCallRequest::kDoGetReturnValueFieldNumber;
 const int MethodCallRequest::kPropertyFieldNumber;
-const int MethodCallRequest::kAssignedIDFieldNumber;
 #endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
 
 MethodCallRequest::MethodCallRequest()
@@ -854,9 +915,9 @@ MethodCallRequest::MethodCallRequest(const MethodCallRequest& from)
   if (from.objectid().size() > 0) {
     objectid_.AssignWithDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), from.objectid_);
   }
-  assignedid_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  if (from.assignedid().size() > 0) {
-    assignedid_.AssignWithDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), from.assignedid_);
+  type_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  if (from.type().size() > 0) {
+    type_.AssignWithDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), from.type_);
   }
   ::memcpy(&static__, &from.static__,
     static_cast<size_t>(reinterpret_cast<char*>(&property_) -
@@ -867,7 +928,7 @@ MethodCallRequest::MethodCallRequest(const MethodCallRequest& from)
 void MethodCallRequest::SharedCtor() {
   methodname_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   objectid_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  assignedid_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  type_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   ::memset(&static__, 0, static_cast<size_t>(
       reinterpret_cast<char*>(&property_) -
       reinterpret_cast<char*>(&static__)) + sizeof(property_));
@@ -881,7 +942,7 @@ MethodCallRequest::~MethodCallRequest() {
 void MethodCallRequest::SharedDtor() {
   methodname_.DestroyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   objectid_.DestroyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  assignedid_.DestroyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  type_.DestroyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 
 void MethodCallRequest::SetCachedSize(int size) const {
@@ -907,7 +968,7 @@ void MethodCallRequest::Clear() {
   arg_.Clear();
   methodname_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   objectid_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  assignedid_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  type_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   ::memset(&static__, 0, static_cast<size_t>(
       reinterpret_cast<char*>(&property_) -
       reinterpret_cast<char*>(&static__)) + sizeof(property_));
@@ -1010,16 +1071,16 @@ bool MethodCallRequest::MergePartialFromCodedStream(
         break;
       }
 
-      // string assignedID = 7;
-      case 7: {
+      // string type = 8;
+      case 8: {
         if (static_cast< ::google::protobuf::uint8>(tag) ==
-            static_cast< ::google::protobuf::uint8>(58u /* 58 & 0xFF */)) {
+            static_cast< ::google::protobuf::uint8>(66u /* 66 & 0xFF */)) {
           DO_(::google::protobuf::internal::WireFormatLite::ReadString(
-                input, this->mutable_assignedid()));
+                input, this->mutable_type()));
           DO_(::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-            this->assignedid().data(), static_cast<int>(this->assignedid().length()),
+            this->type().data(), static_cast<int>(this->type().length()),
             ::google::protobuf::internal::WireFormatLite::PARSE,
-            "exchange.MethodCallRequest.assignedID"));
+            "exchange.MethodCallRequest.type"));
         } else {
           goto handle_unusual;
         }
@@ -1096,14 +1157,14 @@ void MethodCallRequest::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormatLite::WriteBool(6, this->property(), output);
   }
 
-  // string assignedID = 7;
-  if (this->assignedid().size() > 0) {
+  // string type = 8;
+  if (this->type().size() > 0) {
     ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-      this->assignedid().data(), static_cast<int>(this->assignedid().length()),
+      this->type().data(), static_cast<int>(this->type().length()),
       ::google::protobuf::internal::WireFormatLite::SERIALIZE,
-      "exchange.MethodCallRequest.assignedID");
+      "exchange.MethodCallRequest.type");
     ::google::protobuf::internal::WireFormatLite::WriteStringMaybeAliased(
-      7, this->assignedid(), output);
+      8, this->type(), output);
   }
 
   if ((_internal_metadata_.have_unknown_fields() &&  ::google::protobuf::internal::GetProto3PreserveUnknownsDefault())) {
@@ -1165,15 +1226,15 @@ void MethodCallRequest::SerializeWithCachedSizes(
     target = ::google::protobuf::internal::WireFormatLite::WriteBoolToArray(6, this->property(), target);
   }
 
-  // string assignedID = 7;
-  if (this->assignedid().size() > 0) {
+  // string type = 8;
+  if (this->type().size() > 0) {
     ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-      this->assignedid().data(), static_cast<int>(this->assignedid().length()),
+      this->type().data(), static_cast<int>(this->type().length()),
       ::google::protobuf::internal::WireFormatLite::SERIALIZE,
-      "exchange.MethodCallRequest.assignedID");
+      "exchange.MethodCallRequest.type");
     target =
       ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
-        7, this->assignedid(), target);
+        8, this->type(), target);
   }
 
   if ((_internal_metadata_.have_unknown_fields() &&  ::google::protobuf::internal::GetProto3PreserveUnknownsDefault())) {
@@ -1218,11 +1279,11 @@ size_t MethodCallRequest::ByteSizeLong() const {
         this->objectid());
   }
 
-  // string assignedID = 7;
-  if (this->assignedid().size() > 0) {
+  // string type = 8;
+  if (this->type().size() > 0) {
     total_size += 1 +
       ::google::protobuf::internal::WireFormatLite::StringSize(
-        this->assignedid());
+        this->type());
   }
 
   // bool static = 4;
@@ -1276,9 +1337,9 @@ void MethodCallRequest::MergeFrom(const MethodCallRequest& from) {
 
     objectid_.AssignWithDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), from.objectid_);
   }
-  if (from.assignedid().size() > 0) {
+  if (from.type().size() > 0) {
 
-    assignedid_.AssignWithDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), from.assignedid_);
+    type_.AssignWithDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), from.type_);
   }
   if (from.static_() != 0) {
     set_static_(from.static_());
@@ -1320,7 +1381,7 @@ void MethodCallRequest::InternalSwap(MethodCallRequest* other) {
     GetArenaNoVirtual());
   objectid_.Swap(&other->objectid_, &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
     GetArenaNoVirtual());
-  assignedid_.Swap(&other->assignedid_, &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+  type_.Swap(&other->type_, &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
     GetArenaNoVirtual());
   swap(static__, other->static__);
   swap(dogetreturnvalue_, other->dogetreturnvalue_);
@@ -2300,6 +2361,7 @@ const int ChannelResponse::kReturnValueStringFieldNumber;
 const int ChannelResponse::kReturnValueIntFieldNumber;
 const int ChannelResponse::kExceptionMessageFieldNumber;
 const int ChannelResponse::kNoReturnValueFieldNumber;
+const int ChannelResponse::kAssignedIDFieldNumber;
 #endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
 
 ChannelResponse::ChannelResponse()
@@ -2313,6 +2375,10 @@ ChannelResponse::ChannelResponse(const ChannelResponse& from)
   : ::google::protobuf::Message(),
       _internal_metadata_(NULL) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
+  assignedid_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  if (from.assignedid().size() > 0) {
+    assignedid_.AssignWithDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), from.assignedid_);
+  }
   clear_has_return_value();
   switch (from.return_value_case()) {
     case kReturnValueString: {
@@ -2339,6 +2405,7 @@ ChannelResponse::ChannelResponse(const ChannelResponse& from)
 }
 
 void ChannelResponse::SharedCtor() {
+  assignedid_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   clear_has_return_value();
 }
 
@@ -2348,6 +2415,7 @@ ChannelResponse::~ChannelResponse() {
 }
 
 void ChannelResponse::SharedDtor() {
+  assignedid_.DestroyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   if (has_return_value()) {
     clear_return_value();
   }
@@ -2400,6 +2468,7 @@ void ChannelResponse::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
+  assignedid_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   clear_return_value();
   _internal_metadata_.Clear();
 }
@@ -2476,6 +2545,22 @@ bool ChannelResponse::MergePartialFromCodedStream(
         break;
       }
 
+      // string assignedID = 7;
+      case 7: {
+        if (static_cast< ::google::protobuf::uint8>(tag) ==
+            static_cast< ::google::protobuf::uint8>(58u /* 58 & 0xFF */)) {
+          DO_(::google::protobuf::internal::WireFormatLite::ReadString(
+                input, this->mutable_assignedid()));
+          DO_(::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+            this->assignedid().data(), static_cast<int>(this->assignedid().length()),
+            ::google::protobuf::internal::WireFormatLite::PARSE,
+            "exchange.ChannelResponse.assignedID"));
+        } else {
+          goto handle_unusual;
+        }
+        break;
+      }
+
       default: {
       handle_unusual:
         if (tag == 0) {
@@ -2532,6 +2617,16 @@ void ChannelResponse::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormatLite::WriteBool(4, this->no_return_value(), output);
   }
 
+  // string assignedID = 7;
+  if (this->assignedid().size() > 0) {
+    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+      this->assignedid().data(), static_cast<int>(this->assignedid().length()),
+      ::google::protobuf::internal::WireFormatLite::SERIALIZE,
+      "exchange.ChannelResponse.assignedID");
+    ::google::protobuf::internal::WireFormatLite::WriteStringMaybeAliased(
+      7, this->assignedid(), output);
+  }
+
   if ((_internal_metadata_.have_unknown_fields() &&  ::google::protobuf::internal::GetProto3PreserveUnknownsDefault())) {
     ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
         (::google::protobuf::internal::GetProto3PreserveUnknownsDefault()   ? _internal_metadata_.unknown_fields()   : _internal_metadata_.default_instance()), output);
@@ -2578,6 +2673,17 @@ void ChannelResponse::SerializeWithCachedSizes(
     target = ::google::protobuf::internal::WireFormatLite::WriteBoolToArray(4, this->no_return_value(), target);
   }
 
+  // string assignedID = 7;
+  if (this->assignedid().size() > 0) {
+    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+      this->assignedid().data(), static_cast<int>(this->assignedid().length()),
+      ::google::protobuf::internal::WireFormatLite::SERIALIZE,
+      "exchange.ChannelResponse.assignedID");
+    target =
+      ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
+        7, this->assignedid(), target);
+  }
+
   if ((_internal_metadata_.have_unknown_fields() &&  ::google::protobuf::internal::GetProto3PreserveUnknownsDefault())) {
     target = ::google::protobuf::internal::WireFormat::SerializeUnknownFieldsToArray(
         (::google::protobuf::internal::GetProto3PreserveUnknownsDefault()   ? _internal_metadata_.unknown_fields()   : _internal_metadata_.default_instance()), target);
@@ -2595,6 +2701,13 @@ size_t ChannelResponse::ByteSizeLong() const {
       ::google::protobuf::internal::WireFormat::ComputeUnknownFieldsSize(
         (::google::protobuf::internal::GetProto3PreserveUnknownsDefault()   ? _internal_metadata_.unknown_fields()   : _internal_metadata_.default_instance()));
   }
+  // string assignedID = 7;
+  if (this->assignedid().size() > 0) {
+    total_size += 1 +
+      ::google::protobuf::internal::WireFormatLite::StringSize(
+        this->assignedid());
+  }
+
   switch (return_value_case()) {
     // string return_value_string = 1;
     case kReturnValueString: {
@@ -2653,6 +2766,10 @@ void ChannelResponse::MergeFrom(const ChannelResponse& from) {
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
+  if (from.assignedid().size() > 0) {
+
+    assignedid_.AssignWithDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), from.assignedid_);
+  }
   switch (from.return_value_case()) {
     case kReturnValueString: {
       set_return_value_string(from.return_value_string());
@@ -2700,6 +2817,8 @@ void ChannelResponse::Swap(ChannelResponse* other) {
 }
 void ChannelResponse::InternalSwap(ChannelResponse* other) {
   using std::swap;
+  assignedid_.Swap(&other->assignedid_, &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+    GetArenaNoVirtual());
   swap(return_value_, other->return_value_);
   swap(_oneof_case_[0], other->_oneof_case_[0]);
   _internal_metadata_.Swap(&other->_internal_metadata_);
