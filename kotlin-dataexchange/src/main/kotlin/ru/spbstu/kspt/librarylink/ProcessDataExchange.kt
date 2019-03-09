@@ -503,7 +503,7 @@ open class ClassDecl<T : Handle>(clazz: Class<T>, importName: String, methodArgu
     init {
         exchange.makeRequest(DynamicInheritRequest(importName = importName,
                 automatonName = clazz.simpleName, inherits = clazz.superclass.simpleName,
-                methodArguments = methodArguments))
+                methodArguments = methodArguments)).bindTo(this)
 
         exchange.registerConstructorCallback(clazz.simpleName) { req ->
             val instance = clazz.constructors.first { !it.isSynthetic }.newInstance() as DelayedAssignmentHandle  // TODO: Args
@@ -541,10 +541,10 @@ class ArrayHandle<T>(override val size: Int, clazz: Class<T>) : Handle, Abstract
     override lateinit var assignedID: String
 
     private val exchange = LibraryLink.exchange
-    private val className = if (clazz == Character::class.java) "char" else clazz.simpleName // TODO: Very hacky
+    private val typeName = calculatePrimitiveTypeName(clazz)
 
     init {
-        exchange.makeRequest(MethodCallRequest(methodName = "mem_alloc<$className>", args = listOf(Argument(size)))).bindTo(this) // TODO: Type parameter
+        exchange.makeRequest(MethodCallRequest(methodName = "mem_alloc<$typeName>", args = listOf(Argument(size)))).bindTo(this) // TODO: Type parameter
     }
 
     constructor(src: Collection<T>, clazz: Class<T>) : this(src.size, clazz) {
@@ -554,7 +554,7 @@ class ArrayHandle<T>(override val size: Int, clazz: Class<T>) : Handle, Abstract
     }
 
     override operator fun get(index: Int): T {
-        val resp = exchange.makeRequest(MethodCallRequest(methodName = "get<$className>", args = listOf(Argument(index)), objectID = assignedID, doGetReturnValue = true)) // TODO
+        val resp = exchange.makeRequest(MethodCallRequest(methodName = "get<$typeName>", args = listOf(Argument(index)), objectID = assignedID, doGetReturnValue = true)) // TODO
         return resp.returnValue as T
     }
 
@@ -566,8 +566,14 @@ class ArrayHandle<T>(override val size: Int, clazz: Class<T>) : Handle, Abstract
             is Char -> Argument(element.toInt()) // TODO
             else -> TODO()
         }
-        exchange.makeRequest(MethodCallRequest(methodName = "set<$className>", args = listOf(Argument(index), valueArgument), objectID = assignedID, doGetReturnValue = false))
+        exchange.makeRequest(MethodCallRequest(methodName = "set<$typeName>", args = listOf(Argument(index), valueArgument), objectID = assignedID, doGetReturnValue = false))
         return previousValue
+    }
+
+    private fun calculatePrimitiveTypeName(clazz: Class<T>): String = when (clazz) {  // TODO: Very hacky
+        Char::class.java -> "char"
+        Int::class.java -> "int"
+        else -> clazz.simpleName
     }
 }
 
