@@ -1,4 +1,4 @@
-wrapperClass(libraryName, wrappedClasses, builtinClasses) ::= <<
+wrapperClass(libraryName, wrappedClasses, builtinClasses, callbacks) ::= <<
 <imports()>
 
 public class <libraryName>Kotlin {
@@ -7,6 +7,8 @@ public class <libraryName>Kotlin {
     <entitiesMaker()>
 
     <entities(wrappedClasses)>
+
+    <callbacks:callback(); separator="\n">
 }
 >>
 
@@ -105,5 +107,20 @@ class <wrappedClass.name> : HandleAutoGenerate {
     <wrappedClass.constructor:constructor(wrappedClass.name); separator="\n\n">
     <preinitConstructor(wrappedClass)>
     <wrappedClass.methods:method(); separator="\n\n">
+}
+>>
+
+callback(method) ::= <<
+abstract class <method.clazz.name> : DelayedAssignmentHandle {
+    private val exchange = LibraryLink.exchange;
+
+    abstract fun invoke(<method.args:args(); separator=", ">)
+
+    constructor() : super() {
+        exchange.registerCallback("invoke\<<method.clazz.name>\>") { req, obj ->
+            (obj as <method.clazz.name>).invoke(Z3_context(), 0)
+        }
+    }
+
 }
 >>

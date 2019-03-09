@@ -1,9 +1,0 @@
-<component name="libraryTable">
-  <library name="Gradle: ru.spbstu.kspt.librarymigration:kotlin-dataexchange:0.1-SNAPSHOT">
-    <CLASSES>
-      <root url="jar://$MAVEN_REPOSITORY$/ru/spbstu/kspt/librarymigration/kotlin-dataexchange/0.1-SNAPSHOT/kotlin-dataexchange-0.1-SNAPSHOT.jar!/" />
-    </CLASSES>
-    <JAVADOC />
-    <SOURCES />
-  </library>
-</component>

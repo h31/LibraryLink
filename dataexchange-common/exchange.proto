@@ -20,6 +20,7 @@ message MethodCallRequest {
     string methodName = 1;
     string type = 8;
     string objectID = 2;
+    string type = 8;
     repeated Argument arg = 3;
     bool static = 4;
     bool doGetReturnValue = 5;
