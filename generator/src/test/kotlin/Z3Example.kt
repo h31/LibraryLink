@@ -126,7 +126,7 @@ class Z3Example {
 
         cfg.Z3_set_param_value("model".toArrayHandle(), "true".toArrayHandle())
         ctx = cfg.Z3_mk_context()
-//        ctx.Z3_set_error_handler(err)
+        ctx.Z3_set_error_handler(err)
 
         return ctx
     }

@@ -683,7 +683,7 @@ open class CallbackDataExchange : CallbackRegistrable {
 
     private val callbackConstructorsMap: MutableMap<String, (request: MethodCallRequest) -> Handle> = mutableMapOf()
 
-    private val localPersistence: MutableMap<String, Handle> = mutableMapOf()
+    private val localPersistence: MutableMap<String, Handle?> = mutableMapOf()
 
     override fun registerCallback(methodName: String, type: String, receiver: (request: MethodCallRequest, handle: Handle?) -> Any?) {
         callbackReceiversMap += Pair(methodName, type) to receiver
@@ -701,7 +701,7 @@ open class CallbackDataExchange : CallbackRegistrable {
         val request = requestWrapped.methodCall.toMethodCallRequest()
         logger.info("Received callback request $request")
         val existingObject = localPersistence[request.assignedID]
-        val obj = existingObject ?: callbackConstructorsMap[request.objectID]?.invoke(request) ?: TODO() // TODO: Too Dirty
+        val obj = existingObject ?: callbackConstructorsMap[request.objectID]?.invoke(request)
         if (existingObject == null) {
             localPersistence[request.assignedID] = obj
         }
