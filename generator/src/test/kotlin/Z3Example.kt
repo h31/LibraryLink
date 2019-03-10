@@ -193,13 +193,13 @@ class Z3Example {
                 print("unknown\n")
                 m = ctx.Z3_solver_get_model(s)
                 if (m != null) ctx.Z3_model_inc_ref(m)
-                print("potential model:\n%s\n".format(ctx.Z3_model_to_string(m).asString()))
+                print("potential model:\n%s\n".format(ctx.Z3_model_to_string(m).toString()))
             }
             Z3Example.Z3_lbool.Z3_L_TRUE -> {
                 m = ctx.Z3_solver_get_model(s)
                 if (m != null) ctx.Z3_model_inc_ref(m)
                 val arr = ctx.Z3_model_to_string(m)
-                print("sat\n%s\n".format(arr.asString()))
+                print("sat\n%s\n".format(arr.toString()))
             }
         }
         if (lbool !== expected_result) {

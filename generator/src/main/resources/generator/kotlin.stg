@@ -35,14 +35,9 @@ entitiesMaker() ::= <<>>
 doCall(methodObject) ::= <<
 <if(methodObject.returnValue)>
 <if(methodObject.referenceReturn)>
-val returnValue = <methodObject.returnValue>()
-exchange.makeRequest(request).bindTo(returnValue)
-return returnValue
+return exchange.makeRequest(request).bindTo(<methodObject.returnValue>())
 <else>
-val returnValue: <methodObject.returnValue>
-val resp = exchange.makeRequest(request)
-returnValue = resp.returnValue as <methodObject.returnValue>
-return returnValue
+return exchange.makeRequest(request).asInstanceOf()
 <endif>
 <else>
 exchange.makeRequest(request)
