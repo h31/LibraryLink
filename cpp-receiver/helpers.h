@@ -68,12 +68,20 @@ void librarylink_get(const exchange::MethodCallRequest& request,
 }
 
 template<>
-void librarylink_get<char>(const exchange::MethodCallRequest& request,
-                     std::unordered_map<std::string, void *>& persistence,
-                     exchange::ChannelResponse& resp) {
+void librarylink_get<char>(const exchange::MethodCallRequest &request,
+                           std::unordered_map<std::string, void *> &persistence,
+                           exchange::ChannelResponse &resp) {
     char** array = (char**) (persistence[request.objectid()]);
     int32_t pos = request.arg(0).int_value();
     char return_value = (*array)[pos];
+    resp.set_return_value_int(return_value);
+}
+
+void librarylink_strlen(const exchange::MethodCallRequest &request,
+                        std::unordered_map<std::string, void *> &persistence,
+                        exchange::ChannelResponse &resp) {
+    char** array = (char**) (persistence[request.objectid()]);
+    int return_value = static_cast<int>(strlen(*array));
     resp.set_return_value_int(return_value);
 }
 
