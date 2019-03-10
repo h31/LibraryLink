@@ -492,16 +492,23 @@ data class PrimitiveProcessExchangeResponse(val rawValue: Any?,
                                             override val assignedID: String) : ProcessExchangeResponse {
     override fun <T> asInstanceOf(clazz: Class<T>): T {
         return when (clazz) {
-            Int::class.java -> rawValue as? T ?: throw IllegalArgumentException()
-            Char::class.java -> (rawValue as Int).toChar() as? T ?: throw IllegalArgumentException()
+            Int::class.java, Integer::class.java -> rawValue as? T ?: throw IllegalArgumentException()
+            Char::class.java, Character::class.java -> (rawValue as Int).toChar() as? T ?: throw IllegalArgumentException()
             else -> TODO()
         }
     }
 }
 
-data class HandleProcessExchangeResponse(val rawValue: Any?,
-                                         override val assignedID: String) : ProcessExchangeResponse {
-    override fun <T> asInstanceOf(clazz: Class<T>): T = rawValue as? T ?: throw IllegalArgumentException()
+data class HandleProcessExchangeResponse(override val assignedID: String) : ProcessExchangeResponse {
+    override fun <T> asInstanceOf(clazz: Class<T>): T {
+        if (Handle::class.java.isAssignableFrom(clazz)) {
+            val handle = clazz.getConstructor().newInstance() as Handle
+            handle.assignedID = this.assignedID
+            return handle as T
+        } else {
+            throw IllegalArgumentException()
+        }
+    }
 }
 
 data class EmptyProcessExchangeResponse(override val assignedID: String) : ProcessExchangeResponse {
@@ -552,16 +559,28 @@ inline fun <reified T> Collection<T>.toArrayHandle(): ArrayHandle<T> = ArrayHand
 fun <T> Collection<T>.toArrayHandle(clazz: Class<T>): ArrayHandle<T> = ArrayHandle(this, clazz)
 inline fun <reified T> Array<T>.toArrayHandle(): ArrayHandle<T> = ArrayHandle(listOf(*this), T::class.java)
 
-open class ArrayHandle<T>(override var size: Int = 0, val clazz: Class<T>) : Handle, AbstractList<T>() {
+open class ArrayHandle<T>(final override var size: Int = 0, val clazz: Class<T>) : Handle, AbstractList<T>() {
     override lateinit var assignedID: String
 
     private val exchange = LibraryLink.exchange
-    private val typeName = clazz.simpleName
+    private val typeName = calculatePrimitiveTypeName(clazz)
+
+    init {
+        if (size != 0) {
+            allocate()
+        }
+    }
 
     constructor(src: Collection<T>, clazz: Class<T>) : this(src.size, clazz) {
         src.withIndex().forEach { elem ->
             set(elem.index, elem.value)
         }
+    }
+
+    private fun calculatePrimitiveTypeName(clazz: Class<T>): String = when (clazz) {  // TODO: Very hacky
+        Char::class.java, Character::class.java -> "char"
+        Int::class.java, Integer::class.java -> "int"
+        else -> clazz.simpleName
     }
 
     override operator fun get(index: Int): T {
@@ -571,12 +590,6 @@ open class ArrayHandle<T>(override var size: Int = 0, val clazz: Class<T>) : Han
 
     fun allocate() {
         exchange.makeRequest(MethodCallRequest(methodName = "mem_alloc<$typeName>", args = listOf(Argument(size)))).bindTo(this) // TODO: Type parameter
-    }
-
-    private fun calculatePrimitiveTypeName(clazz: Class<T>): String = when (clazz) {  // TODO: Very hacky
-        Char::class.java -> "char"
-        Int::class.java -> "int"
-        else -> clazz.simpleName
     }
 
     operator fun set(index: Int, element: T): T {
@@ -608,10 +621,10 @@ fun ArrayHandle<Char>.strlen2(): Int {
     throw IllegalArgumentException()
 }
 
-fun ArrayHandle<Char>.toString(sizeSource: (ArrayHandle<Char>) -> Int = { this.strlen() }): String { // TODO: Very hacky
+fun ArrayHandle<Char>.toStringOfSize(sizeSource: (ArrayHandle<Char>) -> Int = { this.strlen() }): String { // TODO: Very hacky
     val size = sizeSource(this)
     val sb = StringBuilder(size)
-    for (i in 0..100) {
+    for (i in 0 until size) {
         val char = get(i)
         sb.append(char)
     }
@@ -706,7 +719,7 @@ open class ProtoBufDataExchange(val runner: ReceiverRunner = LibraryLink.runner,
             Exchange.ChannelResponse.ReturnValueCase.NO_RETURN_VALUE,
             Exchange.ChannelResponse.ReturnValueCase.RETURNVALUE_NOT_SET,
             null ->
-                EmptyProcessExchangeResponse(assignedID = this.assignedID)
+                HandleProcessExchangeResponse(assignedID = this.assignedID)
             Exchange.ChannelResponse.ReturnValueCase.EXCEPTION_MESSAGE ->
                 throw LibraryLinkException(this.exceptionMessage)
         }
@@ -807,7 +820,7 @@ open class SimpleTextProcessDataExchange(val runner: ReceiverRunner = LibraryLin
         if (channelResponse.exceptionMessage != null) {
             throw LibraryLinkException(channelResponse.exceptionMessage)
         }
-        val response = HandleProcessExchangeResponse(rawValue = channelResponse.returnValue, assignedID = "") // TODO
+        val response = PrimitiveProcessExchangeResponse(rawValue = channelResponse.returnValue, assignedID = "") // TODO
         logger.info("Received $response")
         return response
     }
