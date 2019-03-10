@@ -56,9 +56,13 @@ fun detectArraysInTypes(library: LibraryDecl, types: Map<String, String>): List<
     val arrayClasses = mutableListOf<WrappedClass>()
     for (type in arrayTypes) {
         val itemType = checkNotNull(types[type.removeSuffix("[]")])
+        val arrayType = "$itemType[]"
         val set = Method("set<$itemType>", args = listOf())
+        set.request = set.request.copy(type = arrayType)
         val get = Method("get<$itemType>", args = listOf())
+        get.request = get.request.copy(type = arrayType)
         val memAlloc = Method("mem_alloc<$itemType>", args = listOf())
+        memAlloc.request = memAlloc.request.copy(type = arrayType)
         arrayClasses += WrappedClass(name = type, methods = listOf(),
                 builtinMethods = listOf(set, get, memAlloc), constructor = null)
 //        val arrayAutomaton = Automaton(name = type,
@@ -88,7 +92,7 @@ fun generateST(srcLibrary: LibraryDecl, st: ST) {
         val args = generateArgs(function.args, types + ("self" to function.entity))
         val request = MethodCallRequest(
                 methodName = function.name,
-                type = "",
+                type = function.entity,
                 objectID = objectId,
                 args = listOf(),
                 doGetReturnValue = function.returnValue != null,
@@ -183,7 +187,7 @@ data class WrappedClass(val name: String,
 }
 
 data class Method(val name: String, val args: List<Arg>) {
-    var request: Request = MethodCallRequest("methodName", "ObjectID", "", listOf(),  true, false, true)
+    var request: MethodCallRequest = MethodCallRequest("methodName", "ObjectID", "", listOf(),  true, false, true)
     var returnValue: String? = null
     var referenceReturn: Boolean = true
     var clazz: WrappedClass? = null

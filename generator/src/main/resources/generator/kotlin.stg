@@ -56,6 +56,7 @@ requestObjectCreation(methodProperties, requestProperties) ::= <<
 <bigList(methodProperties.args)>
 val request = MethodCallRequest(methodName = "<requestProperties.methodName>",
                                 objectID = <if(requestProperties.static)>"<requestProperties.objectID>"<else><requestProperties.objectID><endif>,
+                                type = "<requestProperties.type>",
                                 args = args,
                                 isStatic = <requestProperties.static>,
                                 doGetReturnValue = <requestProperties.doGetReturnValue>,

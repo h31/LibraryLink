@@ -584,12 +584,20 @@ open class ArrayHandle<T>(final override var size: Int = 0, val clazz: Class<T>)
     }
 
     override operator fun get(index: Int): T {
-        val resp = exchange.makeRequest(MethodCallRequest(methodName = "get<$typeName>", args = listOf(Argument(index)), objectID = assignedID, doGetReturnValue = true)) // TODO
+        val resp = exchange.makeRequest(MethodCallRequest(
+                methodName = "get<$typeName>",
+                type = "$typeName[]",
+                args = listOf(Argument(index)),
+                objectID = assignedID,
+                doGetReturnValue = true)) // TODO
         return resp.asInstanceOf(clazz)
     }
 
     fun allocate() {
-        exchange.makeRequest(MethodCallRequest(methodName = "mem_alloc<$typeName>", args = listOf(Argument(size)))).bindTo(this) // TODO: Type parameter
+        exchange.makeRequest(MethodCallRequest(
+                methodName = "mem_alloc<$typeName>",
+                type = "$typeName[]",
+                args = listOf(Argument(size)))).bindTo(this) // TODO: Type parameter
     }
 
     operator fun set(index: Int, element: T): T {
@@ -600,7 +608,12 @@ open class ArrayHandle<T>(final override var size: Int = 0, val clazz: Class<T>)
             is Char -> Argument(element.toInt()) // TODO
             else -> TODO()
         }
-        exchange.makeRequest(MethodCallRequest(methodName = "set<$typeName>", args = listOf(Argument(index), valueArgument), objectID = assignedID, doGetReturnValue = false))
+        exchange.makeRequest(MethodCallRequest(
+                methodName = "set<$typeName>",
+                type = "$typeName[]",
+                args = listOf(Argument(index), valueArgument),
+                objectID = assignedID,
+                doGetReturnValue = false))
         return previousValue
     }
 }
@@ -608,7 +621,12 @@ open class ArrayHandle<T>(final override var size: Int = 0, val clazz: Class<T>)
 class CharArrayHandle(size: Int = 0) : ArrayHandle<Char>(size, Char::class.java)
 
 fun ArrayHandle<Char>.strlen(): Int = LibraryLink.exchange
-        .makeRequest(MethodCallRequest(methodName = "strlen", args = listOf(), objectID = assignedID, doGetReturnValue = true))
+        .makeRequest(MethodCallRequest(
+                methodName = "strlen",
+                type = "char[]",
+                args = listOf(),
+                objectID = assignedID,
+                doGetReturnValue = true))
         .asInstanceOf()
 
 fun ArrayHandle<Char>.strlen2(): Int {

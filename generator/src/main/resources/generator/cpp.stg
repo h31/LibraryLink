@@ -77,7 +77,7 @@ processingClass(wrappedClass) ::= <<
 >>
 
 processEntry(methodObject) ::= <<
-if (request.methodname() == "<methodObject.name>") {
+if (request.type() == "<methodObject.request.type>" && request.methodname() == "<methodObject.name>") {
     librarylink_<methodObject.name>(request, persistence, resp);
     return resp;
 }
