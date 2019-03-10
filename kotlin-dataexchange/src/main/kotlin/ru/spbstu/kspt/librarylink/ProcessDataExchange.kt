@@ -547,30 +547,39 @@ open class ClassDecl<T : Handle>(clazz: Class<T>, importName: String, methodArgu
 //    }
 //}
 
-inline fun <reified T> makeArray(size: Int): ArrayHandle<T> = AllocatedArrayHandle(size, T::class.java)
-inline fun <reified T> Collection<T>.toArrayHandle(): ArrayHandle<T> = AllocatedArrayHandle(this, T::class.java)
-fun <T> Collection<T>.toArrayHandle(clazz: Class<T>): ArrayHandle<T> = AllocatedArrayHandle(this, clazz)
-inline fun <reified T> Array<T>.toArrayHandle(): ArrayHandle<T> = AllocatedArrayHandle(listOf(*this), T::class.java)
+inline fun <reified T> makeArray(size: Int): ArrayHandle<T> = ArrayHandle(size, T::class.java)
+inline fun <reified T> Collection<T>.toArrayHandle(): ArrayHandle<T> = ArrayHandle(this, T::class.java)
+fun <T> Collection<T>.toArrayHandle(clazz: Class<T>): ArrayHandle<T> = ArrayHandle(this, clazz)
+inline fun <reified T> Array<T>.toArrayHandle(): ArrayHandle<T> = ArrayHandle(listOf(*this), T::class.java)
 
-interface ArrayHandle<T> : Handle, List<T> {
-    operator fun set(index: Int, element: T): T
-}
-
-open class ArrayHandleImpl<T>(val clazz: Class<T>) : ArrayHandle<T>, AbstractList<T>() {
+open class ArrayHandle<T>(override var size: Int = 0, val clazz: Class<T>) : Handle, AbstractList<T>() {
     override lateinit var assignedID: String
 
-    override val size: Int
-        get() = TODO("not implemented")
+    private val exchange = LibraryLink.exchange
+    private val typeName = clazz.simpleName
 
-    protected val exchange = LibraryLink.exchange
-    protected val typeName = clazz.simpleName
+    constructor(src: Collection<T>, clazz: Class<T>) : this(src.size, clazz) {
+        src.withIndex().forEach { elem ->
+            set(elem.index, elem.value)
+        }
+    }
 
     override operator fun get(index: Int): T {
         val resp = exchange.makeRequest(MethodCallRequest(methodName = "get<$typeName>", args = listOf(Argument(index)), objectID = assignedID, doGetReturnValue = true)) // TODO
         return resp.asInstanceOf(clazz)
     }
 
-    override operator fun set(index: Int, element: T): T {
+    fun allocate() {
+        exchange.makeRequest(MethodCallRequest(methodName = "mem_alloc<$typeName>", args = listOf(Argument(size)))).bindTo(this) // TODO: Type parameter
+    }
+
+    private fun calculatePrimitiveTypeName(clazz: Class<T>): String = when (clazz) {  // TODO: Very hacky
+        Char::class.java -> "char"
+        Int::class.java -> "int"
+        else -> clazz.simpleName
+    }
+
+    operator fun set(index: Int, element: T): T {
         val previousValue: T = get(index)
         val valueArgument = when (element) {
             is Handle -> Argument(element)
@@ -583,43 +592,30 @@ open class ArrayHandleImpl<T>(val clazz: Class<T>) : ArrayHandle<T>, AbstractLis
     }
 }
 
-open class AllocatedArrayHandle<T>(override final val size: Int, clazz: Class<T>) : ArrayHandleImpl<T>(clazz) {
-    init {
-        exchange.makeRequest(MethodCallRequest(methodName = "mem_alloc<$typeName>", args = listOf(Argument(size)))).bindTo(this) // TODO: Type parameter
-    }
+class CharArrayHandle(size: Int = 0) : ArrayHandle<Char>(size, Char::class.java)
 
-    constructor(src: Collection<T>, clazz: Class<T>) : this(src.size, clazz) {
-        src.withIndex().forEach { elem ->
-            set(elem.index, elem.value)
+fun ArrayHandle<Char>.strlen(): Int = LibraryLink.exchange
+        .makeRequest(MethodCallRequest(methodName = "strlen", args = listOf(), objectID = assignedID, doGetReturnValue = true))
+        .asInstanceOf()
+
+fun ArrayHandle<Char>.strlen2(): Int {
+    for (i in 0..100) {
+        val char = get(i)
+        if (char.toInt() == 0) {
+            return i
         }
     }
-
-    private fun calculatePrimitiveTypeName(clazz: Class<T>): String = when (clazz) {  // TODO: Very hacky
-        Char::class.java -> "char"
-        Int::class.java -> "int"
-        else -> clazz.simpleName
-    }
+    throw IllegalArgumentException()
 }
 
-class CharArrayHandle(val backend: ArrayHandle<Char> = ArrayHandleImpl(Char::class.java)) : ArrayHandle<Char> by backend {
-    private val exchange = LibraryLink.exchange
-
-    override val size: Int
-        get() = exchange
-                .makeRequest(MethodCallRequest(methodName = "strlen", args = listOf(), objectID = assignedID, doGetReturnValue = true))
-                .asInstanceOf()
-
-    override fun toString(): String { // TODO: Very hacky
-        val sb = StringBuilder()
-        for (i in 0..100) {
-            val char = get(i)
-            if (char.toInt() == 0) {
-                break
-            }
-            sb.append(char)
-        }
-        return sb.toString()
+fun ArrayHandle<Char>.toString(sizeSource: (ArrayHandle<Char>) -> Int = { this.strlen() }): String { // TODO: Very hacky
+    val size = sizeSource(this)
+    val sb = StringBuilder(size)
+    for (i in 0..100) {
+        val char = get(i)
+        sb.append(char)
     }
+    return sb.toString()
 }
 
 object HandleReferenceQueue {
