@@ -232,8 +232,8 @@ class Z3Example {
 
         ctx        = mk_context();
         s          = mk_solver(ctx);
-        x          = mk_int_var(ctx, "x".toList().toArrayHandle());
-        y          = mk_int_var(ctx, "y".toList().toArrayHandle());
+        x          = mk_int_var(ctx, "x".toArrayHandle());
+        y          = mk_int_var(ctx, "y".toArrayHandle());
         one        = mk_int(ctx, 1);
         two        = mk_int(ctx, 2);
 

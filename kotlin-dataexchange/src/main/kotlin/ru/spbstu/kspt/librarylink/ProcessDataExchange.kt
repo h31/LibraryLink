@@ -630,7 +630,7 @@ fun ArrayHandle<Char>.strlen(): Int = LibraryLink.exchange
                 doGetReturnValue = true))
         .asInstanceOf()
 
-fun ArrayHandle<Char>.strlen2(): Int {
+fun ArrayHandle<Char>.strlen_test(): Int {
     for (i in 0..100) {
         val char = get(i)
         if (char.toInt() == 0) {
@@ -649,6 +649,8 @@ fun ArrayHandle<Char>.toStringOfSize(sizeSource: (ArrayHandle<Char>) -> Int = { 
     }
     return sb.toString()
 }
+
+fun String.toArrayHandle(): ArrayHandle<Char> = ArrayHandle(this.toList(), Char::class.java)
 
 object HandleReferenceQueue {
     val refqueue = ReferenceQueue<Any>()
