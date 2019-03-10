@@ -256,3 +256,11 @@ void process_channel(int fd) {
         write_frame(fd, 1, response_bytes);
     }
 }
+
+void do_callback(const std::string& method_name, const std::string& type) {
+    auto request = exchange::MethodCallRequest();
+    request.set_methodname(method_name);
+    request.set_type(type);
+    auto rq = exchange::Request();
+    rq.set_allocated_method_call(&request);
+}

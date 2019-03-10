@@ -660,9 +660,11 @@ object HandleReferenceQueue {
 class HandlePhantomReference<T>(referent: T, q: ReferenceQueue<T>, val assignedID: String) : PhantomReference<T>(referent, q)
 
 interface CallbackRegistrable {
-    fun registerCallback(funcName: String, receiver: CallbackReceiver)
-    fun registerCallback(funcName: String, receiver: (request: MethodCallRequest, obj: Any) -> Any?)
-    fun registerConstructorCallback(className: String, receiver: (request: MethodCallRequest) -> Any?)
+    fun registerCallback(methodName: String, type: String, receiver: CallbackReceiver) {
+        registerCallback(methodName, type) { req, _ -> receiver(req) to null }
+    }
+    fun registerCallback(methodName: String, type: String, receiver: (request: MethodCallRequest, handle: Handle?) -> Any?)
+    fun registerConstructorCallback(className: String, receiver: (request: MethodCallRequest) -> Handle)
 }
 
 interface ProcessDataExchange : CallbackRegistrable {
@@ -677,42 +679,57 @@ interface CallbackReceiver {
 open class CallbackDataExchange : CallbackRegistrable {
     private val logger = LoggerFactory.getLogger(CallbackDataExchange::class.java)
 
-    private val mapper = ObjectMapper().registerModule(KotlinModule())
+    private val callbackReceiversMap: MutableMap<Pair<String, String>, (request: MethodCallRequest, handle: Handle?) -> Any?> = mutableMapOf()
 
-    private val callbackReceiversMap: MutableMap<String, (request: MethodCallRequest, obj: Any) -> Any?> = mutableMapOf()
+    private val callbackConstructorsMap: MutableMap<String, (request: MethodCallRequest) -> Handle> = mutableMapOf()
 
-    private val callbackConstructorsMap: MutableMap<String, (request: MethodCallRequest) -> Any?> = mutableMapOf()
+    private val localPersistence: MutableMap<String, Handle> = mutableMapOf()
 
-    private val localPersistence: MutableMap<String, Any?> = mutableMapOf()
-
-    override fun registerCallback(funcName: String, receiver: CallbackReceiver) {
-        callbackReceiversMap += funcName to { req, _ -> receiver(req) to null } // TODO
+    override fun registerCallback(methodName: String, type: String, receiver: (request: MethodCallRequest, handle: Handle?) -> Any?) {
+        callbackReceiversMap += Pair(methodName, type) to receiver
     }
 
-    override fun registerCallback(funcName: String, receiver: (request: MethodCallRequest, obj: Any) -> Any?) {
-        callbackReceiversMap += funcName to receiver
-    }
-
-    override fun registerConstructorCallback(className: String, receiver: (request: MethodCallRequest) -> Any?) {
+    override fun registerConstructorCallback(className: String, receiver: (request: MethodCallRequest) -> Handle) {
         callbackConstructorsMap += className to receiver
     }
 
     fun handleRequest(callbackRequest: ByteArray): ByteArray {
-        val request = mapper.readValue(callbackRequest, MethodCallRequest::class.java)
+        val requestWrapped = Exchange.Request.parseFrom(callbackRequest)
+        if (!requestWrapped.hasMethodCall()) {
+            TODO()
+        }
+        val request = requestWrapped.methodCall.toMethodCallRequest()
         logger.info("Received callback request $request")
         val existingObject = localPersistence[request.assignedID]
-        val obj = existingObject ?: callbackConstructorsMap[request.objectID]?.invoke(request)
-        ?: TODO() // TODO: Too Dirty
+        val obj = existingObject ?: callbackConstructorsMap[request.objectID]?.invoke(request) ?: TODO() // TODO: Too Dirty
         if (existingObject == null) {
             localPersistence[request.assignedID] = obj
         }
-        val callback = callbackReceiversMap[request.methodName] ?: TODO()
+        val callback = callbackReceiversMap[request.methodName to request.type] ?: TODO()
         val returnValue = callback(request, obj) // TODO
-        val response = ChannelResponse(returnValue)
-        val message = mapper.writeValueAsBytes(response)
-        logger.info("Responded with ${message.toString(Charset.defaultCharset())}")
-        return message
+        val valueBuilder = Exchange.Value.newBuilder()
+        when (returnValue) {
+            is Number -> valueBuilder.intValue = returnValue.toLong()
+            is Char -> valueBuilder.intValue = returnValue.toLong()
+            is String -> valueBuilder.stringValue = returnValue
+        }
+        val response = Exchange.ChannelResponse.newBuilder()
+                .setAssignedId(request.assignedID)
+                .setReturnValue(valueBuilder)
+                .build()
+        logger.info("Responded with ${response}")
+        return response.toByteArray()
     }
+
+    private fun Exchange.MethodCallRequest.toMethodCallRequest(): MethodCallRequest = MethodCallRequest(
+            methodName = this.methodName,
+            objectID = this.objectId,
+            type = this.type,
+            args = listOf(),
+            isStatic = this.static,
+            doGetReturnValue = this.doGetReturnValue,
+            isProperty = this.property
+    )
 }
 
 class LibraryLinkException(message: String) : Exception(message)
@@ -863,13 +880,7 @@ open class SimpleTextProcessDataExchange(val runner: ReceiverRunner = LibraryLin
     }
 }
 
-class CachingProcessDataExchange(val backend: ProcessDataExchange, val cacheManager: CacheManager) : ProcessDataExchange {
-    override fun registerCallback(funcName: String, receiver: CallbackReceiver) = backend.registerCallback(funcName, receiver)
-
-    override fun registerCallback(funcName: String, receiver: (request: MethodCallRequest, obj: Any) -> Any?) = backend.registerCallback(funcName, receiver)
-
-    override fun registerConstructorCallback(className: String, receiver: (request: MethodCallRequest) -> Any?) = backend.registerConstructorCallback(className, receiver)
-
+class CachingProcessDataExchange(val backend: ProcessDataExchange, val cacheManager: CacheManager) : ProcessDataExchange by backend {
     override fun makeRequest(request: Request): ProcessExchangeResponse {
         val cached = currentSequence.poll()
         val response: ProcessExchangeResponse = if (cached != null && cached.first == request) {
@@ -889,8 +900,6 @@ class CachingProcessDataExchange(val backend: ProcessDataExchange, val cacheMana
     }
 
     private val currentSequence = ArrayDeque<Pair<Request, ProcessExchangeResponse>>()
-
-    override fun makeRequests(requests: List<Request>): List<ProcessExchangeResponse> = backend.makeRequests(requests) // TODO
 }
 
 interface CacheManager {

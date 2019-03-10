@@ -12,4 +12,6 @@ exchange::ChannelResponse process_request(const exchange::MethodCallRequest& req
                                           std::unordered_map<std::string, void *>& persistence,
                                           exchange::ChannelResponse& resp);
 
+void do_callback(const std::string& method_name, const std::string& type);
+
 #endif //CURLRECEIVER_HANDLERS_H
