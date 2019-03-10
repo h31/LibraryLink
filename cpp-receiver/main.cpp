@@ -221,6 +221,13 @@ void process_channel(int fd) {
         rq.ParseFromArray(request_bytes.data(), length);
         exchange::ChannelResponse response;
 
+        if (!rq.assigned_id().empty()) {
+            response.set_assigned_id(rq.assigned_id());
+        } else {
+            auto id = assigned_id_counter++;
+            response.set_assigned_id(std::to_string(id));
+        }
+
         switch (rq.request_case()) {
             case rq.kMethodCall:
                 auto request = rq.method_call();
@@ -228,9 +235,6 @@ void process_channel(int fd) {
                 printf("Method is %s \n", request.methodname().c_str());
                 printf("Rq is %s \n", rq.DebugString().c_str());
 //                printf("Request is %s \n", request.DebugString().c_str());
-
-                auto id = assigned_id_counter++;
-                response.set_assignedid(std::to_string(id));
 
                 response = process_request(request, persistence, response);
 

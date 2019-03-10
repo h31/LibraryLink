@@ -492,8 +492,9 @@ data class PrimitiveProcessExchangeResponse(val rawValue: Any?,
                                             override val assignedID: String) : ProcessExchangeResponse {
     override fun <T> asInstanceOf(clazz: Class<T>): T {
         return when (clazz) {
-            Int::class.java, Integer::class.java -> rawValue as? T ?: throw IllegalArgumentException()
-            Char::class.java, Character::class.java -> (rawValue as Int).toChar() as? T ?: throw IllegalArgumentException()
+            Long::class.java -> rawValue as? T ?: throw IllegalArgumentException()
+            Int::class.java, Integer::class.java -> (rawValue as Long).toInt() as T
+            Char::class.java, Character::class.java -> (rawValue as Long).toChar() as T
             else -> TODO()
         }
     }
@@ -729,23 +730,25 @@ open class ProtoBufDataExchange(val runner: ReceiverRunner = LibraryLink.runner,
     }
 
     private fun Exchange.ChannelResponse.toProcessExchangeResponse(): ProcessExchangeResponse {
-        return when (this.returnValueCase) {
-            Exchange.ChannelResponse.ReturnValueCase.RETURN_VALUE_STRING ->
-                TODO()
-            Exchange.ChannelResponse.ReturnValueCase.RETURN_VALUE_INT ->
-                PrimitiveProcessExchangeResponse(rawValue = this.returnValueInt, assignedID = this.assignedID)
-            Exchange.ChannelResponse.ReturnValueCase.NO_RETURN_VALUE,
-            Exchange.ChannelResponse.ReturnValueCase.RETURNVALUE_NOT_SET,
+        return when (this.resultCase) {
+            Exchange.ChannelResponse.ResultCase.RETURN_VALUE ->
+                when (this.returnValue.valueCase) {
+                    Exchange.Value.ValueCase.INT_VALUE -> PrimitiveProcessExchangeResponse(rawValue = this.returnValue.intValue, assignedID = this.assignedId)
+                    Exchange.Value.ValueCase.UINT_VALUE -> PrimitiveProcessExchangeResponse(rawValue = this.returnValue.uintValue, assignedID = this.assignedId)
+                    Exchange.Value.ValueCase.STRING_VALUE -> PrimitiveProcessExchangeResponse(rawValue = this.returnValue.stringValue, assignedID = this.assignedId)
+                    Exchange.Value.ValueCase.VALUE_NOT_SET, null -> throw IllegalArgumentException()
+                }
+            Exchange.ChannelResponse.ResultCase.RESULT_NOT_SET,
             null ->
-                HandleProcessExchangeResponse(assignedID = this.assignedID)
-            Exchange.ChannelResponse.ReturnValueCase.EXCEPTION_MESSAGE ->
+                HandleProcessExchangeResponse(assignedID = this.assignedId)
+            Exchange.ChannelResponse.ResultCase.EXCEPTION_MESSAGE ->
                 throw LibraryLinkException(this.exceptionMessage)
         }
     }
 
     private fun Request.toProtobuf(): ByteArray {
         val builder = Exchange.Request.newBuilder()
-        builder.assignedID = this.assignedID
+        builder.assignedId = this.assignedID
         when (this) {
             is MethodCallRequest -> builder.methodCall = this.toProtobuf()
             is ImportRequest -> builder.importation = this.toProtobuf()
@@ -759,7 +762,7 @@ open class ProtoBufDataExchange(val runner: ReceiverRunner = LibraryLink.runner,
         val builder = Exchange.MethodCallRequest.newBuilder()
         builder.methodName = this.methodName
         builder.type = this.type
-        builder.objectID = this.objectID
+        builder.objectId = this.objectID
         builder.addAllArg(this.args.map { it.toProtobuf() })
         builder.static = this.isStatic
         builder.doGetReturnValue = this.doGetReturnValue
@@ -785,10 +788,13 @@ open class ProtoBufDataExchange(val runner: ReceiverRunner = LibraryLink.runner,
             "inplace" -> Exchange.Argument.ArgumentType.INPLACE
             else -> throw IllegalArgumentException("arg.type == ${this.type}")
         }
+        val valueBuilder = Exchange.Value.newBuilder()
         when (this.value) {
-            is Number -> argBuilder.intValue = this.value.toInt() // TODO: Long?
-            is String -> argBuilder.stringValue = this.value
+            is Number -> valueBuilder.intValue = this.value.toLong()
+            is Char -> valueBuilder.intValue = this.value.toLong()
+            is String -> valueBuilder.stringValue = this.value
         }
+        argBuilder.value = valueBuilder.build()
         argBuilder.key = this.key ?: ""
         return argBuilder.build()
     }

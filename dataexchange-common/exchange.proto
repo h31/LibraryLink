@@ -13,25 +13,22 @@ message Request {
         bool eval = 4;
         bool dynamic_inherit = 5;
     }
-    string assignedID = 7;
+    string assigned_id = 7;
 }
 
 message MethodCallRequest {
     string methodName = 1;
-    string objectID = 2;
+    string object_id = 2;
     string type = 8;
     repeated Argument arg = 3;
     bool static = 4;
-    bool doGetReturnValue = 5;
+    bool do_get_return_value = 5;
     bool property = 6;
 }
 
 message Argument {
     ArgumentType type = 1;
-    oneof value {
-        string string_value = 2;
-        int32 int_value = 3;
-    }
+    Value value = 3;
     string key = 4;
 
     enum ArgumentType {
@@ -40,8 +37,16 @@ message Argument {
     }
 }
 
+message Value {
+    oneof value {
+        string string_value = 2;
+        sfixed64 int_value = 3;
+        fixed64 uint_value = 5;
+    }
+}
+
 message ImportRequest {
-    string importedName = 1;
+    string imported_name = 1;
 }
 
 message ConstructorRequest {
@@ -50,11 +55,9 @@ message ConstructorRequest {
 }
 
 message ChannelResponse {
-    oneof return_value {
-        string return_value_string = 1;
-        int32 return_value_int = 2;
+    oneof result {
+        Value return_value = 1;
         string exception_message = 3;
-        bool no_return_value = 4;
     }
-    string assignedID = 7;
+    string assigned_id = 7;
 }

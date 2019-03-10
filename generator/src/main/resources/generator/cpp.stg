@@ -25,9 +25,9 @@ void librarylink_<methodObject.name>(const exchange::MethodCallRequest& request,
     <if(methodObject.referenceReturn)>
     <methodObject.returnValue>* ptr = new <methodObject.returnValue>;
     *ptr = std::move(return_value);
-    persistence[resp.assignedid()] = ptr;
+    persistence[resp.assigned_id()] = ptr;
     <else>
-    resp.set_return_value_int(return_value);
+    resp.mutable_return_value()->set_int_value(return_value);
     <endif>
     <endif>
 }
@@ -35,11 +35,11 @@ void librarylink_<methodObject.name>(const exchange::MethodCallRequest& request,
 
 arg(argObject) ::= <<
 <if(argObject.self)>
-<argObject.type>* <argObject.name> = (<argObject.type>*) persistence[request.objectid()];
+<argObject.type>* <argObject.name> = (<argObject.type>*) persistence[request.object_id()];
 <elseif(argObject.reference)>
-<argObject.type>* <argObject.name> = (<argObject.type>*) persistence[request.arg(<argObject.index>).string_value()];
+<argObject.type>* <argObject.name> = (<argObject.type>*) persistence[request.arg(<argObject.index>).value().string_value()];
 <else>
-<argObject.type> <argObject.name> = request.arg(<argObject.index>).int_value();
+<argObject.type> <argObject.name> = request.arg(<argObject.index>).value().int_value();
 <endif>
 >>
 
