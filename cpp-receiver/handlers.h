@@ -8,6 +8,8 @@
 #include <unordered_map>
 #include "exchange.pb.h"
 
+extern std::atomic_uint_fast64_t assigned_id_counter;
+
 exchange::ChannelResponse process_request(const exchange::MethodCallRequest& request,
                                           std::unordered_map<std::string, void *>& persistence,
                                           exchange::ChannelResponse& resp);

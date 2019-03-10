@@ -261,6 +261,9 @@ void do_callback(const std::string& method_name, const std::string& type) {
     auto request = exchange::MethodCallRequest();
     request.set_methodname(method_name);
     request.set_type(type);
+    auto arg = exchange::Argument();
+    auto value = exchange::Value();
+    arg.set_allocated_value();
     auto rq = exchange::Request();
     rq.set_allocated_method_call(&request);
 }
