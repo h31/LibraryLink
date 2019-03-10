@@ -61,10 +61,7 @@ exchange::ChannelResponse process_request(const exchange::MethodCallRequest& req
                                           std::unordered_map\<std::string, void *>& persistence,
                                           exchange::ChannelResponse& resp) {
     <wrappedClasses:processingClass(); separator="\n">
-    if (request.methodname() == "strlen") {
-        librarylink_strlen(request, persistence, resp);
-        return resp;
-    }
+    <stdlibEntries()>
     printf("No handler found\n");
     throw "error";
 }
@@ -79,6 +76,13 @@ processingClass(wrappedClass) ::= <<
 processEntry(methodObject) ::= <<
 if (request.type() == "<methodObject.request.type>" && request.methodname() == "<methodObject.name>") {
     librarylink_<methodObject.name>(request, persistence, resp);
+    return resp;
+}
+>>
+
+stdlibEntries() ::= <<
+if (request.methodname() == "strlen") {
+    librarylink_strlen(request, persistence, resp);
     return resp;
 }
 >>
