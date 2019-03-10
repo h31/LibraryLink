@@ -124,7 +124,7 @@ class Z3Example {
     fun mk_context_custom(cfg: Z3_config, err: Z3_error_handler): Z3_context {
         val ctx: Z3_context
 
-        cfg.Z3_set_param_value("model".toList().toArrayHandle(), "true".toList().toArrayHandle())
+        cfg.Z3_set_param_value("model".toArrayHandle(), "true".toArrayHandle())
         ctx = cfg.Z3_mk_context()
 //        ctx.Z3_set_error_handler(err)
 
