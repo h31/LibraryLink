@@ -1,10 +1,10 @@
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import ru.spbstu.kspt.librarylink.MethodCallRequest
-import ru.spbstu.kspt.librarymigration.CallEdge
-import ru.spbstu.kspt.librarymigration.Edge
-import ru.spbstu.kspt.librarymigration.LinkedEdge
 import ru.spbstu.kspt.librarymigration.parser.ModelParser
+import ru.spbstu.kspt.librarymigration.parser.edgemodel.CallEdge
+import ru.spbstu.kspt.librarymigration.parser.edgemodel.Edge
+import ru.spbstu.kspt.librarymigration.parser.edgemodel.LinkedEdge
 import java.io.File
 
 fun main(args: Array<String>) {
