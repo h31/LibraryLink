@@ -110,10 +110,10 @@ callback(method) ::= <<
 abstract class <method.clazz.name> : DelayedAssignmentHandle {
     private val exchange = LibraryLink.exchange;
 
-    abstract fun invoke(<method.args:args(); separator=", ">)
+    abstract fun <method.name>(<method.args:args(); separator=", ">)
 
     constructor() : super() {
-        exchange.registerCallback("invoke\<<method.clazz.name>\>") { req, obj ->
+        exchange.registerCallback("<method.name>", "<method.clazz.name>") { req, obj ->
             (obj as <method.clazz.name>).invoke(Z3_context(), 0)
         }
     }
