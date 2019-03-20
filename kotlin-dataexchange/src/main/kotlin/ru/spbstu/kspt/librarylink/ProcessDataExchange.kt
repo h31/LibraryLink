@@ -567,8 +567,8 @@ open class ArrayHandle<T>(final override var size: Int = 0, val clazz: Class<T>)
     private val typeName = calculatePrimitiveTypeName(clazz)
 
     init {
-        if (size != 0) {
-            allocate()
+        if (size > 0) {
+            allocate(size)
         }
     }
 
@@ -594,11 +594,11 @@ open class ArrayHandle<T>(final override var size: Int = 0, val clazz: Class<T>)
         return resp.asInstanceOf(clazz)
     }
 
-    fun allocate() {
+    fun allocate(allocationSize: Int) {
         exchange.makeRequest(MethodCallRequest(
                 methodName = "mem_alloc<$typeName>",
                 type = "$typeName[]",
-                args = listOf(Argument(size)))).bindTo(this) // TODO: Type parameter
+                args = listOf(Argument(allocationSize)))).bindTo(this) // TODO: Type parameter
     }
 
     operator fun set(index: Int, element: T): T {
@@ -616,6 +616,10 @@ open class ArrayHandle<T>(final override var size: Int = 0, val clazz: Class<T>)
                 objectID = assignedID,
                 doGetReturnValue = false))
         return previousValue
+    }
+
+    companion object {
+        inline operator fun <reified T> invoke() = ArrayHandle(clazz = T::class.java)
     }
 }
 
