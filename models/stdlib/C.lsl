@@ -4,6 +4,7 @@ library C {
    Int (int);
    Any (void);
    Char (char);
+   Boolean (bool);
  }
 }
 

@@ -3,5 +3,6 @@ library Kotlin {
    String (String);
    Int (Int);
    Char (Char);
+   Boolean (Boolean);
  }
 }
