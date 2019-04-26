@@ -33,6 +33,8 @@ void check(bool condition) {
 
 std::unordered_map<std::string, void *> persistence;
 
+thread_local int wrapper_fd;
+
 template <typename T> std::unique_ptr<T> read_value(int fd) {
     std::unique_ptr<T> buffer = std::make_unique<T>();
 
@@ -199,6 +201,7 @@ void open_callback_channel(const std::string &base_path) {
 }
 
 void process_channel(int fd) {
+    wrapper_fd = fd;
     std::string response_bytes;
 
     while (true) {
@@ -257,13 +260,32 @@ void process_channel(int fd) {
     }
 }
 
-void do_callback(const std::string& method_name, const std::string& type) {
-    auto request = exchange::MethodCallRequest();
-    request.set_methodname(method_name);
-    request.set_type(type);
-    auto arg = exchange::Argument();
-    auto value = exchange::Value();
-    arg.set_allocated_value();
+void do_callback(const std::string& method_name, const std::string& type, const args_vector& args) {
     auto rq = exchange::Request();
-    rq.set_allocated_method_call(&request);
+    auto request = rq.mutable_method_call();
+    request->set_methodname(method_name);
+    request->set_type(type);
+    for (const auto& it : args) {
+        auto arg = request->add_arg();
+        auto value = arg->mutable_value();
+
+        if (it.first == INPLACE) {
+            arg->set_type(exchange::Argument::ArgumentType::Argument_ArgumentType_INPLACE);
+            value->set_int_value(*((uint64_t*)it.second));
+        } else if (it.first == PERSISTENCE) {
+            arg->set_type(exchange::Argument::ArgumentType::Argument_ArgumentType_PERSISTENCE);
+            auto id = assigned_id_counter++;
+            std::string key = std::to_string(id);
+            value->set_string_value(key);
+            persistence[key] = it.second;
+        } else {
+            printf("Error\n");
+        }
+    }
+
+    std::string rq_bytes;
+    rq.SerializeToString(&rq_bytes);
+
+    write_frame(wrapper_fd, 2, rq_bytes);
+//    read_frame(wrapper_fd);
 }
