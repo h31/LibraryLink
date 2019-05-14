@@ -33,7 +33,29 @@ val kotlinStyleArrayType = { type: CodeType -> CodeType("ArrayHandle<${type.type
 
 val arrayTypeConverters = mapOf("kotlin" to kotlinStyleArrayType, "cpp" to cStyleArrayType)
 
-fun List<TypeDecl>.withSelfTypeDecl(entity: SemanticType) = this + TypeDecl(semanticType = SemanticType("self"), codeType = this[entity].codeType)
+val cStyleComplexType = mapOf(
+        "[]" to "%s*",
+        "*" to "%s*",
+        "const" to "const %s"
+)
+
+val kotlinStyleComplexType = mapOf(
+        "[]" to "ArrayHandle<%s>",
+        "*" to "%s",
+        "const" to "%s"
+)
+
+//val kotlinStyleComplexType = { type: ComplexSemanticType, typeDeclarations: List<TypeDecl> ->
+//    when {
+//        type.isArray() -> CodeType("ArrayHandle<${typeDeclarations[type.innerType].codeType.typeName.capitalize()}>")
+//        type.isPointer() -> CodeType(typeDeclarations[type.innerType].codeType.typeName) // CodeType("PointerHandle<${type.innerType.typeName.capitalize()}>")
+//        else -> TODO()
+//    }
+//}
+
+val complexTypesConverters = mapOf("kotlin" to kotlinStyleComplexType, "cpp" to cStyleComplexType)
+
+fun List<TypeDecl>.withSelfTypeDecl(entity: SemanticType) = this + TypeDecl(semanticType = SimpleSemanticType("self"), codeType = this[entity].codeType)
 
 fun SemanticType.isSelf() = typeName == "self"
 
@@ -41,8 +63,8 @@ fun generateST(srcLibrary: LibraryDecl, st: ST, destinationLanguage: String) {
     val library = srcLibrary
             .addMissingAutomata()
             .addDefaultStates()
-            .addArrayTypeDecls(checkNotNull(arrayTypeConverters[destinationLanguage]))
-            .generateHandlersForArrayTypes()
+            .addComplexTypesDecls(checkNotNull(complexTypesConverters[destinationLanguage]))
+            .generateHandlersForArrayAndPointerTypes()
 
     val methods = mutableMapOf<String, Method>()
 
@@ -64,7 +86,7 @@ fun generateST(srcLibrary: LibraryDecl, st: ST, destinationLanguage: String) {
                 isStatic = static)
         val returnType = if (hasReturnValue) typesWithSelf[function.returnValue!!].codeType.typeName else null // TODO: Check
         val method = Method(name = function.name, args = args, request = request,
-                returnValue = returnType, referenceReturn = function.returnValue?.isReference() ?: false)
+                returnValue = returnType, referenceReturn = function.returnValue?.isReference() ?: false, builtin = function.builtin)
         methods += method.name to method
     }
 
@@ -81,10 +103,11 @@ fun generateST(srcLibrary: LibraryDecl, st: ST, destinationLanguage: String) {
         } else {
             val classMethods = automaton.shifts.filterNot { it.from == "Created" }.flatMap { it.functions }.map { checkNotNull(methods[it]) }
             val constructor = automaton.shifts.filter { it.from == "Created" }.flatMap { it.functions }.map { checkNotNull(methods[it]) }.singleOrNull()
+            val builtins = methods.values.filter { it.request.type == automaton.name.typeName && it.builtin }
             val clazz = WrappedClass(
                     automaton.name.typeName,
                     classMethods,
-                    listOf(),
+                    builtins,
                     constructor
             )
             clazz.noExplicitConstructors = (constructor == null)
@@ -92,51 +115,6 @@ fun generateST(srcLibrary: LibraryDecl, st: ST, destinationLanguage: String) {
         }
     }
     st.add("libraryName", library.name)
-//    val wrappedClass = WrappedClass(
-//            "Requests",
-//            listOf(
-//                    Method("get", listOf(
-//                            Arg("String", "url", "InPlaceArgument")
-//                    )),
-//                    Method("get", listOf(
-//                            Arg("String", "url", "InPlaceArgument"),
-//                            Arg("Headers", "headers", "PersistenceArgument")
-//                    ))
-//            )
-//    )
-//    st.add("wrappedClasses", wrappedClass)
-
-//    for (type in library.machineTypes.values.filter { it.contains('.') }) {
-//        val actualName = getRealClassName(type)
-////        if (type != "Requests.Requests") { // TODO: Very dirty!
-////            val constructor = clazz.addConstructor()
-////            constructor.addParameter(JavaParser.parseType("String"), "storedName")
-////            constructor.createBody().addStatement(JavaParser.parseStatement("super(storedName);"))
-////        }
-//        val edges = library.edges.filter { library.machineTypes[it.src.machine] == type }
-//        for (edge in edges.filterIsInstance<CallEdge>()) {
-//            val request = makeRequest(edge)
-//            for (arg in request.args) {
-//                method.addParameter(JavaParser.parseType(getVariableType(arg.param)), arg.value.toString())
-//            }
-//            val statements = generateStatements(request, edge.linkedEdge?.dst?.machine?.type())
-//            for (s in statements) {
-//                methodBody.addStatement(s)
-//            }
-//            if (edge.hasReturnValue) {
-//                val linkedEdge = edge.linkedEdge!!
-//                method.type = JavaParser.parseType(linkedEdge.dst.machine.type())
-//            }
-//        }
-//        for (edge in edges.filterIsInstance<TemplateEdge>()) {
-//            val method = clazz.addMethod("to" + edge.dst.machine.name)
-//            method.type = JavaParser.parseType(edge.dst.machine.name)
-//        }
-//    }
-////    myClass.addField(Int::class.javaPrimitiveType, "A_CONSTANT", Modifier.PUBLIC, Modifier.STATIC)
-////    myClass.addField(String::class.java, "name", Modifier.PRIVATE)
-//    val code = compilationUnit.toString()
-//    println(code)
 }
 
 data class WrappedClass(val name: String,
@@ -148,7 +126,7 @@ data class WrappedClass(val name: String,
 
 data class Method(val name: String, val args: List<Arg>,
                   val request: MethodCallRequest, var returnValue: String? = null,
-                  var referenceReturn: Boolean = true, val clazz: WrappedClass? = null) // , val returnValueConstructor: String?
+                  var referenceReturn: Boolean = true, val clazz: WrappedClass? = null, val builtin: Boolean = false) // , val returnValueConstructor: String?
 
 data class Arg(val type: String, val name: String, val reference: Boolean, val self: Boolean) {
     var index = 0

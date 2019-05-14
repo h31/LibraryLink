@@ -219,6 +219,32 @@ public class Z3Kotlin {
 
         }
 
+        public fun Z3_solver_check_assumptions(s: Z3_solver, num_assumptions: Int, assumptions: ArrayHandle<Z3_ast>): Int {
+            val args = listOf<Argument>(Argument(s, "s"), Argument(num_assumptions, "num_assumptions"), Argument(assumptions, "assumptions"));
+            val request = MethodCallRequest(methodName = "Z3_solver_check_assumptions",
+                                            objectID = assignedID,
+                                            type = "Z3_context",
+                                            args = args,
+                                            isStatic = false,
+                                            doGetReturnValue = true,
+                                            isProperty = false);
+            return exchange.makeRequest(request).asInstanceOf()
+
+        }
+
+        public fun Z3_solver_get_unsat_core(s: Z3_solver): Z3_ast_vector {
+            val args = listOf<Argument>(Argument(s, "s"));
+            val request = MethodCallRequest(methodName = "Z3_solver_get_unsat_core",
+                                            objectID = assignedID,
+                                            type = "Z3_context",
+                                            args = args,
+                                            isStatic = false,
+                                            doGetReturnValue = true,
+                                            isProperty = false);
+            return exchange.makeRequest(request).bindTo(Z3_ast_vector())
+
+        }
+
         public fun Z3_mk_string_symbol(s: ArrayHandle<Char>): Z3_symbol {
             val args = listOf<Argument>(Argument(s, "s"));
             val request = MethodCallRequest(methodName = "Z3_mk_string_symbol",
@@ -280,7 +306,7 @@ public class Z3Kotlin {
                                             isStatic = false,
                                             doGetReturnValue = true,
                                             isProperty = false);
-            return exchange.makeRequest(request).bindTo(CharArrayHandle())
+            return exchange.makeRequest(request).bindTo(ArrayHandle<Char>())
 
         }
 
@@ -363,7 +389,7 @@ public class Z3Kotlin {
         }
 
         public fun Z3_set_error_handler(h: Z3_error_handler) {
-            val args = listOf<Argument>();
+            val args = listOf<Argument>(Argument(h, "h"));
             val request = MethodCallRequest(methodName = "Z3_set_error_handler",
                                             objectID = assignedID,
                                             type = "Z3_context",
@@ -372,6 +398,110 @@ public class Z3Kotlin {
                                             doGetReturnValue = false,
                                             isProperty = false);
             exchange.makeRequest(request)
+
+        }
+
+        public fun Z3_get_symbol_kind(s: Z3_symbol): Int {
+            val args = listOf<Argument>(Argument(s, "s"));
+            val request = MethodCallRequest(methodName = "Z3_get_symbol_kind",
+                                            objectID = assignedID,
+                                            type = "Z3_context",
+                                            args = args,
+                                            isStatic = false,
+                                            doGetReturnValue = true,
+                                            isProperty = false);
+            return exchange.makeRequest(request).asInstanceOf()
+
+        }
+
+        public fun Z3_get_symbol_int(s: Z3_symbol): Int {
+            val args = listOf<Argument>(Argument(s, "s"));
+            val request = MethodCallRequest(methodName = "Z3_get_symbol_int",
+                                            objectID = assignedID,
+                                            type = "Z3_context",
+                                            args = args,
+                                            isStatic = false,
+                                            doGetReturnValue = true,
+                                            isProperty = false);
+            return exchange.makeRequest(request).asInstanceOf()
+
+        }
+
+        public fun Z3_get_symbol_string(s: Z3_symbol): ArrayHandle<Char> {
+            val args = listOf<Argument>(Argument(s, "s"));
+            val request = MethodCallRequest(methodName = "Z3_get_symbol_string",
+                                            objectID = assignedID,
+                                            type = "Z3_context",
+                                            args = args,
+                                            isStatic = false,
+                                            doGetReturnValue = true,
+                                            isProperty = false);
+            return exchange.makeRequest(request).bindTo(ArrayHandle<Char>())
+
+        }
+
+        public fun Z3_model_get_num_consts(m: Z3_model): Int {
+            val args = listOf<Argument>(Argument(m, "m"));
+            val request = MethodCallRequest(methodName = "Z3_model_get_num_consts",
+                                            objectID = assignedID,
+                                            type = "Z3_context",
+                                            args = args,
+                                            isStatic = false,
+                                            doGetReturnValue = true,
+                                            isProperty = false);
+            return exchange.makeRequest(request).asInstanceOf()
+
+        }
+
+        public fun Z3_model_get_const_decl(m: Z3_model, i: Int): Z3_func_decl {
+            val args = listOf<Argument>(Argument(m, "m"), Argument(i, "i"));
+            val request = MethodCallRequest(methodName = "Z3_model_get_const_decl",
+                                            objectID = assignedID,
+                                            type = "Z3_context",
+                                            args = args,
+                                            isStatic = false,
+                                            doGetReturnValue = true,
+                                            isProperty = false);
+            return exchange.makeRequest(request).bindTo(Z3_func_decl())
+
+        }
+
+        public fun Z3_get_decl_name(d: Z3_func_decl): Z3_symbol {
+            val args = listOf<Argument>(Argument(d, "d"));
+            val request = MethodCallRequest(methodName = "Z3_get_decl_name",
+                                            objectID = assignedID,
+                                            type = "Z3_context",
+                                            args = args,
+                                            isStatic = false,
+                                            doGetReturnValue = true,
+                                            isProperty = false);
+            return exchange.makeRequest(request).bindTo(Z3_symbol())
+
+        }
+
+        public fun Z3_mk_app(d: Z3_func_decl, num_args: Int, args: ArrayHandle<Z3_ast>): Z3_ast {
+            val args = listOf<Argument>(Argument(d, "d"), Argument(num_args, "num_args"), Argument(args, "args"));
+            val request = MethodCallRequest(methodName = "Z3_mk_app",
+                                            objectID = assignedID,
+                                            type = "Z3_context",
+                                            args = args,
+                                            isStatic = false,
+                                            doGetReturnValue = true,
+                                            isProperty = false);
+            return exchange.makeRequest(request).bindTo(Z3_ast())
+
+        }
+
+        public fun Z3_model_eval(m: Z3_model, t: Z3_ast, model_completion: Boolean, v: Z3_ast): Boolean {
+            val args = listOf<Argument>(Argument(m, "m"), Argument(t, "t"), Argument(model_completion, "model_completion"), Argument(v, "v"));
+            val request = MethodCallRequest(methodName = "Z3_model_eval",
+                                            objectID = assignedID,
+                                            type = "Z3_context",
+                                            args = args,
+                                            isStatic = false,
+                                            doGetReturnValue = true,
+                                            isProperty = false);
+            return exchange.makeRequest(request).asInstanceOf()
 
         }
 
@@ -419,14 +549,26 @@ public class Z3Kotlin {
 
     }
 
+    class Z3_func_decl : HandleAutoGenerate {
+        private val exchange = LibraryLink.exchange;
+        constructor() : super();
+
+    }
+
+    class Z3_ast_vector : HandleAutoGenerate {
+        private val exchange = LibraryLink.exchange;
+        constructor() : super();
+
+    }
+
     abstract class Z3_error_handler : DelayedAssignmentHandle {
         private val exchange = LibraryLink.exchange;
 
         abstract fun invoke(c: Z3_context, e: Int)
 
         constructor() : super() {
-            exchange.registerCallback("invoke", "Z3_error_handler") { req, _ ->
-                this.invoke(Z3_context(), 0)
+            exchange.registerCallback("invoke", "Z3_error_handler") { req, obj ->
+                (obj as Z3_error_handler).invoke(Z3_context(), 0)
             }
         }
 

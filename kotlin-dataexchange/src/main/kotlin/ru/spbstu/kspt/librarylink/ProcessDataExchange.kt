@@ -587,7 +587,7 @@ open class ArrayHandle<T>(final override var size: Int = 0, val clazz: Class<T>)
     override operator fun get(index: Int): T {
         val resp = exchange.makeRequest(MethodCallRequest(
                 methodName = "get<$typeName>",
-                type = "$typeName[]",
+                type = "${typeName.capitalize()}[]",
                 args = listOf(Argument(index)),
                 objectID = assignedID,
                 doGetReturnValue = true)) // TODO
@@ -597,7 +597,7 @@ open class ArrayHandle<T>(final override var size: Int = 0, val clazz: Class<T>)
     fun allocate(allocationSize: Int) {
         exchange.makeRequest(MethodCallRequest(
                 methodName = "mem_alloc<$typeName>",
-                type = "$typeName[]",
+                type = "${typeName.capitalize()}[]",
                 args = listOf(Argument(allocationSize)))).bindTo(this) // TODO: Type parameter
     }
 
@@ -611,7 +611,7 @@ open class ArrayHandle<T>(final override var size: Int = 0, val clazz: Class<T>)
         }
         exchange.makeRequest(MethodCallRequest(
                 methodName = "set<$typeName>",
-                type = "$typeName[]",
+                type = "${typeName.capitalize()}[]",
                 args = listOf(Argument(index), valueArgument),
                 objectID = assignedID,
                 doGetReturnValue = false))

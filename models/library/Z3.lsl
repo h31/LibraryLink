@@ -40,7 +40,7 @@ library Z3 {
    shift Constructed -> self (Z3_mk_int_symbol, Z3_mk_const, Z3_mk_and, Z3_mk_or, Z3_mk_not, Z3_mk_iff);
    shift Constructed -> self (Z3_mk_solver, Z3_solver_inc_ref, Z3_solver_dec_ref);
    shift Constructed -> self (Z3_solver_assert, Z3_solver_check, Z3_solver_check_assumptions, Z3_solver_get_unsat_core);
-   shift Constructed -> self (Z3_mk_string_symbol, Z3_mk_int_sort, Z3_solver_get_model, Z3_model_inc_ref, Z3_model_to_string, Z3_model_dec_ref, Z3_mk_add, Z3_mk_lt, Z3_mk_gt, Z3_mk_eq, Z3_mk_int, Z3_set_error_handler, Z3_get_symbol_kind, Z3_get_symbol_int, Z3_get_symbol_string, Z3_model_get_num_consts, Z3_model_get_const_decl, Z3_get_decl_name, Z3_mk_app, Z3_model_eval);
+   shift Constructed -> self (Z3_mk_string_symbol, Z3_mk_int_sort, Z3_solver_get_model, Z3_model_inc_ref, Z3_model_to_string, Z3_model_dec_ref, Z3_mk_add, Z3_mk_lt, Z3_mk_gt, Z3_mk_eq, Z3_mk_int, Z3_set_error_handler, Z3_get_symbol_kind, Z3_get_symbol_int, Z3_get_symbol_string, Z3_model_get_num_consts, Z3_model_get_const_decl, Z3_get_decl_name, Z3_mk_app);
    shift Constructed -> Closed (Z3_del_context);
  }
 
@@ -108,7 +108,7 @@ library Z3 {
  
  fun Z3_context.Z3_set_error_handler(c: self, h: Z3_error_handler);
  
- fun Z3_context.Z3_model_to_string(c: self, m: Z3_model): Char[];
+ fun Z3_context.Z3_model_to_string(c: self, m: Z3_model): const<Char[]>;
  fun Z3_context.Z3_model_get_num_consts(c: self, m: Z3_model): Int;
  fun Z3_context.Z3_model_get_const_decl(c: self, m: Z3_model, i: Int): Z3_func_decl;
  fun Z3_context.Z3_get_decl_name(c: self, d: Z3_func_decl): Z3_symbol;
@@ -120,7 +120,7 @@ library Z3 {
  
  fun Z3_context.Z3_get_symbol_kind(cfg: self, s: Z3_symbol): Int;
  fun Z3_context.Z3_get_symbol_int(cfg: self, s: Z3_symbol): Int;
- fun Z3_context.Z3_get_symbol_string(cfg: self, s: Z3_symbol): Char[];
+ fun Z3_context.Z3_get_symbol_string(cfg: self, s: Z3_symbol): const<Char[]>;
  
  automaton Z3_error_handler {
    state Created, Constructed;

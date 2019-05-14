@@ -4,8 +4,9 @@ import org.junit.Assert.fail
 import org.junit.Test
 import ru.spbstu.kspt.librarylink.*
 import Z3Kotlin.Z3_context
-
-
+import Z3Kotlin.Z3_config
+import java.io.Writer
+import java.lang.IllegalArgumentException
 
 
 class Z3Example {
@@ -30,13 +31,26 @@ class Z3Example {
         Z3_L_TRUE(1);
 
         companion object {
-            fun valueOf(value: Int): Z3_lbool? = Z3_lbool.values().find { it.i == value }
+            fun valueOf(value: Int): Z3_lbool = Z3_lbool.values().find { it.i == value }
+                    ?: throw NoSuchElementException()
+        }
+    };
+
+    enum class Z3_symbol_kind(val i: Int) {
+        Z3_INT_SYMBOL(0),
+        Z3_STRING_SYMBOL(1);
+
+        companion object {
+            fun valueOf(value: Int): Z3_symbol_kind = Z3_symbol_kind.values().find { it.i == value }
+                    ?: throw NoSuchElementException()
         }
     };
 
 
     @Test
     fun demorgan() {
+        Thread.sleep(10*1000)
+
         val cfg: Z3Kotlin.Z3_config;
         val ctx: Z3Kotlin.Z3_context;
         val s: Z3Kotlin.Z3_solver;
@@ -261,4 +275,226 @@ class Z3Example {
         del_solver(ctx, s);
         ctx.Z3_del_context();
     }
+
+    /**
+     * \brief Create a logical context.
+     * Enable fine-grained proof construction.
+     * Enable model construction.
+     * Also enable tracing to stderr and register standard error handler.
+     */
+    fun mk_proof_context(): Z3_context {
+        val cfg = Z3Kotlin.Z3_config()
+        val ctx: Z3_context
+        cfg.Z3_set_param_value("proof".toArrayHandle(), "true".toArrayHandle())
+        ctx = mk_context_custom(cfg, ErrorHandler())
+        cfg.Z3_del_config()
+        return ctx
+    }
+
+    /**
+    \brief Create a boolean variable using the given name.
+     */
+    fun mk_bool_var(ctx: Z3_context, name: String): Z3_ast {
+        val ty: Z3_sort = ctx.Z3_mk_bool_sort();
+        return mk_var(ctx, name.toArrayHandle(), ty);
+    }
+
+    /**
+    \brief Display a symbol in the given output stream.
+     */
+    fun display_symbol(c: Z3_context, output: Writer, s: Z3_symbol) {
+        val kind = c.Z3_get_symbol_kind(s)
+        when (Z3_symbol_kind.valueOf(kind)) {
+            Z3_symbol_kind.Z3_INT_SYMBOL -> output.write("#%d".format(c.Z3_get_symbol_int(s)))
+            Z3_symbol_kind.Z3_STRING_SYMBOL -> output.write("%s".format(c.Z3_get_symbol_string(s)))
+            else -> throw IllegalArgumentException()
+        }
+    }
+
+//    /**
+//    \brief Custom ast pretty printer.
+//    This function demonstrates how to use the API to navigate terms.
+//     */
+//    fun display_ast(c: Z3_context, output: Writer, v: Z3_ast) {
+//        when (c.Z3_get_ast_kind(v)) {
+//            Z3_NUMERAL_AST -> {
+//                val t: Z3_sort
+//                output.write("%s".format(c.Z3_get_numeral_string(c, v)))
+//                t = c.Z3_get_sort(v)
+//                output.write(":")
+//                display_sort(c, out, t)
+//            }
+//            Z3_APP_AST -> {
+//                val i: unsigned
+//                val app = Z3_to_app(c, v)
+//                val num_fields = Z3_get_app_num_args(c, app)
+//                val d = Z3_get_app_decl(c, app)
+//                fprintf(out, "%s", Z3_func_decl_to_string(c, d))
+//                if (num_fields > 0) {
+//                    fprintf(out, "[")
+//                    i = 0
+//                    while (i < num_fields) {
+//                        if (i > 0) {
+//                            fprintf(out, ", ")
+//                        }
+//                        display_ast(c, out, Z3_get_app_arg(c, app, i))
+//                        i++
+//                    }
+//                    fprintf(out, "]")
+//                }
+//            }
+//            Z3_QUANTIFIER_AST -> {
+//                run({ fprintf(out, "quantifier") })
+//                fprintf(out, "#unknown")
+//            }
+//            else -> fprintf(out, "#unknown")
+//        }
+//    }
+
+    /**
+    \brief Custom model pretty printer.
+     */
+    fun display_model(c: Z3_context, output: Writer, m: Z3_model?) {
+        val num_constants: Int
+        var i: Int
+        if (m == null) return
+        num_constants = c.Z3_model_get_num_consts(m)
+        i = 0
+        while (i < num_constants) {
+            val name: Z3_symbol
+            val cnst = c.Z3_model_get_const_decl(m, i)
+            val a: Z3_ast
+            val v: Z3_ast
+            val ok: Boolean
+            name = c.Z3_get_decl_name(cnst)
+            display_symbol(c, output, name)
+            output.write(" = ")
+            a = c.Z3_mk_app(cnst, 0, listOf<Z3_ast>().toArrayHandle())
+            v = a
+            ok = c.Z3_model_eval(m, a, true, v)
+//            display_ast(c, out, v) TODO
+            output.write("\n")
+            i++
+        }
+//        display_function_interpretations(c, out, m) TODO
+    }
+
+    /**
+    \brief Prove a theorem and extract, and print the proof.
+    This example illustrates the use of #Z3_check_assumptions.
+     */
+    @Test
+    fun unsat_core_and_proof_example() {
+        val ctx: Z3_context = mk_proof_context();
+        val s: Z3_solver = mk_solver(ctx);
+        val pa: Z3_ast = mk_bool_var(ctx, "PredA");
+        val pb: Z3_ast = mk_bool_var(ctx, "PredB");
+        val pc: Z3_ast = mk_bool_var(ctx, "PredC");
+        val pd: Z3_ast = mk_bool_var(ctx, "PredD");
+        val p1: Z3_ast = mk_bool_var(ctx, "P1");
+        val p2: Z3_ast = mk_bool_var(ctx, "P2");
+        val p3: Z3_ast = mk_bool_var(ctx, "P3");
+        val p4: Z3_ast = mk_bool_var(ctx, "P4");
+        val assumptions = listOf<Z3_ast>(ctx.Z3_mk_not(p1), ctx.Z3_mk_not(p2), ctx.Z3_mk_not(p3), ctx.Z3_mk_not(p4));
+        val args1 = listOf<Z3_ast>(pa, pb, pc);
+        val f1: Z3_ast = ctx.Z3_mk_and(3, args1.toArrayHandle());
+        val args2 = listOf<Z3_ast>(pa, ctx.Z3_mk_not(pb), pc);
+        val f2: Z3_ast = ctx.Z3_mk_and(3, args2.toArrayHandle());
+        val args3 = listOf<Z3_ast>(ctx.Z3_mk_not(pa), ctx.Z3_mk_not(pc));
+        val f3: Z3_ast = ctx.Z3_mk_or(2, args3.toArrayHandle());
+        val f4: Z3_ast = pd;
+        val g1 = listOf<Z3_ast>(f1, p1);
+        val g2 = listOf<Z3_ast>(f2, p2);
+        val g3 = listOf<Z3_ast>(f3, p3);
+        val g4 = listOf<Z3_ast>(f4, p4);
+        val result: Z3_lbool;
+        val proof: Z3_ast;
+        val m: Z3_model?;
+//        val i: Int;
+        val core: Z3Kotlin.Z3_ast_vector;
+
+        print("\nunsat_core_and_proof_example\n");
+//        LOG_MSG("unsat_core_and_proof_example");
+
+        ctx.Z3_solver_assert(s, ctx.Z3_mk_or(2, g1.toArrayHandle()));
+        ctx.Z3_solver_assert(s, ctx.Z3_mk_or(2, g2.toArrayHandle()));
+        ctx.Z3_solver_assert(s, ctx.Z3_mk_or(2, g3.toArrayHandle()));
+        ctx.Z3_solver_assert(s, ctx.Z3_mk_or(2, g4.toArrayHandle()));
+
+        result = Z3_lbool.valueOf(ctx.Z3_solver_check_assumptions(s, 4, assumptions.toArrayHandle()));
+
+        when (result) {
+            Z3_lbool.Z3_L_FALSE -> {
+                TODO()
+//                core = ctx.Z3_solver_get_unsat_core(s);
+//                proof = ctx.Z3_solver_get_proof(s);
+//                print("unsat\n");
+//                print("proof: %s\n".format(ctx.Z3_ast_to_string(proof)));
+//
+//                print("\ncore:\n");
+//                for (i in 0 until ctx.Z3_ast_vector_size(core)) {
+//                    print("%s\n".format(Z3_ast_to_string(ctx, Z3_ast_vector_get(ctx, core, i))));
+//                }
+//                printf("\n");
+            }
+            Z3_lbool.Z3_L_UNDEF -> {
+                print("unknown\n");
+                print("potential model:\n");
+                m = ctx.Z3_solver_get_model(s);
+                if (m != null) ctx.Z3_model_inc_ref(m);
+                display_model(ctx, System.out.writer(), m);
+            }
+            Z3_lbool.Z3_L_TRUE -> {
+                print("sat\n");
+                m = ctx.Z3_solver_get_model(s);
+                if (m != null) ctx.Z3_model_inc_ref(m);
+                display_model(ctx, System.out.writer(), m);
+            }
+        }
+
+        /* delete logical context */
+        if (m != null) ctx.Z3_model_dec_ref(m);
+        del_solver(ctx, s);
+        ctx.Z3_del_context();
+    }
+
+//    /**
+//    \brief Similar to #check, but uses #display_model instead of #Z3_model_to_string.
+//     */
+//    fun array_example2() {
+//        val ctx: Z3_context
+//        val s: Z3_solver
+//        val bool_sort: Z3_sort
+//        val array_sort: Z3_sort
+//        val a: Array<Z3_ast>
+//        val d: Z3_ast
+//        val i: Int
+//        val n: Int
+//        print("\narray_example2\n")
+////        LOG_MSG("array_example2")
+//        n = 2
+//        while (n <= 5) {
+//            printf("n = %d\n", n)
+//            ctx = mk_context()
+//            s = mk_solver(ctx)
+//            bool_sort = Z3_mk_bool_sort(ctx)
+//            array_sort = Z3_mk_array_sort(ctx, bool_sort, bool_sort)
+//            /* create arrays */
+//            i = 0
+//            while (i < n) {
+//                val s = Z3_mk_int_symbol(ctx, i)
+//                a[i] = Z3_mk_const(ctx, s, array_sort)
+//                i++
+//            }
+//            /* assert distinct(a[0], ..., a[n]) */
+//            d = Z3_mk_distinct(ctx, n, a)
+//            printf("%s\n", Z3_ast_to_string(ctx, d))
+//            Z3_solver_assert(ctx, s, d)
+//            /* context is satisfiable if n < 5 */
+//            check2(ctx, s, if (n < 5) Z3_L_TRUE else Z3_L_FALSE)
+//            del_solver(ctx, s)
+//            Z3_del_context(ctx)
+//            n++
+//        }
+//    }
 }

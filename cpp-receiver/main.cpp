@@ -39,7 +39,7 @@ template <typename T> std::unique_ptr<T> read_value(int fd) {
     std::unique_ptr<T> buffer = std::make_unique<T>();
 
     long res = read(fd, buffer.get(), sizeof(T));
-    printf("fread res is %ld \n", res);
+//    printf("fread res is %ld \n", res);
     if (res == 0) {
         throw std::string("Connection closed");
     }
@@ -50,7 +50,7 @@ std::vector<uint8_t> read_block(int fd, size_t length = 1) {
     std::vector<uint8_t> buffer(length);
 
     long res = read(fd, buffer.data(), length);
-    printf("fread res is %ld \n", res);
+//    printf("fread res is %ld \n", res);
     if (res == 0) {
         throw std::string("Connection closed");
     }
@@ -59,10 +59,10 @@ std::vector<uint8_t> read_block(int fd, size_t length = 1) {
 
 channel_request read_frame(int fd) {
     auto length = read_value<uint32_t>(fd);
-    printf("Len is %u \n", *length);
+//    printf("Len is %u \n", *length);
 
     auto tag = read_value<uint32_t>(fd);
-    printf("Tag is %u \n", *tag);
+//    printf("Tag is %u \n", *tag);
 
     auto data = read_block(fd, *length);
     return std::make_tuple(*length, *tag, std::move(data));
@@ -235,13 +235,13 @@ void process_channel(int fd) {
             case rq.kMethodCall:
                 auto request = rq.method_call();
 
-                printf("Method is %s \n", request.methodname().c_str());
-                printf("Rq is %s \n", rq.DebugString().c_str());
+//                printf("Method is %s \n", request.methodname().c_str());
+//                printf("Rq is %s \n", rq.DebugString().c_str());
 //                printf("Request is %s \n", request.DebugString().c_str());
 
                 response = process_request(request, persistence, response);
 
-                printf("Response is %s \n", response.DebugString().c_str());
+//                printf("Response is %s \n", response.DebugString().c_str());
         }
 
 
@@ -254,7 +254,7 @@ void process_channel(int fd) {
 //        }
 
 //        size_t written = fwrite(response.c_str(), sizeof(char), 6, output); // TODO
-        int written = fmt::printf("%s\n", response.DebugString());
+//        int written = fmt::printf("%s\n", response.DebugString());
         response.SerializeToString(&response_bytes);
         write_frame(fd, 1, response_bytes);
     }
