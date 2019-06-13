@@ -85,4 +85,15 @@ void librarylink_strlen(const exchange::MethodCallRequest &request,
     resp.mutable_return_value()->set_int_value(return_value);
 }
 
+void** librarylink_get_pointer(void** ptr, int indirection_degree) {
+    void** current_ptr = ptr; // TODO: Maybe use ptr itself?
+    void** new_ptr = ptr; // TODO: Maybe use ptr itself?
+    for (int degree = 1; degree < indirection_degree; degree++) {
+        new_ptr = static_cast<void **>(malloc(sizeof(void **)));
+        (*new_ptr) = current_ptr;
+        current_ptr = new_ptr;
+    }
+    return new_ptr;
+}
+
 #endif //LIBRARYLINKRECEIVER_HELPERS_H

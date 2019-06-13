@@ -470,6 +470,24 @@ void librarylink_Z3_mk_app(const exchange::MethodCallRequest& request,
     persistence[resp.assigned_id()] = ptr;
 }
 
+void librarylink_Z3_model_eval(const exchange::MethodCallRequest& request,
+                                     std::unordered_map<std::string, void *>& persistence,
+                                     exchange::ChannelResponse& resp) {
+    Z3_context* c = (Z3_context*) persistence[request.object_id()];
+
+    Z3_model* m = (Z3_model*) persistence[request.arg(0).value().string_value()];
+
+    Z3_ast* t = (Z3_ast*) persistence[request.arg(1).value().string_value()];
+
+    bool model_completion = request.arg(2).value().int_value();
+
+    Z3_ast* v = (Z3_ast*) persistence[request.arg(3).value().string_value()];
+    Z3_ast** v2 = reinterpret_cast<Z3_ast **>(librarylink_get_pointer(reinterpret_cast<void **>(v), 2));
+
+    bool return_value = Z3_model_eval(*c, *m, *t, model_completion, *v2);
+    resp.mutable_return_value()->set_int_value(return_value);
+}
+
 void librarylink_Z3_del_context(const exchange::MethodCallRequest& request,
                                      std::unordered_map<std::string, void *>& persistence,
                                      exchange::ChannelResponse& resp) {
@@ -662,6 +680,10 @@ exchange::ChannelResponse process_request(const exchange::MethodCallRequest& req
     }
     if (request.type() == "Z3_context" && request.methodname() == "Z3_mk_app") {
         librarylink_Z3_mk_app(request, persistence, resp);
+        return resp;
+    }
+    if (request.type() == "Z3_context" && request.methodname() == "Z3_model_eval") {
+        librarylink_Z3_model_eval(request, persistence, resp);
         return resp;
     }
     if (request.type() == "Z3_context" && request.methodname() == "Z3_del_context") {
