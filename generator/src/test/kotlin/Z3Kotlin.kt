@@ -505,6 +505,97 @@ public class Z3Kotlin {
 
         }
 
+        public fun Z3_get_ast_kind(a: Z3_ast): Int {
+            val args = listOf<Argument>(Argument(a, "a"));
+            val request = MethodCallRequest(methodName = "Z3_get_ast_kind",
+                                            objectID = assignedID,
+                                            type = "Z3_context",
+                                            args = args,
+                                            isStatic = false,
+                                            doGetReturnValue = true,
+                                            isProperty = false);
+            return exchange.makeRequest(request).asInstanceOf()
+
+        }
+
+        public fun Z3_get_numeral_string(a: Z3_ast) {
+            val args = listOf<Argument>(Argument(a, "a"));
+            val request = MethodCallRequest(methodName = "Z3_get_numeral_string",
+                                            objectID = assignedID,
+                                            type = "Z3_context",
+                                            args = args,
+                                            isStatic = false,
+                                            doGetReturnValue = false,
+                                            isProperty = false);
+            exchange.makeRequest(request)
+
+        }
+
+        public fun Z3_get_sort(a: Z3_ast): Z3_sort {
+            val args = listOf<Argument>(Argument(a, "a"));
+            val request = MethodCallRequest(methodName = "Z3_get_sort",
+                                            objectID = assignedID,
+                                            type = "Z3_context",
+                                            args = args,
+                                            isStatic = false,
+                                            doGetReturnValue = true,
+                                            isProperty = false);
+            return exchange.makeRequest(request).bindTo(Z3_sort())
+
+        }
+
+        public fun Z3_get_sort_kind(t: Z3_sort): Int {
+            val args = listOf<Argument>(Argument(t, "t"));
+            val request = MethodCallRequest(methodName = "Z3_get_sort_kind",
+                                            objectID = assignedID,
+                                            type = "Z3_context",
+                                            args = args,
+                                            isStatic = false,
+                                            doGetReturnValue = true,
+                                            isProperty = false);
+            return exchange.makeRequest(request).asInstanceOf()
+
+        }
+
+        public fun Z3_get_sort_name(d: Z3_sort): Z3_symbol {
+            val args = listOf<Argument>(Argument(d, "d"));
+            val request = MethodCallRequest(methodName = "Z3_get_sort_name",
+                                            objectID = assignedID,
+                                            type = "Z3_context",
+                                            args = args,
+                                            isStatic = false,
+                                            doGetReturnValue = true,
+                                            isProperty = false);
+            return exchange.makeRequest(request).bindTo(Z3_symbol())
+
+        }
+
+        public fun Z3_get_bv_sort_size(t: Z3_sort): Int {
+            val args = listOf<Argument>(Argument(t, "t"));
+            val request = MethodCallRequest(methodName = "Z3_get_bv_sort_size",
+                                            objectID = assignedID,
+                                            type = "Z3_context",
+                                            args = args,
+                                            isStatic = false,
+                                            doGetReturnValue = true,
+                                            isProperty = false);
+            return exchange.makeRequest(request).asInstanceOf()
+
+        }
+
+        public fun Z3_get_array_sort_domain(t: Z3_sort): Z3_sort {
+            val args = listOf<Argument>(Argument(t, "t"));
+            val request = MethodCallRequest(methodName = "Z3_get_array_sort_domain",
+                                            objectID = assignedID,
+                                            type = "Z3_context",
+                                            args = args,
+                                            isStatic = false,
+                                            doGetReturnValue = true,
+                                            isProperty = false);
+            return exchange.makeRequest(request).bindTo(Z3_sort())
+
+        }
+
         public fun Z3_del_context() {
             val args = listOf<Argument>();
             val request = MethodCallRequest(methodName = "Z3_del_context",
