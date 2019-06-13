@@ -11,12 +11,20 @@ find_package(Z3
         CONFIG
         )
 
-include_directories(${PROJECT_SOURCE_DIR})
+find_package(benchmark
+        REQUIRED
+        )
+
 add_executable(Z3Example main.c)
 add_executable(Z3ExampleBenchmark main.c benchmark.cpp)
+
+include_directories(${PROJECT_SOURCE_DIR})
+include_directories(${benchmark_INCLUDE_DIRS})
 
 target_include_directories(Z3Example PRIVATE ${Z3_C_INCLUDE_DIRS})
 target_link_libraries(Z3Example PRIVATE ${Z3_LIBRARIES})
 
 target_include_directories(Z3ExampleBenchmark PRIVATE ${Z3_C_INCLUDE_DIRS})
-target_link_libraries(Z3ExampleBenchmark PRIVATE ${Z3_LIBRARIES})
+target_link_libraries(Z3ExampleBenchmark PRIVATE ${Z3_LIBRARIES} benchmark::benchmark)
+
+#target_link_libraries(Z3ExampleBenchmark ${benchmark_LIBRARIES})

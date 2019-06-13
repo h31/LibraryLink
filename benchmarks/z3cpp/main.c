@@ -191,8 +191,8 @@ void demorgan()
     Z3_ast x, y, not_x, not_y, x_and_y, ls, rs, conjecture, negated_conjecture;
     Z3_ast args[2];
 
-    printf("\nDeMorgan\n");
-    LOG_MSG("DeMorgan");
+//    printf("\nDeMorgan\n");
+//    LOG_MSG("DeMorgan");
 
     cfg                = Z3_mk_config();
     ctx                = Z3_mk_context(cfg);
