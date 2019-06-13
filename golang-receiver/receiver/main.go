@@ -1,11 +1,11 @@
-package main
+package receiver
 
 import (
 	"bufio"
 	"encoding/binary"
-	"exchange"
 	"fmt"
 	"github.com/dave/jennifer/jen"
+	"github.com/h31/LibraryLink/golang-receiver/exchange"
 	"io/ioutil"
 	"log"
 	"net"
