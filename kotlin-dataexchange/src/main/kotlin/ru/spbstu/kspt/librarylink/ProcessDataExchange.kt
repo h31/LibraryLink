@@ -495,6 +495,7 @@ data class PrimitiveProcessExchangeResponse(val rawValue: Any?,
             Long::class.java -> rawValue as? T ?: throw IllegalArgumentException()
             Int::class.java, Integer::class.java -> (rawValue as Long).toInt() as T
             Char::class.java, Character::class.java -> (rawValue as Long).toChar() as T
+            Boolean::class.java, java.lang.Boolean::class.java -> ((rawValue as Long) != 0L) as T
             else -> TODO()
         }
     }
@@ -567,9 +568,7 @@ open class ArrayHandle<T>(final override var size: Int = 0, val clazz: Class<T>)
     private val typeName = calculatePrimitiveTypeName(clazz)
 
     init {
-        if (size > 0) {
-            allocate(size)
-        }
+        allocate(size)
     }
 
     constructor(src: Collection<T>, clazz: Class<T>) : this(src.size, clazz) {
