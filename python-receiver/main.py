@@ -114,11 +114,11 @@ class SimpleBinaryFraming:
             logging.info("Empty request, exiting")
             exit(0)  # TODO
         length = int.from_bytes(length_binary, byteorder='little')
-        logging.info("Received length: {}", length)
+        logging.info("Received length: %d", length)
 
         tag_binary = self.channel.read(4)
         tag = int.from_bytes(tag_binary, byteorder='little')
-        logging.info("Received tag: {}", tag)
+        logging.info("Received tag: %s", tag)
 
         message_text = self.channel.read(length)
         return tag, message_text
