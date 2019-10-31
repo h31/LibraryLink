@@ -8,9 +8,8 @@ plugins {
 repositories {
     mavenLocal()
     jcenter()
-    maven {
-        url 'https://www.h31.ishere.ru/ModelParser'
-    }
+//    maven { url 'https://www.h31.ishere.ru/ModelParser' }
+    maven { url 'https://maven.pkg.github.com/h31' }
 }
 
 dependencies {
