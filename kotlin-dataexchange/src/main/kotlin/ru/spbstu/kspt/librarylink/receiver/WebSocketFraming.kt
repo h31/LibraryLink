@@ -3,10 +3,11 @@ package ru.spbstu.kspt.librarylink.receiver
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import io.javalin.Javalin
+import io.javalin.websocket.WsSession
 import org.slf4j.LoggerFactory
-import ru.spbstu.kspt.librarylink.ChannelResponse
-import ru.spbstu.kspt.librarylink.Exchange
-import ru.spbstu.kspt.librarylink.MethodCallRequest
+import ru.spbstu.kspt.librarylink.*
+import java.nio.ByteBuffer
+import kotlin.concurrent.thread
 
 class Receiver {
     private val mapper = ObjectMapper().registerModule(KotlinModule())
@@ -27,14 +28,34 @@ class Receiver {
     }
 }
 
-fun main(args: Array<String>) {
+fun main() {
     val app = Javalin.create().start(7000)
+    LibraryLink.runner = DummyRunner(true, "/tmp/linktest")
+    LibraryLink.exchange = ProtoBufDataExchange()
 
-    app.ws("/websocket/:path") { ws ->
+    val sessions = mutableSetOf<WsSession>()
+
+    val channel = LibraryLink.runner.foreignChannelManager.getBidirectionalChannel()
+
+    app.ws("/librarylink/:path") { ws ->
         ws.onConnect { session -> println("Connected") }
-        ws.onMessage { session, message ->
-            println("Received: $message")
-            session.remote.sendString("Echo: $message")
+        ws.onMessage { session, msg, offset, length ->
+            val actualMsg = msg.copyOfRange(offset, offset + length)
+            channel.outputStream.write(length.toByteArray())
+            channel.outputStream.write(actualMsg.toByteArray())
+            if (session !in sessions) {
+                sessions += session
+                thread {
+                    while (true) {
+                        val msgLength = ByteArray(4)
+                        channel.inputStream.read(msgLength)
+                        val msgData = ByteArray(msgLength.toInt())
+                        channel.inputStream.read(msgData)
+                        println("Received: $msgData")
+                        session.remote.sendBytes(ByteBuffer.wrap(msgData))
+                    }
+                }
+            }
         }
         ws.onClose { session, statusCode, reason -> println("Closed") }
         ws.onError { session, throwable -> println("Errored") }
