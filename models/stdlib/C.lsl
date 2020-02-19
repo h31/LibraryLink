@@ -1,11 +1,9 @@
 library C {
  types {
-   String (string);
    Int (int);
-   Any (void);
+   Any (void*);
    Char (char);
    Boolean (bool);
+   String (sem:Char[]);
  }
 }
-
-

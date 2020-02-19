@@ -56,6 +56,34 @@ void librarylink_Z3_mk_bool_sort(const exchange::MethodCallRequest& request,
     persistence[resp.assigned_id()] = ptr;
 }
 
+void librarylink_Z3_get_range(const exchange::MethodCallRequest& request,
+                                     std::unordered_map<std::string, void *>& persistence,
+                                     exchange::ChannelResponse& resp) {
+    Z3_context* c = (Z3_context*) persistence[request.object_id()];
+
+    Z3_func_decl* d = (Z3_func_decl*) persistence[request.arg(0).value().string_value()];
+
+    Z3_sort return_value = Z3_get_range(*c, *d);
+    Z3_sort* ptr = new Z3_sort;
+    *ptr = std::move(return_value);
+    persistence[resp.assigned_id()] = ptr;
+}
+
+void librarylink_Z3_get_tuple_sort_field_decl(const exchange::MethodCallRequest& request,
+                                     std::unordered_map<std::string, void *>& persistence,
+                                     exchange::ChannelResponse& resp) {
+    Z3_context* c = (Z3_context*) persistence[request.object_id()];
+
+    Z3_sort* t = (Z3_sort*) persistence[request.arg(0).value().string_value()];
+
+    int i = request.arg(1).value().int_value();
+
+    Z3_func_decl return_value = Z3_get_tuple_sort_field_decl(*c, *t, i);
+    Z3_func_decl* ptr = new Z3_func_decl;
+    *ptr = std::move(return_value);
+    persistence[resp.assigned_id()] = ptr;
+}
+
 void librarylink_Z3_mk_int_symbol(const exchange::MethodCallRequest& request,
                                      std::unordered_map<std::string, void *>& persistence,
                                      exchange::ChannelResponse& resp) {
@@ -142,6 +170,19 @@ void librarylink_Z3_mk_iff(const exchange::MethodCallRequest& request,
     persistence[resp.assigned_id()] = ptr;
 }
 
+void librarylink_Z3_sort_to_string(const exchange::MethodCallRequest& request,
+                                     std::unordered_map<std::string, void *>& persistence,
+                                     exchange::ChannelResponse& resp) {
+    Z3_context* c = (Z3_context*) persistence[request.object_id()];
+
+    Z3_sort* t = (Z3_sort*) persistence[request.arg(0).value().string_value()];
+
+    const sem:Char[] return_value = Z3_sort_to_string(*c, *t);
+    const sem:Char[]* ptr = new const sem:Char[];
+    *ptr = std::move(return_value);
+    persistence[resp.assigned_id()] = ptr;
+}
+
 void librarylink_Z3_mk_solver(const exchange::MethodCallRequest& request,
                                      std::unordered_map<std::string, void *>& persistence,
                                      exchange::ChannelResponse& resp) {
@@ -171,6 +212,17 @@ void librarylink_Z3_solver_dec_ref(const exchange::MethodCallRequest& request,
     Z3_solver* s = (Z3_solver*) persistence[request.arg(0).value().string_value()];
 
 Z3_solver_dec_ref(*cfg, *s);
+}
+
+void librarylink_Z3_get_datatype_sort_num_constructors(const exchange::MethodCallRequest& request,
+                                     std::unordered_map<std::string, void *>& persistence,
+                                     exchange::ChannelResponse& resp) {
+    Z3_context* c = (Z3_context*) persistence[request.object_id()];
+
+    Z3_sort* t = (Z3_sort*) persistence[request.arg(0).value().string_value()];
+
+    int return_value = Z3_get_datatype_sort_num_constructors(*c, *t);
+    resp.mutable_return_value()->set_int_value(return_value);
 }
 
 void librarylink_Z3_solver_assert(const exchange::MethodCallRequest& request,
@@ -222,6 +274,17 @@ void librarylink_Z3_solver_get_unsat_core(const exchange::MethodCallRequest& req
     Z3_ast_vector* ptr = new Z3_ast_vector;
     *ptr = std::move(return_value);
     persistence[resp.assigned_id()] = ptr;
+}
+
+void librarylink_Z3_get_tuple_sort_num_fields(const exchange::MethodCallRequest& request,
+                                     std::unordered_map<std::string, void *>& persistence,
+                                     exchange::ChannelResponse& resp) {
+    Z3_context* c = (Z3_context*) persistence[request.object_id()];
+
+    Z3_sort* t = (Z3_sort*) persistence[request.arg(0).value().string_value()];
+
+    int return_value = Z3_get_tuple_sort_num_fields(*c, *t);
+    resp.mutable_return_value()->set_int_value(return_value);
 }
 
 void librarylink_Z3_mk_string_symbol(const exchange::MethodCallRequest& request,
@@ -278,8 +341,8 @@ void librarylink_Z3_model_to_string(const exchange::MethodCallRequest& request,
 
     Z3_model* m = (Z3_model*) persistence[request.arg(0).value().string_value()];
 
-    const char* return_value = Z3_model_to_string(*c, *m);
-    const char** ptr = new const char*;
+    const sem:Char[] return_value = Z3_model_to_string(*c, *m);
+    const sem:Char[]* ptr = new const sem:Char[];
     *ptr = std::move(return_value);
     persistence[resp.assigned_id()] = ptr;
 }
@@ -408,8 +471,8 @@ void librarylink_Z3_get_symbol_string(const exchange::MethodCallRequest& request
 
     Z3_symbol* s = (Z3_symbol*) persistence[request.arg(0).value().string_value()];
 
-    const char* return_value = Z3_get_symbol_string(*cfg, *s);
-    const char** ptr = new const char*;
+    const sem:Char[] return_value = Z3_get_symbol_string(*cfg, *s);
+    const sem:Char[]* ptr = new const sem:Char[];
     *ptr = std::move(return_value);
     persistence[resp.assigned_id()] = ptr;
 }
@@ -482,10 +545,104 @@ void librarylink_Z3_model_eval(const exchange::MethodCallRequest& request,
     bool model_completion = request.arg(2).value().int_value();
 
     Z3_ast* v = (Z3_ast*) persistence[request.arg(3).value().string_value()];
-    Z3_ast** v2 = reinterpret_cast<Z3_ast **>(librarylink_get_pointer(reinterpret_cast<void **>(v), 2));
 
-    bool return_value = Z3_model_eval(*c, *m, *t, model_completion, *v2);
+    bool return_value = Z3_model_eval(*c, *m, *t, model_completion, *v);
     resp.mutable_return_value()->set_int_value(return_value);
+}
+
+void librarylink_Z3_get_ast_kind(const exchange::MethodCallRequest& request,
+                                     std::unordered_map<std::string, void *>& persistence,
+                                     exchange::ChannelResponse& resp) {
+    Z3_context* c = (Z3_context*) persistence[request.object_id()];
+
+    Z3_ast* a = (Z3_ast*) persistence[request.arg(0).value().string_value()];
+
+    int return_value = Z3_get_ast_kind(*c, *a);
+    resp.mutable_return_value()->set_int_value(return_value);
+}
+
+void librarylink_Z3_get_numeral_string(const exchange::MethodCallRequest& request,
+                                     std::unordered_map<std::string, void *>& persistence,
+                                     exchange::ChannelResponse& resp) {
+    Z3_context* c = (Z3_context*) persistence[request.object_id()];
+
+    Z3_ast* a = (Z3_ast*) persistence[request.arg(0).value().string_value()];
+
+Z3_get_numeral_string(*c, *a);
+}
+
+void librarylink_Z3_get_sort(const exchange::MethodCallRequest& request,
+                                     std::unordered_map<std::string, void *>& persistence,
+                                     exchange::ChannelResponse& resp) {
+    Z3_context* c = (Z3_context*) persistence[request.object_id()];
+
+    Z3_ast* a = (Z3_ast*) persistence[request.arg(0).value().string_value()];
+
+    Z3_sort return_value = Z3_get_sort(*c, *a);
+    Z3_sort* ptr = new Z3_sort;
+    *ptr = std::move(return_value);
+    persistence[resp.assigned_id()] = ptr;
+}
+
+void librarylink_Z3_get_sort_kind(const exchange::MethodCallRequest& request,
+                                     std::unordered_map<std::string, void *>& persistence,
+                                     exchange::ChannelResponse& resp) {
+    Z3_context* c = (Z3_context*) persistence[request.object_id()];
+
+    Z3_sort* t = (Z3_sort*) persistence[request.arg(0).value().string_value()];
+
+    int return_value = Z3_get_sort_kind(*c, *t);
+    resp.mutable_return_value()->set_int_value(return_value);
+}
+
+void librarylink_Z3_get_sort_name(const exchange::MethodCallRequest& request,
+                                     std::unordered_map<std::string, void *>& persistence,
+                                     exchange::ChannelResponse& resp) {
+    Z3_context* c = (Z3_context*) persistence[request.object_id()];
+
+    Z3_sort* d = (Z3_sort*) persistence[request.arg(0).value().string_value()];
+
+    Z3_symbol return_value = Z3_get_sort_name(*c, *d);
+    Z3_symbol* ptr = new Z3_symbol;
+    *ptr = std::move(return_value);
+    persistence[resp.assigned_id()] = ptr;
+}
+
+void librarylink_Z3_get_bv_sort_size(const exchange::MethodCallRequest& request,
+                                     std::unordered_map<std::string, void *>& persistence,
+                                     exchange::ChannelResponse& resp) {
+    Z3_context* c = (Z3_context*) persistence[request.object_id()];
+
+    Z3_sort* t = (Z3_sort*) persistence[request.arg(0).value().string_value()];
+
+    int return_value = Z3_get_bv_sort_size(*c, *t);
+    resp.mutable_return_value()->set_int_value(return_value);
+}
+
+void librarylink_Z3_get_array_sort_domain(const exchange::MethodCallRequest& request,
+                                     std::unordered_map<std::string, void *>& persistence,
+                                     exchange::ChannelResponse& resp) {
+    Z3_context* c = (Z3_context*) persistence[request.object_id()];
+
+    Z3_sort* t = (Z3_sort*) persistence[request.arg(0).value().string_value()];
+
+    Z3_sort return_value = Z3_get_array_sort_domain(*c, *t);
+    Z3_sort* ptr = new Z3_sort;
+    *ptr = std::move(return_value);
+    persistence[resp.assigned_id()] = ptr;
+}
+
+void librarylink_Z3_get_array_sort_range(const exchange::MethodCallRequest& request,
+                                     std::unordered_map<std::string, void *>& persistence,
+                                     exchange::ChannelResponse& resp) {
+    Z3_context* c = (Z3_context*) persistence[request.object_id()];
+
+    Z3_sort* t = (Z3_sort*) persistence[request.arg(0).value().string_value()];
+
+    Z3_sort return_value = Z3_get_array_sort_range(*c, *t);
+    Z3_sort* ptr = new Z3_sort;
+    *ptr = std::move(return_value);
+    persistence[resp.assigned_id()] = ptr;
 }
 
 void librarylink_Z3_del_context(const exchange::MethodCallRequest& request,
@@ -495,6 +652,8 @@ void librarylink_Z3_del_context(const exchange::MethodCallRequest& request,
 
 Z3_del_context(*cfg);
 }
+
+
 
 
 
@@ -554,6 +713,14 @@ exchange::ChannelResponse process_request(const exchange::MethodCallRequest& req
         librarylink_Z3_mk_bool_sort(request, persistence, resp);
         return resp;
     }
+    if (request.type() == "Z3_context" && request.methodname() == "Z3_get_range") {
+        librarylink_Z3_get_range(request, persistence, resp);
+        return resp;
+    }
+    if (request.type() == "Z3_context" && request.methodname() == "Z3_get_tuple_sort_field_decl") {
+        librarylink_Z3_get_tuple_sort_field_decl(request, persistence, resp);
+        return resp;
+    }
     if (request.type() == "Z3_context" && request.methodname() == "Z3_mk_int_symbol") {
         librarylink_Z3_mk_int_symbol(request, persistence, resp);
         return resp;
@@ -578,6 +745,10 @@ exchange::ChannelResponse process_request(const exchange::MethodCallRequest& req
         librarylink_Z3_mk_iff(request, persistence, resp);
         return resp;
     }
+    if (request.type() == "Z3_context" && request.methodname() == "Z3_sort_to_string") {
+        librarylink_Z3_sort_to_string(request, persistence, resp);
+        return resp;
+    }
     if (request.type() == "Z3_context" && request.methodname() == "Z3_mk_solver") {
         librarylink_Z3_mk_solver(request, persistence, resp);
         return resp;
@@ -588,6 +759,10 @@ exchange::ChannelResponse process_request(const exchange::MethodCallRequest& req
     }
     if (request.type() == "Z3_context" && request.methodname() == "Z3_solver_dec_ref") {
         librarylink_Z3_solver_dec_ref(request, persistence, resp);
+        return resp;
+    }
+    if (request.type() == "Z3_context" && request.methodname() == "Z3_get_datatype_sort_num_constructors") {
+        librarylink_Z3_get_datatype_sort_num_constructors(request, persistence, resp);
         return resp;
     }
     if (request.type() == "Z3_context" && request.methodname() == "Z3_solver_assert") {
@@ -604,6 +779,10 @@ exchange::ChannelResponse process_request(const exchange::MethodCallRequest& req
     }
     if (request.type() == "Z3_context" && request.methodname() == "Z3_solver_get_unsat_core") {
         librarylink_Z3_solver_get_unsat_core(request, persistence, resp);
+        return resp;
+    }
+    if (request.type() == "Z3_context" && request.methodname() == "Z3_get_tuple_sort_num_fields") {
+        librarylink_Z3_get_tuple_sort_num_fields(request, persistence, resp);
         return resp;
     }
     if (request.type() == "Z3_context" && request.methodname() == "Z3_mk_string_symbol") {
@@ -684,6 +863,38 @@ exchange::ChannelResponse process_request(const exchange::MethodCallRequest& req
     }
     if (request.type() == "Z3_context" && request.methodname() == "Z3_model_eval") {
         librarylink_Z3_model_eval(request, persistence, resp);
+        return resp;
+    }
+    if (request.type() == "Z3_context" && request.methodname() == "Z3_get_ast_kind") {
+        librarylink_Z3_get_ast_kind(request, persistence, resp);
+        return resp;
+    }
+    if (request.type() == "Z3_context" && request.methodname() == "Z3_get_numeral_string") {
+        librarylink_Z3_get_numeral_string(request, persistence, resp);
+        return resp;
+    }
+    if (request.type() == "Z3_context" && request.methodname() == "Z3_get_sort") {
+        librarylink_Z3_get_sort(request, persistence, resp);
+        return resp;
+    }
+    if (request.type() == "Z3_context" && request.methodname() == "Z3_get_sort_kind") {
+        librarylink_Z3_get_sort_kind(request, persistence, resp);
+        return resp;
+    }
+    if (request.type() == "Z3_context" && request.methodname() == "Z3_get_sort_name") {
+        librarylink_Z3_get_sort_name(request, persistence, resp);
+        return resp;
+    }
+    if (request.type() == "Z3_context" && request.methodname() == "Z3_get_bv_sort_size") {
+        librarylink_Z3_get_bv_sort_size(request, persistence, resp);
+        return resp;
+    }
+    if (request.type() == "Z3_context" && request.methodname() == "Z3_get_array_sort_domain") {
+        librarylink_Z3_get_array_sort_domain(request, persistence, resp);
+        return resp;
+    }
+    if (request.type() == "Z3_context" && request.methodname() == "Z3_get_array_sort_range") {
+        librarylink_Z3_get_array_sort_range(request, persistence, resp);
         return resp;
     }
     if (request.type() == "Z3_context" && request.methodname() == "Z3_del_context") {
@@ -801,6 +1012,7 @@ exchange::ChannelResponse process_request(const exchange::MethodCallRequest& req
         librarylink_mem_alloc<Z3_ast>(request, persistence, resp);
         return resp;
     }
+
 
 
 

@@ -6,6 +6,12 @@ import protobuf from "protobufjs";
 // var fruits = require("./fruits");
 // var container = document.getElementById("container");
 
+async function getResponse(socket) {
+    return new Promise(function (resolve) {
+        socket.onMessage.addOnceListener(data => resolve(data));
+    });
+}
+
 (async () => {
     try {
         let root = await protobuf.load("exchange.proto");
@@ -27,16 +33,20 @@ import protobuf from "protobufjs";
 
         await socket.open();
 
-        let messageBuffer = new ArrayBuffer(4 + 4 + payloadBuffer.length);
+        let messageBuffer = new ArrayBuffer(4 + payloadBuffer.length);
 
-        let headerView = new Uint8Array(messageBuffer, 0, 2);
-        headerView[0] = payloadBuffer.byteLength;
-        headerView[1] = 0; // REQUEST
+        let headerView = new Uint8Array(messageBuffer, 0, 1);
+        headerView[0] = 0; // REQUEST
 
-        let payloadView = new Uint8Array(messageBuffer, 8);
+        let payloadView = new Uint8Array(messageBuffer, 4);
         payloadView.set(payloadBuffer);
 
-        socket.send(headerView);
+        socket.send(messageBuffer);
+
+        let responseMessage = await getResponse(socket);
+
+        let response = request.decode(new Uint8Array(responseMessage));
+        alert(response.toJSON());
 
         await socket.close();
     } catch (err) {

@@ -53,6 +53,7 @@ fun main() {
                         channel.inputStream.read(msgData)
                         println("Received: $msgData")
                         session.remote.sendBytes(ByteBuffer.wrap(msgData))
+                        if (true) print("a") else print("b")
                     }
                 }
             }

@@ -417,53 +417,53 @@ class Z3Example {
         }
     }
 
-//    /**
-//    \brief Display the given type.
-//     */
-//    fun display_sort(c: Z3_context, output: Writer, ty: Z3_sort) {
-//        when (Z3_sort_kind.valueOf(c.Z3_get_sort_kind(ty))) {
-//            Z3_sort_kind.Z3_UNINTERPRETED_SORT -> display_symbol(c, output, c.Z3_get_sort_name(ty))
-//            Z3_sort_kind.Z3_BOOL_SORT -> output.write("bool")
-//            Z3_sort_kind.Z3_INT_SORT -> output.write("int")
-//            Z3_sort_kind.Z3_REAL_SORT -> output.write( "real")
-//            Z3_sort_kind.Z3_BV_SORT -> output.write( "bv" + c.Z3_get_bv_sort_size(ty))
-//            Z3_sort_kind.Z3_ARRAY_SORT -> {
-//                output.write( "[")
-//                display_sort(c, output, c.Z3_get_array_sort_domain(ty))
-//                output.write( "->")
-//                display_sort(c, output, c.Z3_get_array_sort_range(ty))
-//                output.write( "]")
-//            }
-//            Z3_sort_kind.Z3_DATATYPE_SORT -> {
-//                if (Z3_get_datatype_sort_num_constructors(c, ty) !== 1) {
-//                    output.write(Z3_sort_to_string(c, ty))
-//                }
-//                else {
-//                    val num_fields = Z3_get_tuple_sort_num_fields(c, ty)
-//                    val i: unsigned
-//                    output.write( "(")
-//                    i = 0
-//                    while (i < num_fields) {
-//                        val field = Z3_get_tuple_sort_field_decl(c, ty, i)
-//                        if (i > 0) {
-//                            output.write( ", ")
-//                        }
-//                        display_sort(c, out, Z3_get_range(c, field))
-//                        i++
-//                    }
-//                    output.write( ")")
-//                }
-//                output.write( "unknown[")
-//                display_symbol(c, out, Z3_get_sort_name(c, ty))
-//                output.write( "]")
-//            }
-//            else -> {
-//                output.write( "unknown[")
-//                display_symbol(c, out, Z3_get_sort_name(c, ty))
-//                output.write( "]")
-//            }
-//        }
-//    }
+    /**
+    \brief Display the given type.
+     */
+    fun display_sort(c: Z3_context, output: Writer, ty: Z3_sort) {
+        when (Z3_sort_kind.valueOf(c.Z3_get_sort_kind(ty))) {
+            Z3_sort_kind.Z3_UNINTERPRETED_SORT -> display_symbol(c, output, c.Z3_get_sort_name(ty))
+            Z3_sort_kind.Z3_BOOL_SORT -> output.write("bool")
+            Z3_sort_kind.Z3_INT_SORT -> output.write("int")
+            Z3_sort_kind.Z3_REAL_SORT -> output.write( "real")
+            Z3_sort_kind.Z3_BV_SORT -> output.write( "bv" + c.Z3_get_bv_sort_size(ty))
+            Z3_sort_kind.Z3_ARRAY_SORT -> {
+                output.write( "[")
+                display_sort(c, output, c.Z3_get_array_sort_domain(ty))
+                output.write( "->")
+                display_sort(c, output, c.Z3_get_array_sort_range(ty))
+                output.write( "]")
+            }
+            Z3_sort_kind.Z3_DATATYPE_SORT -> {
+                if (c.Z3_get_datatype_sort_num_constructors(ty) != 1) {
+                    output.write(c.Z3_sort_to_string(ty).toStringOfSize())
+                }
+                else {
+                    val num_fields = c.Z3_get_tuple_sort_num_fields(ty)
+                    var i: Int
+                    output.write( "(")
+                    i = 0
+                    while (i < num_fields) {
+                        val field = c.Z3_get_tuple_sort_field_decl(ty, i)
+                        if (i > 0) {
+                            output.write( ", ")
+                        }
+                        display_sort(c, output, c.Z3_get_range(field))
+                        i++
+                    }
+                    output.write( ")")
+                }
+                output.write( "unknown[")
+                display_symbol(c, output, c.Z3_get_sort_name(ty))
+                output.write( "]")
+            }
+            else -> {
+                output.write( "unknown[")
+                display_symbol(c, output, c.Z3_get_sort_name(ty))
+                output.write( "]")
+            }
+        }
+    }
 
 //    /**
 //    \brief Custom ast pretty printer.

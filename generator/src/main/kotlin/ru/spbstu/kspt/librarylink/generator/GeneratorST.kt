@@ -193,8 +193,13 @@ fun mergeASTs(name: String, vararg mergedASTs: LibraryDecl) = mergeASTs(name, me
 fun mergeASTs(name: String, mergedASTs: List<LibraryDecl>) = LibraryDecl(
         name = name,
         imports = mergedASTs.flatMap { it.imports },
+        includes = mergedASTs.flatMap { it.includes },
         automata = mergedASTs.flatMap { it.automata },
         types = mergedASTs.flatMap { it.types },
         converters = mergedASTs.flatMap { it.converters },
         functions = mergedASTs.flatMap { it.functions }
 )
+
+fun mergeTypes(libraryDecl: LibraryDecl) {
+    return libraryDecl.copy(types = libraryDecl.types.map { it.codeType })
+}

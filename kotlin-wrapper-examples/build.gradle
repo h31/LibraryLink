@@ -1,0 +1,34 @@
+plugins {
+    id 'idea'
+    id "org.jetbrains.kotlin.jvm" version "1.3.21"
+}
+
+repositories {
+    mavenLocal()
+    jcenter()
+    maven {
+        url 'https://www.h31.ishere.ru/ModelParser'
+    }
+}
+
+dependencies {
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    compile "org.jetbrains.kotlin:kotlin-reflect"
+    compile 'ch.qos.logback:logback-classic:1.2.3'
+    compile 'ru.spbstu.kspt.librarymigration:kotlin-dataexchange:0.1-SNAPSHOT'
+    testCompile 'junit:junit:4.12'
+}
+
+idea {
+    module {
+        downloadJavadoc = true
+        downloadSources = true
+    }
+}
+
+test {
+    testLogging {
+        events "started", "skipped", "failed"
+        exceptionFormat "full"
+    }
+}

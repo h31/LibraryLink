@@ -76,6 +76,32 @@ public class Z3Kotlin {
 
         }
 
+        public fun Z3_get_range(d: Z3_func_decl): Z3_sort {
+            val args = listOf<Argument>(Argument(d, "d"));
+            val request = MethodCallRequest(methodName = "Z3_get_range",
+                                            objectID = assignedID,
+                                            type = "Z3_context",
+                                            args = args,
+                                            isStatic = false,
+                                            doGetReturnValue = true,
+                                            isProperty = false);
+            return exchange.makeRequest(request).bindTo(Z3_sort())
+
+        }
+
+        public fun Z3_get_tuple_sort_field_decl(t: Z3_sort, i: Int): Z3_func_decl {
+            val args = listOf<Argument>(Argument(t, "t"), Argument(i, "i"));
+            val request = MethodCallRequest(methodName = "Z3_get_tuple_sort_field_decl",
+                                            objectID = assignedID,
+                                            type = "Z3_context",
+                                            args = args,
+                                            isStatic = false,
+                                            doGetReturnValue = true,
+                                            isProperty = false);
+            return exchange.makeRequest(request).bindTo(Z3_func_decl())
+
+        }
+
         public fun Z3_mk_int_symbol(i: Int): Z3_symbol {
             val args = listOf<Argument>(Argument(i, "i"));
             val request = MethodCallRequest(methodName = "Z3_mk_int_symbol",
@@ -154,6 +180,19 @@ public class Z3Kotlin {
 
         }
 
+        public fun Z3_sort_to_string(t: Z3_sort): String {
+            val args = listOf<Argument>(Argument(t, "t"));
+            val request = MethodCallRequest(methodName = "Z3_sort_to_string",
+                                            objectID = assignedID,
+                                            type = "Z3_context",
+                                            args = args,
+                                            isStatic = false,
+                                            doGetReturnValue = true,
+                                            isProperty = false);
+            return exchange.makeRequest(request).bindTo(String())
+
+        }
+
         public fun Z3_mk_solver(): Z3_solver {
             val args = listOf<Argument>();
             val request = MethodCallRequest(methodName = "Z3_mk_solver",
@@ -190,6 +229,19 @@ public class Z3Kotlin {
                                             doGetReturnValue = false,
                                             isProperty = false);
             exchange.makeRequest(request)
+
+        }
+
+        public fun Z3_get_datatype_sort_num_constructors(t: Z3_sort): Int {
+            val args = listOf<Argument>(Argument(t, "t"));
+            val request = MethodCallRequest(methodName = "Z3_get_datatype_sort_num_constructors",
+                                            objectID = assignedID,
+                                            type = "Z3_context",
+                                            args = args,
+                                            isStatic = false,
+                                            doGetReturnValue = true,
+                                            isProperty = false);
+            return exchange.makeRequest(request).asInstanceOf()
 
         }
 
@@ -245,6 +297,19 @@ public class Z3Kotlin {
 
         }
 
+        public fun Z3_get_tuple_sort_num_fields(t: Z3_sort): Int {
+            val args = listOf<Argument>(Argument(t, "t"));
+            val request = MethodCallRequest(methodName = "Z3_get_tuple_sort_num_fields",
+                                            objectID = assignedID,
+                                            type = "Z3_context",
+                                            args = args,
+                                            isStatic = false,
+                                            doGetReturnValue = true,
+                                            isProperty = false);
+            return exchange.makeRequest(request).asInstanceOf()
+
+        }
+
         public fun Z3_mk_string_symbol(s: ArrayHandle<Char>): Z3_symbol {
             val args = listOf<Argument>(Argument(s, "s"));
             val request = MethodCallRequest(methodName = "Z3_mk_string_symbol",
@@ -297,7 +362,7 @@ public class Z3Kotlin {
 
         }
 
-        public fun Z3_model_to_string(m: Z3_model): ArrayHandle<Char> {
+        public fun Z3_model_to_string(m: Z3_model): String {
             val args = listOf<Argument>(Argument(m, "m"));
             val request = MethodCallRequest(methodName = "Z3_model_to_string",
                                             objectID = assignedID,
@@ -306,7 +371,7 @@ public class Z3Kotlin {
                                             isStatic = false,
                                             doGetReturnValue = true,
                                             isProperty = false);
-            return exchange.makeRequest(request).bindTo(ArrayHandle<Char>())
+            return exchange.makeRequest(request).bindTo(String())
 
         }
 
@@ -427,7 +492,7 @@ public class Z3Kotlin {
 
         }
 
-        public fun Z3_get_symbol_string(s: Z3_symbol): ArrayHandle<Char> {
+        public fun Z3_get_symbol_string(s: Z3_symbol): String {
             val args = listOf<Argument>(Argument(s, "s"));
             val request = MethodCallRequest(methodName = "Z3_get_symbol_string",
                                             objectID = assignedID,
@@ -436,7 +501,7 @@ public class Z3Kotlin {
                                             isStatic = false,
                                             doGetReturnValue = true,
                                             isProperty = false);
-            return exchange.makeRequest(request).bindTo(ArrayHandle<Char>())
+            return exchange.makeRequest(request).bindTo(String())
 
         }
 
@@ -596,6 +661,19 @@ public class Z3Kotlin {
 
         }
 
+        public fun Z3_get_array_sort_range(t: Z3_sort): Z3_sort {
+            val args = listOf<Argument>(Argument(t, "t"));
+            val request = MethodCallRequest(methodName = "Z3_get_array_sort_range",
+                                            objectID = assignedID,
+                                            type = "Z3_context",
+                                            args = args,
+                                            isStatic = false,
+                                            doGetReturnValue = true,
+                                            isProperty = false);
+            return exchange.makeRequest(request).bindTo(Z3_sort())
+
+        }
+
         public fun Z3_del_context() {
             val args = listOf<Argument>();
             val request = MethodCallRequest(methodName = "Z3_del_context",
@@ -647,6 +725,72 @@ public class Z3Kotlin {
     }
 
     class Z3_ast_vector : HandleAutoGenerate {
+        private val exchange = LibraryLink.exchange;
+        constructor() : super();
+
+    }
+
+    class Char[] : HandleAutoGenerate {
+        private val exchange = LibraryLink.exchange;
+        constructor() : super();
+
+    }
+
+    class Char[] : HandleAutoGenerate {
+        private val exchange = LibraryLink.exchange;
+        constructor() : super();
+
+    }
+
+    class Z3_ast[] : HandleAutoGenerate {
+        private val exchange = LibraryLink.exchange;
+        constructor() : super();
+
+    }
+
+    class Z3_ast[] : HandleAutoGenerate {
+        private val exchange = LibraryLink.exchange;
+        constructor() : super();
+
+    }
+
+    class Z3_ast[] : HandleAutoGenerate {
+        private val exchange = LibraryLink.exchange;
+        constructor() : super();
+
+    }
+
+    class Z3_ast[] : HandleAutoGenerate {
+        private val exchange = LibraryLink.exchange;
+        constructor() : super();
+
+    }
+
+    class Char[] : HandleAutoGenerate {
+        private val exchange = LibraryLink.exchange;
+        constructor() : super();
+
+    }
+
+    class Z3_ast[] : HandleAutoGenerate {
+        private val exchange = LibraryLink.exchange;
+        constructor() : super();
+
+    }
+
+    class const<String> : HandleAutoGenerate {
+        private val exchange = LibraryLink.exchange;
+        constructor() : super();
+
+    }
+
+    class const<String> : HandleAutoGenerate {
+        private val exchange = LibraryLink.exchange;
+        constructor() : super();
+
+    }
+
+    class const<String> : HandleAutoGenerate {
         private val exchange = LibraryLink.exchange;
         constructor() : super();
 
